@@ -26,7 +26,7 @@ class EstablecimientoController extends Controller
      */
     public function index()
     {
-        $establecimientos = Establecimiento::orderBy('nombre')->get();
+        $establecimientos = Establecimiento::getAll();
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {
@@ -35,16 +35,6 @@ class EstablecimientoController extends Controller
         }
 
         return $establecimientos;
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -198,6 +188,33 @@ class EstablecimientoController extends Controller
         try {
             $establecimiento = Establecimiento::findOrFail($id);
             $establecimiento->delete();
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Cambia el periodo activo del establecimiento.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePeriodoActivo(Request $request, $id)
+    {
+        Request()->validate([
+            'idPeriodoActivo' => 'required',
+        ]);
+
+        try {
+            $establecimiento = Establecimiento::findOrFail($id);
+
+            $idPeriodoActivo          = $request->input('idPeriodoActivo');
+            $fechaInicioPeriodoActivo = $request->input('fechaInicioPeriodoActivo');
+
+            $establecimiento->idPeriodoActivo          = $idPeriodoActivo;
+            $establecimiento->fechaInicioPeriodoActivo = $fechaInicioPeriodoActivo;
+            $establecimiento->save();
+
+            return response(null, 200);
         } catch (\Throwable $th) {
             return response($th, 500);
         }

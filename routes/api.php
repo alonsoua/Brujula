@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EstablecimientoController;
+use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\UserController;
 
 use Illuminate\Http\Request;
@@ -71,12 +72,14 @@ Route::get('/usuarios', [UserController::class, 'index']);
 // Route::put('/usuarios/password/{id}', [UserController::class, 'updatePassword']);
 // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
+// Periodos
+Route::get('/periodos', [PeriodoController::class, 'index']);
 
 // Establecimientos
 Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
 Route::post('/establecimientos', [EstablecimientoController::class, 'store']);
 Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
+Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::class, 'updatePeriodoActivo']);
 // Route::delete('/establecimientos/{id}', [EstablecimientoController::class, 'destroy']);
 // Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
-// Route::put('/establecimientos/estado/{id}', [EstablecimientoController::class, 'updateEstado']);
 // Route::put('/establecimientos/password/{id}', [EstablecimientoController::class, 'updatePassword']);
