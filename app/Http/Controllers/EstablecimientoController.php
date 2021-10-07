@@ -1,0 +1,205 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Establecimiento;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\UrlGenerator;
+
+class EstablecimientoController extends Controller
+{
+
+    protected $url;
+
+    public function __construct(UrlGenerator $url)
+    {
+        $this->url = $url;
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $establecimientos = Establecimiento::orderBy('nombre')->get();
+        foreach ($establecimientos as $key => $establecimiento) {
+            // agregamos código y nombre
+            if ($establecimiento['insignia']) {
+                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+            }
+        }
+
+        return $establecimientos;
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'rbd' => 'required|max:10|unique:establecimientos',
+            'nombre' => 'required|max:200',
+            'correo' => 'required|email|max:80',
+            'telefono' => 'required|max:25',
+            'direccion' => 'required',
+            'dependencia' => 'required',
+            'estado' => 'required',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                $insignia = $request->input('insignia');
+                $rbd = $request->input('rbd');
+
+                if ( !is_null( $insignia ) ) {
+                    $nombreInsignia = formatNameImage(
+                        $insignia
+                        , $rbd
+                    );
+                    saveStorageImagen(
+                        'insignias_establecimientos'
+                        , $insignia
+                        , $nombreInsignia
+                    );
+                    $insignia = $nombreInsignia;
+                }
+
+                Establecimiento::Create([
+                    'rbd'             => $rbd,
+                    'nombre'          => $request->input('nombre'),
+                    'insignia'        => $insignia,
+                    'correo'          => $request->input('correo'),
+                    'telefono'        => $request->input('telefono'),
+                    'direccion'       => $request->input('direccion'),
+                    'dependencia'     => $request->input('dependencia'),
+                    'idPeriodoActivo' => $request->input('idPeriodoActivo'),
+                    'estado'          => $request->input('estado'),
+                ]);
+
+                return response(null, 200);
+            });
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        return Establecimiento::findOrFail($id);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        Request()->validate([
+            'rbd' => 'required|max:10|unique:establecimientos,rbd,'.$id.',id' ,
+            'nombre' => 'required|max:200',
+            'correo' => 'required|email|max:80',
+            'telefono' => 'required|max:25',
+            'direccion' => 'required',
+            'dependencia' => 'required',
+            'estado' => 'required',
+        ]);
+
+        try {
+            $establecimiento = Establecimiento::findOrFail($id);
+
+            $rbd    = $request->input('rbd');
+            $nombre = $request->input('nombre');
+
+            $insignia = $request->input('insignia');
+            if (!is_null($insignia)) {
+                $nombreInsignia = formatNameImage(
+                    $insignia
+                    , $rbd
+                );
+                if ( !is_null($nombreInsignia) ) {
+                    $insigniaAntigua = $establecimiento->insignia;
+                    if ($insigniaAntigua) {
+                        Storage::disk('insignias_establecimientos')->delete($insigniaAntigua);
+                    }
+                    saveStorageImagen(
+                        'insignias_establecimientos'
+                        , $insignia
+                        , $nombreInsignia
+                    );
+                    $establecimiento->insignia = $nombreInsignia;
+                }
+            } else {
+                $insigniaAntigua = $establecimiento->insignia;
+                if ($insigniaAntigua) {
+                    Storage::disk('insignias_establecimientos')->delete($insigniaAntigua);
+                }
+                $establecimiento->insignia = null;
+            }
+
+            $correo      = $request->input('correo');
+            $telefono    = $request->input('telefono');
+            $direccion   = $request->input('direccion');
+            $dependencia = $request->input('dependencia');
+            $estado      = $request->input('estado');
+
+            $establecimiento->rbd         = $rbd;
+            $establecimiento->nombre      = $nombre;
+            $establecimiento->correo      = $correo;
+            $establecimiento->telefono    = $telefono;
+            $establecimiento->direccion   = $direccion;
+            $establecimiento->dependencia = $dependencia;
+            $establecimiento->estado      = $estado;
+            $establecimiento->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $establecimiento = Establecimiento::findOrFail($id);
+            $establecimiento->delete();
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+}
