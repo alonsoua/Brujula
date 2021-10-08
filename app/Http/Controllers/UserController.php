@@ -4,9 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\UrlGenerator;
 
 class UserController extends Controller
 {
+    protected $url;
+
+    public function __construct(UrlGenerator $url)
+    {
+        $this->url = $url;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -46,7 +54,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        //
+        return User::findOrFail($id);
     }
 
     /**

@@ -36,6 +36,14 @@ class Establecimiento extends Model
             ->get();
     }
 
+    public static function getAllActivos() {
+        return Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
+            ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id")
+            ->where('estado', 'Activo')
+            ->orderBy('nombre')
+            ->get();
+    }
+
     public static function getActivos() {
 
         return Establecimiento::where('estado', 'Activo')

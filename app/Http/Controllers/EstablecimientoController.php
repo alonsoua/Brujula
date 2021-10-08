@@ -38,6 +38,24 @@ class EstablecimientoController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getActivos()
+    {
+        $establecimientos = Establecimiento::getAllActivos();
+        foreach ($establecimientos as $key => $establecimiento) {
+            // agregamos código y nombre
+            if ($establecimiento['insignia']) {
+                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+            }
+        }
+
+        return $establecimientos;
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
