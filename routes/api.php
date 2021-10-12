@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RolController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\EstablecimientoController;
 // use App\Http\Controllers\Auth\SignInController;
@@ -68,12 +69,15 @@ Route::group([
 
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
+Route::post('/usuarios', [UserController::class, 'store']);
 // Route::get('/usuarios/activos', [UserController::class, 'getActivos']);
-// Route::post('/usuarios', [UserController::class, 'store']);
 // Route::put('/usuarios/estado/{id}', [UserController::class, 'updateEstado']);
 // Route::put('/usuarios/{id}', [UserController::class, 'update']);
 // Route::put('/usuarios/password/{id}', [UserController::class, 'updatePassword']);
 // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
+
+// Roles
+Route::get('/roles', [RolController::class, 'index']);
 
 // Periodos
 Route::get('/periodos', [PeriodoController::class, 'index']);

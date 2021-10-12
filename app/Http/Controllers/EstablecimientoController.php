@@ -68,7 +68,7 @@ class EstablecimientoController extends Controller
             'nombre' => 'required|max:200',
             'correo' => 'required|email|max:80',
             'telefono' => 'required|max:25',
-            'direccion' => 'required',
+            'direccion' => 'required|max:250',
             'dependencia' => 'required',
             'estado' => 'required',
         ]);
@@ -136,7 +136,7 @@ class EstablecimientoController extends Controller
             'nombre' => 'required|max:200',
             'correo' => 'required|email|max:80',
             'telefono' => 'required|max:25',
-            'direccion' => 'required',
+            'direccion' => 'required|max:250',
             'dependencia' => 'required',
             'estado' => 'required',
         ]);
@@ -195,21 +195,6 @@ class EstablecimientoController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Request $request, $id)
-    {
-        try {
-            $establecimiento = Establecimiento::findOrFail($id);
-            $establecimiento->delete();
-        } catch (\Throwable $th) {
-            return response($th, 500);
-        }
-    }
 
     /**
      * Cambia el periodo activo del establecimiento.
@@ -237,4 +222,21 @@ class EstablecimientoController extends Controller
             return response($th, 500);
         }
     }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $establecimiento = Establecimiento::findOrFail($id);
+            $establecimiento->delete();
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
 }

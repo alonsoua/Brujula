@@ -47,7 +47,7 @@ class MeController extends Controller
                 $array
             );
         }
-        $rol = $roles = $user->getRoleNames();
+        $rol = $user->getRoleNames();
         // if ($user->imagen) {
         //     $user->imagen = $this->url->to('/').''.Storage::url('images_users/'.$user['imagen']);
         // }
