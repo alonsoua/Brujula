@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\UsuarioEstablecimiento;
+use App\Models\model_has_roles;
 use Illuminate\Http\Request;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class MeController extends Controller
 {
@@ -21,11 +25,51 @@ class MeController extends Controller
     public function __invoke(Request $request)
     {
         $user = $request->user();
+
         if ($user->estado == 'Inactivo') {
             auth()->logout();
             return response('Usuario Inactivo', 500);
         }
-        $usersPermissions = $user->getAllPermissions();
+
+        $establecimientos = UsuarioEstablecimiento::getEstablecimientosActivosPorUsuario($user->id);
+        foreach ($establecimientos as $key => $establecimiento) {
+            if ($establecimiento->insignia) {
+                $establecimiento->insignia = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+            }
+        }
+
+        // si idEstablecimientoActivo == null, es Super Admin o Admin Daem
+        $roles = array();
+        if ($user['rolActivo'] === 'Super Administrador'
+        || $user['rolActivo'] === 'Administrador Daem')
+        {
+            $usersPermissions = $user->getAllPermissions();
+            $rol = model_has_roles::getRolByModel_id($user['id']);
+            foreach ($rol as $key => $r) {
+                array_push(
+                    $roles,
+                    $r
+                );
+            }
+        } else {
+            $role = Role::findByName($user['rolActivo']);
+            $usersPermissions = $role->getAllPermissions();
+
+            // obtenemos todos los roles de este establecimiento, para asignarlo a roles
+
+            foreach ($establecimientos as $key => $establecimiento) {
+
+                $rol = model_has_roles::getRolByModel_id($establecimiento['id']);
+
+                foreach ($rol as $key => $r) {
+                    array_push(
+                        $roles,
+                        $r
+                    );
+                }
+            }
+        }
+        // return response($roles, 200);
 
         $permisos = array();
         $array = array(
@@ -36,6 +80,7 @@ class MeController extends Controller
             $permisos,
             $array
         );
+
         foreach ($usersPermissions as $key2 => $userPermission) {
             $val = explode( '_', $userPermission['name']);
             $array = array(
@@ -47,7 +92,8 @@ class MeController extends Controller
                 $array
             );
         }
-        $rol = $user->getRoleNames();
+
+
         // if ($user->imagen) {
         //     $user->imagen = $this->url->to('/').''.Storage::url('images_users/'.$user['imagen']);
         // }
@@ -61,8 +107,10 @@ class MeController extends Controller
             'primerApellido'          => $user->primerApellido,
             'segundoApellido'         => $user->segundoApellido,
             'idEstablecimientoActivo' => $user->idEstablecimientoActivo,
-            'rol'                     => $rol,
+            'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
+            'establecimientos'        => $establecimientos,
+            'roles'                   => $roles,
             'ability'                 => $permisos,
         ]);
     }

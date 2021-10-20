@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Establecimiento;
 use App\Models\UsuarioEstablecimiento;
+use App\Models\model_has_roles;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Routing\UrlGenerator;
@@ -16,6 +18,7 @@ class UserController extends Controller
 
     public function __construct(UrlGenerator $url)
     {
+        // $this->middleware(['auth:api']);
         $this->url = $url;
     }
     /**
@@ -23,19 +26,33 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return User::orderBy('name')->get();
+        $user = $request->user();
+        $admins = User::getAllAdmins();
+        $usuarios = User::getAll($user->idEstablecimientoActivo);
+        $response = array();
+
+        foreach ($admins as $key => $admin) {
+            array_push($response, $admin);
+        }
+
+        foreach ($usuarios as $key => $usuario) {
+            array_push($response, $usuario);
+        }
+        // return response($admins, 200);
+        return $response;
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Obtiene listado de Docentes
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function getDocentesActivos(Request $request)
     {
-        //
+        $user = $request->user();
+        return User::getDocentesActivos($user->idEstablecimiento);
     }
 
     /**
@@ -46,9 +63,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // return response($request, 200);
         $request->validate([
-            'email'          => 'required|email|max:80|unique:users',
+            'email'           => 'required|email|max:80|unique:users',
             'password'        => 'required|min:6|max:30',
             'rut'             => 'required|max:15|unique:users',
             'nombres'         => 'required|max:150',
@@ -57,42 +73,53 @@ class UserController extends Controller
             'estado'          => 'required',
         ]);
 
-        // try {
+        try {
 
-            // DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request) {
+                $establecimiento = $request->input('establecimiento');
+                $idRol     = $request->input('rol')['id'];
+                $nombreRol = $request->input('rol')['title'];
 
                 $usuario = User::Create([
-                    'correo'          => $request->input('correo'),
-                    'password'        => bcrypt($request->input('password')),
-                    'rut'             => $request->input('rut'),
-                    'nombre'          => $request->input('nombres'),
-                    'primerApellido'  => $request->input('primerApellido'),
-                    'segundoApellido' => $request->input('segundoApellido'),
-                    'idEstablecimientoActivo' => null,
-                    'estado'          => $request->input('estado'),
+                    'name'               => 'a',
+                    'email'              => $request->input('email'),
+                    'password'           => bcrypt($request->input('password')),
+                    'rut'                => $request->input('rut'),
+                    'nombres'            => $request->input('nombres'),
+                    'primerApellido'     => $request->input('primerApellido'),
+                    'segundoApellido'    => $request->input('segundoApellido'),
+                    'idEstablecimientoActivo' => $establecimiento,
+                    'rolActivo'          => $nombreRol,
+                    'estado'             => $request->input('estado'),
                 ]);
 
-                $idEstablecimientoActivo = null;
-                $establecimientos = $request->input('establecimientos');
-                foreach ($establecimientos as $key => $establecimiento) {
-                    $idEstablecimientoActivo = $key == 0
-                        ? $establecimiento['id']
-                        : $idEstablecimientoActivo;
-                    UsuarioEstablecimiento::create([
+                if ($nombreRol === 'Super Administrador' ||
+                    $nombreRol === 'Administrador Daem')
+                {
+
+                    // * Asigna rol por medio de spatie
+                    // model_type = App\Models\User
+                    $usuario->assignRole($nombreRol);
+
+                } else {
+                    $usuarioEstablecimiento = UsuarioEstablecimiento::create([
                         'idUsuario'         => $usuario->id,
-                        'idEstablecimiento' => $establecimiento['id'],
+                        'idEstablecimiento' => $establecimiento,
+                    ]);
+
+                    // * Asigna rol directo a la Tabla
+                    $usuarioEstablecimiento = model_has_roles::create([
+                        'role_id'    => $idRol,
+                        'model_type' => 'App\Models\UsuarioEstablecimiento',
+                        'model_id'   => $usuarioEstablecimiento->id,
                     ]);
                 }
 
-                // editar idEstablecimientoActivo
-
-
                 return response(null, 200);
-            // });
-
-        // } catch (\Throwable $th) {
-        //     return response($th, 500);
-        // }
+            });
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**
@@ -127,6 +154,47 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         //
+    }
+
+    /**
+     * Update las vistas del usuario en el sistema.
+     *
+     * Establecimiento Activo
+     * Rol Activo
+     * Periodo Activo
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateVistas(Request $request, $id)
+    {
+        // Request()->validate([
+        //     'idEstablecimientoActivo' => 'required|max:10|unique:establecimientos,rbd,'.$id.',id' ,
+        //     'rolActivo' => 'required|max:200',
+        //     'idPeriodoActivo' => 'required|email|max:80',
+        //     'telefono' => 'required|max:25',
+        //     'direccion' => 'required|max:250',
+        //     'dependencia' => 'required',
+        //     'estado' => 'required',
+        // ]);
+        try {
+            $usuario = User::findOrFail($id);
+
+            $idEstablecimientoActivo = $request->input('idEstablecimientoActivo');
+            $rolActivo               = $request->input('rolActivo');
+            $idPeriodoActivo         = $request->input('idPeriodoActivo');
+
+            $usuario->idEstablecimientoActivo = $idEstablecimientoActivo;
+            $usuario->rolActivo               = $rolActivo;
+            $usuario->idPeriodoActivo         = $idPeriodoActivo;
+            $usuario->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**
