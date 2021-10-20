@@ -34,10 +34,27 @@ class UsuarioEstablecimiento extends Model
                 , 'establecimientos.nombre as nombreEstablecimiento'
                 , 'establecimientos.id as idEstablecimiento'
                 , 'establecimientos.insignia'
+                , 'establecimientos.idPeriodoActivo'
                 )
-            ->leftJoin("establecimientos","usuario_establecimientos.idEstablecimiento", "=", "establecimientos.id")
+            ->leftJoin("establecimientos",
+                "usuario_establecimientos.idEstablecimiento",
+                "=",
+                "establecimientos.id"
+            )
             ->where('usuario_establecimientos.idUsuario', $idUsuario)
             ->get();
+    }
 
+    /**
+     * Obtiene el id de usuario_establecimientos
+     *
+     * @return array
+     */
+    public static function getId($idUsuario, $idEstablecimiento) {
+        $usuario_establecimiento = UsuarioEstablecimiento::select('id')
+            ->where('usuario_establecimientos.idUsuario', $idUsuario)
+            ->where('usuario_establecimientos.idEstablecimiento', $idEstablecimiento)
+            ->get();
+        return $usuario_establecimiento[0]['id'];
     }
 }

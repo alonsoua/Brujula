@@ -31,45 +31,54 @@ class MeController extends Controller
             return response('Usuario Inactivo', 500);
         }
 
-        $establecimientos = UsuarioEstablecimiento::getEstablecimientosActivosPorUsuario($user->id);
+        $establecimientos = UsuarioEstablecimiento::
+            getEstablecimientosActivosPorUsuario($user->id);
+
         foreach ($establecimientos as $key => $establecimiento) {
             if ($establecimiento->insignia) {
-                $establecimiento->insignia = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+                $establecimiento->insignia = $this->url->to('/').''.Storage::
+                url(
+                    'insignias_establecimientos/'.$establecimiento['insignia']
+                );
             }
         }
 
         // si idEstablecimientoActivo == null, es Super Admin o Admin Daem
-        $roles = array();
+
         if ($user['rolActivo'] === 'Super Administrador'
         || $user['rolActivo'] === 'Administrador Daem')
         {
             $usersPermissions = $user->getAllPermissions();
-            $rol = model_has_roles::getRolByModel_id($user['id']);
-            foreach ($rol as $key => $r) {
-                array_push(
-                    $roles,
-                    $r
-                );
-            }
+            $rol = model_has_roles::getRolByModel_id($user['id'], 'User');
+            // $roles = array();
+            // foreach ($rol as $key => $r) {
+            //     array_push(
+            //         $roles,
+            //         $r
+            //     );
+            // }
+            // $establecimientos['roles'] = $roles;
+
         } else {
             $role = Role::findByName($user['rolActivo']);
             $usersPermissions = $role->getAllPermissions();
 
             // obtenemos todos los roles de este establecimiento, para asignarlo a roles
-
-            foreach ($establecimientos as $key => $establecimiento) {
-
-                $rol = model_has_roles::getRolByModel_id($establecimiento['id']);
-
+            foreach ($establecimientos as $establecimientoKey => $establecimiento) {
+                $rol = model_has_roles::getRolByModel_id(
+                    $establecimiento['id'],
+                    'UsuarioEstablecimiento'
+                );
+                $roles = array();
                 foreach ($rol as $key => $r) {
                     array_push(
                         $roles,
                         $r
                     );
                 }
+                $establecimientos[$establecimientoKey]['roles'] = $roles;
             }
         }
-        // return response($roles, 200);
 
         $permisos = array();
         $array = array(
@@ -110,7 +119,7 @@ class MeController extends Controller
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,
-            'roles'                   => $roles,
+            // 'roles'                   => $roles,
             'ability'                 => $permisos,
         ]);
     }

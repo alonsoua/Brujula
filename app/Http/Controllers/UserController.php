@@ -11,6 +11,7 @@ use App\Models\model_has_roles;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Routing\UrlGenerator;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -21,6 +22,7 @@ class UserController extends Controller
         // $this->middleware(['auth:api']);
         $this->url = $url;
     }
+
     /**
      * Display a listing of the resource.
      *
@@ -28,19 +30,23 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        // Si $user tiene $user->idEstablecimientoActivo, muestra la información
+        // del establecimiento activo
+        // Si idEstablecimientoActivo es null, es Super Admin o Admin Daem
         $user = $request->user();
-        $admins = User::getAllAdmins();
-        $usuarios = User::getAll($user->idEstablecimientoActivo);
+
         $response = array();
-
-        foreach ($admins as $key => $admin) {
-            array_push($response, $admin);
+        if (is_null($user->idEstablecimientoActivo)) {
+            $admins = User::getAllAdmins();
+            foreach ($admins as $adminKey => $admin) {
+                array_push($response, $admin);
+            }
         }
+        $usuarios = User::getAll($user->idEstablecimientoActivo);
 
-        foreach ($usuarios as $key => $usuario) {
+        foreach ($usuarios as $usuarioKey => $usuario) {
             array_push($response, $usuario);
         }
-        // return response($admins, 200);
         return $response;
     }
 
@@ -169,21 +175,41 @@ class UserController extends Controller
      */
     public function updateVistas(Request $request, $id)
     {
-        // Request()->validate([
-        //     'idEstablecimientoActivo' => 'required|max:10|unique:establecimientos,rbd,'.$id.',id' ,
-        //     'rolActivo' => 'required|max:200',
-        //     'idPeriodoActivo' => 'required|email|max:80',
-        //     'telefono' => 'required|max:25',
-        //     'direccion' => 'required|max:250',
-        //     'dependencia' => 'required',
-        //     'estado' => 'required',
-        // ]);
+        Request()->validate([
+            'idEstablecimientoActivo' => 'required',
+            'rolActivo' => 'required',
+            // 'idPeriodoActivo' => 'required',
+        ]);
         try {
             $usuario = User::findOrFail($id);
 
             $idEstablecimientoActivo = $request->input('idEstablecimientoActivo');
             $rolActivo               = $request->input('rolActivo');
             $idPeriodoActivo         = $request->input('idPeriodoActivo');
+
+            // * Si cambia el establecimiento
+            if ($usuario['idEstablecimientoActivo'] != $idEstablecimientoActivo) {
+
+                $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+                    $id,
+                    $idEstablecimientoActivo
+                );
+                $existeRol = model_has_roles::getExisteRolInEstablecimiento(
+                    $idUsuarioEstablecimiento,
+                    $usuario['rolActivo']
+                );
+                if ($existeRol == false) {
+                    $roles = model_has_roles::getRolByModel_id(
+                        $idUsuarioEstablecimiento,
+                        'UsuarioEstablecimiento'
+                    );
+                    $rolActivo = $roles[0]['nombre'];
+                }
+
+                // consultar establecimiento para obtener periodo Activo
+                $establecimiento = Establecimiento::findOrFail($idEstablecimientoActivo);
+                $idPeriodoActivo = $establecimiento['idPeriodoActivo'];
+            }
 
             $usuario->idEstablecimientoActivo = $idEstablecimientoActivo;
             $usuario->rolActivo               = $rolActivo;
