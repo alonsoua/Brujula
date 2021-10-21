@@ -102,7 +102,6 @@ class UserController extends Controller
                 if ($nombreRol === 'Super Administrador' ||
                     $nombreRol === 'Administrador Daem')
                 {
-
                     // * Asigna rol por medio de spatie
                     // model_type = App\Models\User
                     $usuario->assignRole($nombreRol);
