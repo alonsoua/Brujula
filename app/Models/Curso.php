@@ -19,7 +19,6 @@ class Curso extends Model
         'letra',
         'idGrado',
         'idProfesorJefe',
-        'idPeriodo',
         'idEstablecimiento',
         'estado',
     ];

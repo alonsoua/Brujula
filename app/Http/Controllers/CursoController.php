@@ -30,54 +30,33 @@ class CursoController extends Controller
         $request->validate([
             'idEstablecimiento' => 'required',
             'cantidad'          => 'required',
-            'idPeriodo'         => 'required',
             'idGrado'           => 'required',
             'estado'            => 'required',
         ]);
 
-        // try {
+        try {
 
-            // DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request) {
 
                 $cantidad = intval($request->input('cantidad'));
-                // $curso = new Curso();
+                $letra = 'A';
                 for ($i = 0; $i < $cantidad; $i++) {
-                    $letra = '';
-                    if ($i = 0) {
-                        $letra = 'A';
-                    } else if ($i = 1) {
-                        $letra = 'B';
-                    } else if ($i = 2) {
-                        $letra = 'C';
-                    } else if ($i = 3) {
-                        $letra = 'D';
-                    } else if ($i = 4) {
-                        $letra = 'E';
-                    }
-
-                    // $curso->letra             = $letra;
-                    // $curso->idEstablecimiento = $request->input('idEstablecimiento');
-                    // $curso->idPeriodo         = $request->input('idPeriodo');
-                    // $curso->idGrado           = $request->input('idGrado');
-                    // $curso->estado            = $request->input('estado');
-                    // $curso->save();
-
                     Curso::Create([
                         'letra'             => $letra,
+                        'idProfesorJefe'    => Null,
                         'idEstablecimiento' => $request->input('idEstablecimiento'),
-                        'idPeriodo'         => $request->input('idPeriodo'),
                         'idGrado'           => $request->input('idGrado'),
                         'estado'            => $request->input('estado'),
                     ]);
-                    return response($i, 200);
+                    $letra++;
                 }
 
-            //     return response(null, 200);
-            // });
+                return response(null, 200);
+            });
 
-        // } catch (\Throwable $th) {
-        //     return response($th, 500);
-        // }
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**
