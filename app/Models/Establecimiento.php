@@ -29,11 +29,18 @@ class Establecimiento extends Model
         'updated_at',
     ];
 
-    public static function getAll() {
-        return Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
-            ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id")
-            ->orderBy('nombre')
+    public static function getAll($idEstablecimiento) {
+        $establecimientos = Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
+            ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id");
+
+
+        if (!is_null($idEstablecimiento)) {
+            $establecimientos = $establecimientos->where('establecimientos.id', $idEstablecimiento);
+        }
+        $establecimientos = $establecimientos->orderBy('nombre')
             ->get();
+
+        return $establecimientos;
     }
 
     public static function getAllActivos() {

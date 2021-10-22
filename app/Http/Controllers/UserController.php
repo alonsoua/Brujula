@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Establecimiento;
 use App\Models\UsuarioEstablecimiento;
 use App\Models\model_has_roles;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Routing\UrlGenerator;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -34,19 +33,30 @@ class UserController extends Controller
         // del establecimiento activo
         // Si idEstablecimientoActivo es null, es Super Admin o Admin Daem
         $user = $request->user();
-
         $response = array();
         if (is_null($user->idEstablecimientoActivo)) {
             $admins = User::getAllAdmins();
             foreach ($admins as $adminKey => $admin) {
+                if ($admin->avatar) {
+                    $admin->avatar = $this->url->to('/').''.Storage::url(
+                        'avatars_usuarios/'.$admin->avatar
+                    );
+                }
                 array_push($response, $admin);
             }
         }
         $usuarios = User::getAll($user->idEstablecimientoActivo);
 
         foreach ($usuarios as $usuarioKey => $usuario) {
+            if ($usuario->avatar) {
+                $usuario->avatar = $this->url->to('/').''.Storage::url(
+                    'avatars_usuarios/'.$usuario->avatar
+                );
+            }
             array_push($response, $usuario);
         }
+
+
         return $response;
     }
 
@@ -85,24 +95,44 @@ class UserController extends Controller
                 $establecimiento = $request->input('establecimiento');
                 $idRol     = $request->input('rol')['id'];
                 $nombreRol = $request->input('rol')['title'];
+                $rut       = $request->input('rut');
+                $avatar    = $request->input('avatar');
+
+
+                if ( !is_null( $avatar ) ) {
+                    $nombreAvatar = formatNameImage(
+                        $avatar
+                        , $rut
+                    );
+
+                    saveStorageImagen(
+                        'avatars_usuarios'
+                        , $avatar
+                        , $nombreAvatar
+                    );
+                    $avatar = $nombreAvatar;
+                }
+
+                $userCreate = $request->user();
 
                 $usuario = User::Create([
-                    'name'               => 'a',
                     'email'              => $request->input('email'),
                     'password'           => bcrypt($request->input('password')),
-                    'rut'                => $request->input('rut'),
+                    'avatar'             => $avatar,
+                    'rut'                => $rut,
                     'nombres'            => $request->input('nombres'),
                     'primerApellido'     => $request->input('primerApellido'),
                     'segundoApellido'    => $request->input('segundoApellido'),
                     'idEstablecimientoActivo' => $establecimiento,
                     'rolActivo'          => $nombreRol,
                     'estado'             => $request->input('estado'),
+                    'idUsuarioCreated'   => $userCreate['id'],
                 ]);
 
                 if ($nombreRol === 'Super Administrador' ||
                     $nombreRol === 'Administrador Daem')
                 {
-                    // * Asigna rol por medio de spatie
+                    // * Relaciona rol por medio de spatie
                     // model_type = App\Models\User
                     $usuario->assignRole($nombreRol);
 
@@ -112,8 +142,9 @@ class UserController extends Controller
                         'idEstablecimiento' => $establecimiento,
                     ]);
 
-                    // * Asigna rol directo a la Tabla
-                    $usuarioEstablecimiento = model_has_roles::create([
+                    // * Relaciona rol directo en la Tabla
+                    // model_type = App\Models\UsuarioEstablecimiento
+                    model_has_roles::create([
                         'role_id'    => $idRol,
                         'model_type' => 'App\Models\UsuarioEstablecimiento',
                         'model_id'   => $usuarioEstablecimiento->id,
@@ -139,17 +170,6 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -158,7 +178,62 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        Request()->validate([
+            'email' => 'required|max:80|unique:users,email,'.$id.',id' ,
+            'rut' => 'required|max:15|unique:users,rut,'.$id.',id' ,
+            'nombres'         => 'required|max:150',
+            'primerApellido'  => 'required|max:100',
+            'segundoApellido' => 'required|max:100',
+        ]);
+
+        try {
+            $usuario = User::findOrFail($id);
+
+            $rut    = $request->input('rut');
+            $avatar = $request->input('avatar');
+
+            if (!is_null($avatar)) {
+                $nombreInsignia = formatNameImage(
+                    $avatar
+                    , $rut
+                );
+                if ( !is_null($nombreInsignia) ) {
+                    $avatarAntigua = $usuario->avatar;
+                    if ($avatarAntigua) {
+                        Storage::disk('avatars_usuarios')->delete($avatarAntigua);
+                    }
+                    saveStorageImagen(
+                        'avatars_usuarios'
+                        , $avatar
+                        , $nombreInsignia
+                    );
+                    $usuario->avatar = $nombreInsignia;
+                }
+            } else {
+                $avatarAntigua = $usuario->avatar;
+                if ($avatarAntigua) {
+                    Storage::disk('avatars_usuarios')->delete($avatarAntigua);
+                }
+                $usuario->avatar = null;
+            }
+
+            $nombres = $request->input('nombres');
+            $email   = $request->input('email');
+            $primerApellido  = $request->input('primerApellido');
+            $segundoApellido = $request->input('segundoApellido');
+
+            $usuario->email   = $email;
+            $usuario->rut     = $rut;
+            $usuario->nombres = $nombres;
+            $usuario->primerApellido  = $primerApellido;
+            $usuario->segundoApellido = $segundoApellido;
+            $usuario->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**

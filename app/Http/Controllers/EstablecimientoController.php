@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Establecimiento;
+use App\Models\Periodo;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,13 +25,16 @@ class EstablecimientoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $establecimientos = Establecimiento::getAll();
+        $user = $request->user();
+        $establecimientos = Establecimiento::getAll($user->idEstablecimientoActivo);
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {
-                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url(
+                    'insignias_establecimientos/'.$establecimiento['insignia']
+                );
             }
         }
 
@@ -48,7 +52,9 @@ class EstablecimientoController extends Controller
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {
-                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url('insignias_establecimientos/'.$establecimiento['insignia']);
+                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url(
+                    'insignias_establecimientos/'.$establecimiento['insignia']
+                );
             }
         }
 
@@ -73,11 +79,11 @@ class EstablecimientoController extends Controller
             'estado' => 'required',
         ]);
 
+
         try {
             DB::transaction(function () use ($request) {
                 $insignia = $request->input('insignia');
                 $rbd = $request->input('rbd');
-
                 if ( !is_null( $insignia ) ) {
                     $nombreInsignia = formatNameImage(
                         $insignia
@@ -91,6 +97,9 @@ class EstablecimientoController extends Controller
                     $insignia = $nombreInsignia;
                 }
 
+                $periodos = Periodo::all();
+                $lastPeriodo = $periodos->last();
+
                 Establecimiento::Create([
                     'rbd'             => $rbd,
                     'nombre'          => $request->input('nombre'),
@@ -99,7 +108,7 @@ class EstablecimientoController extends Controller
                     'telefono'        => $request->input('telefono'),
                     'direccion'       => $request->input('direccion'),
                     'dependencia'     => $request->input('dependencia'),
-                    'idPeriodoActivo' => $request->input('idPeriodoActivo'),
+                    'idPeriodoActivo' => $lastPeriodo['id'],
                     'estado'          => $request->input('estado'),
                 ]);
 

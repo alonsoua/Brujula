@@ -22,9 +22,9 @@ class User extends Authenticatable implements JWTSubject
      * @var string[]
      */
     protected $fillable = [
-        'name',
         'email',
         'password',
+        'avatar',
         'rut',
         'nombres',
         'primerApellido',
@@ -33,6 +33,8 @@ class User extends Authenticatable implements JWTSubject
         'rolActivo',
         'idPeriodoActivo',
         'estado',
+        'idUsuarioCreated',
+        'idUsuarioUpdated',
     ];
 
     /**
@@ -117,21 +119,20 @@ class User extends Authenticatable implements JWTSubject
      */
     public static function getAll($idEstablecimiento) {
         // group_concat(ro.name) as nombreRol
-        $sql = '
-            SELECT
-                us.*
-                , es.nombre as nombreEstablecimiento
-                , ro.name as nombreRol
-            FROM users as us
-            LEFT JOIN usuario_establecimientos as ue
-                ON us.id = ue.idUsuario
-            LEFT JOIN establecimientos as es
-                ON ue.idEstablecimiento = es.id
-            LEFT JOIN model_has_roles as mhr
-                ON ue.id = mhr.model_id
-            LEFT JOIN roles as ro
-                ON mhr.role_id = ro.id
-            WHERE ';
+        $sql = 'SELECT
+                    us.*
+                    , es.nombre as nombreEstablecimiento
+                    , ro.name as nombreRol
+                FROM users as us
+                LEFT JOIN usuario_establecimientos as ue
+                    ON us.id = ue.idUsuario
+                LEFT JOIN establecimientos as es
+                    ON ue.idEstablecimiento = es.id
+                LEFT JOIN model_has_roles as mhr
+                    ON ue.id = mhr.model_id
+                LEFT JOIN roles as ro
+                    ON mhr.role_id = ro.id
+                WHERE ';
 
         if (!is_null($idEstablecimiento)) {
             $sql .= 'ue.idEstablecimiento = '. $idEstablecimiento .' ';

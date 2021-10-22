@@ -60,6 +60,13 @@ return [
             'visibility' => 'public',
         ],
 
+        'avatars_usuarios' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/avatars_usuarios'),
+            'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+        ],
+
     ],
 
     /*

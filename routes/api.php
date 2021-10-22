@@ -79,6 +79,7 @@ Route::get('/grados', [GradoController::class, 'index']);
 Route::get('/usuarios', [UserController::class, 'index']);
 Route::get('/usuarios/docentes/{token}', [UserController::class, 'getDocentesActivos']);
 Route::post('/usuarios', [UserController::class, 'store']);
+Route::put('/usuarios/{id}', [UserController::class, 'update']);
 Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
 
 // Route::get('/usuarios/activos', [UserController::class, 'getActivos']);

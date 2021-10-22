@@ -31,6 +31,13 @@ class MeController extends Controller
             return response('Usuario Inactivo', 500);
         }
 
+        // Define url de avatar
+        if ($user->avatar) {
+            $user->avatar = $this->url->to('/').''.Storage::url(
+                'avatars_usuarios/'.$user['avatar']
+            );
+        }
+
         $establecimientos = UsuarioEstablecimiento::
             getEstablecimientosActivosPorUsuario($user->id);
 
@@ -43,21 +50,12 @@ class MeController extends Controller
             }
         }
 
-        // si idEstablecimientoActivo == null, es Super Admin o Admin Daem
-
         if ($user['rolActivo'] === 'Super Administrador'
-        || $user['rolActivo'] === 'Administrador Daem')
-        {
+            || $user['rolActivo'] === 'Administrador Daem'
+        ) {
+
             $usersPermissions = $user->getAllPermissions();
             $rol = model_has_roles::getRolByModel_id($user['id'], 'User');
-            // $roles = array();
-            // foreach ($rol as $key => $r) {
-            //     array_push(
-            //         $roles,
-            //         $r
-            //     );
-            // }
-            // $establecimientos['roles'] = $roles;
 
         } else {
             $role = Role::findByName($user['rolActivo']);
@@ -81,14 +79,10 @@ class MeController extends Controller
         }
 
         $permisos = array();
-        $array = array(
+        array_push($permisos, array(
             'action' => 'read',
             'subject' => 'home'
-        );
-        array_push(
-            $permisos,
-            $array
-        );
+        ));
 
         foreach ($usersPermissions as $key2 => $userPermission) {
             $val = explode( '_', $userPermission['name']);
@@ -102,15 +96,10 @@ class MeController extends Controller
             );
         }
 
-
-        // if ($user->imagen) {
-        //     $user->imagen = $this->url->to('/').''.Storage::url('images_users/'.$user['imagen']);
-        // }
-        // 'imagen' => $user->imagen,
-
         return response()->json([
             'id'                      => $user->id,
             'email'                   => $user->email,
+            'avatar'                  => $user->avatar,
             'rut'                     => $user->rut,
             'nombres'                 => $user->nombres,
             'primerApellido'          => $user->primerApellido,
@@ -119,7 +108,6 @@ class MeController extends Controller
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,
-            // 'roles'                   => $roles,
             'ability'                 => $permisos,
         ]);
     }

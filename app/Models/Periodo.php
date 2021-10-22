@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Periodo extends Model
 {
@@ -16,6 +17,7 @@ class Periodo extends Model
      * @var array
      */
     protected $fillable = [
+        'id',
         'nombre',
         'created_at',
         'updated_at',
