@@ -77,7 +77,7 @@ Route::get('/grados', [GradoController::class, 'index']);
 
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
-Route::get('/usuarios/docentes/{token}', [UserController::class, 'getDocentesActivos']);
+Route::get('/usuarios/docentes', [UserController::class, 'getDocentesActivos']);
 Route::post('/usuarios', [UserController::class, 'store']);
 Route::put('/usuarios/{id}', [UserController::class, 'update']);
 Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);

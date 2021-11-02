@@ -23,8 +23,8 @@ class Curso extends Model
         'estado',
     ];
 
-    public static function getAll() {
-        return Curso::select(
+    public static function getAll($idEstablecimiento) {
+        $cursos = Curso::select(
                   'cursos.*'
                 , 'users.nombres as nombreProfesorJefe'
                 , 'grados.nombre as nombreGrado'
@@ -34,8 +34,12 @@ class Curso extends Model
             ->leftJoin("users", "cursos.idProfesorJefe", "=", "users.id")
             ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
             ->leftJoin("periodos", "cursos.idPeriodo", "=", "periodos.id")
-            ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id")
-            ->orderBy('cursos.id')
+            ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id");
+        if (!is_null($idEstablecimiento)) {
+            $cursos = $cursos ->where('establecimientos.id', $idEstablecimiento);
+        }
+            $cursos = $cursos->orderBy('cursos.id')
             ->get();
+        return $cursos;
     }
 }

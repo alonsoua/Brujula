@@ -68,6 +68,8 @@ class UserController extends Controller
     public function getDocentesActivos(Request $request)
     {
         $user = $request->user();
+        return User::getDocentesActivos(Null);
+        return response($user, 200);
         return User::getDocentesActivos($user->idEstablecimiento);
     }
 

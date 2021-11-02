@@ -154,36 +154,69 @@ class User extends Authenticatable implements JWTSubject
      * @return array
      */
     public static function getDocentesActivos($idEstablecimiento) {
-        $users = User::select(
-                'users.*'
-                , 'establecimientos.nombre as nombreEstablecimiento'
-                , 'establecimientos.id as idEstablecimiento'
-                , 'roles.name as nombreRol'
-                )
-            ->leftJoin("usuario_establecimientos",
-                "users.id",
-                "=",
-                "usuario_establecimientos.idUsuario"
-            )
-            ->leftJoin("establecimientos",
-                "usuario_establecimientos.idEstablecimiento",
-                "=",
-                "establecimientos.id"
-            )
-            ->leftJoin("model_has_roles","users.id", "=", "model_has_roles.model_id")
-            ->leftJoin("roles","model_has_roles.role_id", "=", "roles.id")
-            ->where('roles.id', 6)
-            ->where('users.estado', 'Activo');
-        if ($idEstablecimiento !== 'null') {
-            $users = $users->where(
-                'usuario_establecimientos.idEstablecimiento',
-                $idEstablecimiento
-            );
+        $sql = 'SELECT
+                    us.id
+                    , us.nombres
+                    , us.primerApellido
+                    , us.segundoApellido
+                    , us.avatar
+                    , es.id as idEstablecimiento
+                    , es.nombre as nombreEstablecimiento
+                    , ro.name as nombreRol
+                FROM users as us
+                LEFT JOIN usuario_establecimientos as ue
+                    ON us.id = ue.idUsuario
+                LEFT JOIN establecimientos as es
+                    ON ue.idEstablecimiento = es.id
+                LEFT JOIN model_has_roles as mhr
+                    ON ue.id = mhr.model_id
+                LEFT JOIN roles as ro
+                    ON mhr.role_id = ro.id
+                WHERE
+                ro.name = "Docente" OR
+                ro.name = "Docente Pie" AND
+                us.estado = "Activo" ';
+        if (!is_null($idEstablecimiento)) {
+            $sql .= 'ue.idEstablecimiento = '. $idEstablecimiento .' ';
         }
-        $users = $users->orderBy('users.nombres')
-            ->get();
 
-        return $users;
+        $sql .= '
+            ORDER BY us.nombres asc';
+
+        return DB::select($sql, []);
+
+        // $users = User::select(
+        //         'users.*'
+        //         , 'establecimientos.nombre as nombreEstablecimiento'
+        //         , 'establecimientos.id as idEstablecimiento'
+        //         , 'roles.name as nombreRol'
+        //         )
+        //     ->leftJoin("usuario_establecimientos",
+        //         "users.id",
+        //         "=",
+        //         "usuario_establecimientos.idUsuario"
+        //     )
+        //     ->leftJoin("establecimientos",
+        //         "usuario_establecimientos.idEstablecimiento",
+        //         "=",
+        //         "establecimientos.id"
+        //     )
+        //     ->leftJoin("model_has_roles",
+        //         "users.id", "=", "model_has_roles.model_id"
+        //     )
+        //     ->leftJoin("roles","model_has_roles.role_id", "=", "roles.id")
+        //     ->where('roles.id', 6)
+        //     ->where('users.estado', 'Activo');
+        // if (!is_null($idEstablecimiento)) {
+        //     $users = $users->where(
+        //         'usuario_establecimientos.idEstablecimiento',
+        //         $idEstablecimiento
+        //     );
+        // }
+        // $users = $users->orderBy('users.nombres')
+        //     ->get();
+
+        // return $users;
     }
 
 }
