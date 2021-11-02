@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Nivel;
+use App\Models\TipoEnseñanza;
 use Illuminate\Http\Request;
 
-class NivelController extends Controller
+class TipoEnseñanzaController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -14,7 +14,7 @@ class NivelController extends Controller
      */
     public function index()
     {
-        return Nivel::all();
+        return TipoEnseñanza::all();
     }
 
     /**

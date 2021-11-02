@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Nivel extends Model
+class TipoEnseñanza extends Model
 {
     use HasFactory;
 
-    protected $table = "niveles";
+    protected $table = "tipo_enseñanza";
     /**
      * The attributes that are mass assignable.
      *

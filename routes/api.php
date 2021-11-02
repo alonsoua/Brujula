@@ -5,7 +5,7 @@ use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\CursoController;
-use App\Http\Controllers\NivelController;
+use App\Http\Controllers\TipoEnseñanzaController;
 use App\Http\Controllers\GradoController;
 // use App\Http\Controllers\Auth\SignInController;
 // use App\Http\Controllers\Auth\SignOutController;
@@ -69,7 +69,7 @@ Route::group([
 
 // TIPO ENSEÑANZA
 // Niveles
-Route::get('/niveles', [NivelController::class, 'index']);
+Route::get('/tipoEnseñanza', [TipoEnseñanzaController::class, 'index']);
 // Grados
 Route::get('/grados', [GradoController::class, 'index']);
 
