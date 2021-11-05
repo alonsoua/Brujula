@@ -1,12 +1,19 @@
 <?php
 
+// TABLAS PADRE
+use App\Http\Controllers\JsonObjetivosController;
+use App\Http\Controllers\TipoEnseñanzaController;
+use App\Http\Controllers\GradoController;
+use App\Http\Controllers\AsignaturaController;
+use App\Http\Controllers\EjeController;
+
 use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\CursoController;
-use App\Http\Controllers\TipoEnseñanzaController;
-use App\Http\Controllers\GradoController;
+
+
 // use App\Http\Controllers\Auth\SignInController;
 // use App\Http\Controllers\Auth\SignOutController;
 // use App\Http\Controllers\Auth\MeController;
@@ -67,13 +74,24 @@ Route::group([
     Route::get('me', 'MeController');
 });
 
-// TIPO ENSEÑANZA
-// Niveles
+/* Funcion para subir relaciones entre
+* Asignaturas
+* Unidades
+* Objetivos
+* Indicadores
+* Actividades
+*/
+// Route::post('/jsonObjetivos', [JsonObjetivosController::class, 'store']);
+
+// Tipo Enseñanza
 Route::get('/tipoEnseñanza', [TipoEnseñanzaController::class, 'index']);
 // Grados
 Route::get('/grados', [GradoController::class, 'index']);
-
-
+// Asignatura
+Route::get('/asignaturas', [AsignaturaController::class, 'index']);
+// Eje
+Route::get('/ejes/asignatura/{idAsignatura}', [EjeController::class, 'getEjesAsignatura']);
+Route::post('/ejes', [EjeController::class, 'store']);
 
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
@@ -106,6 +124,7 @@ Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::c
 // Cursos
 Route::get('/cursos', [CursoController::class, 'index']);
 Route::post('/cursos', [CursoController::class, 'store']);
+
 // Route::get('/cursos/activos', [UserController::class, 'getActivos']);
 // Route::put('/cursos/estado/{id}', [UserController::class, 'updateEstado']);
 // Route::put('/cursos/{id}', [UserController::class, 'update']);
