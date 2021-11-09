@@ -46,9 +46,10 @@ class EstablecimientoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getActivos()
+    public function getActivos(Request $request)
     {
-        $establecimientos = Establecimiento::getAllActivos();
+        $user = $request->user();
+        $establecimientos = Establecimiento::getAllActivos($user->idEstablecimientoActivo);
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {

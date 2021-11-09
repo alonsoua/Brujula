@@ -23,7 +23,7 @@ class Curso extends Model
         'estado',
     ];
 
-    public static function getAll($idEstablecimiento) {
+    public static function getAll($idEstablecimiento, $estado) {
         $cursos = Curso::select(
                   'cursos.*'
                 , 'users.nombres as nombreProfesorJefe'
@@ -38,8 +38,13 @@ class Curso extends Model
         if (!is_null($idEstablecimiento)) {
             $cursos = $cursos ->where('establecimientos.id', $idEstablecimiento);
         }
+        if (!is_null($estado)) {
+            $cursos = $cursos ->where('cursos.estado', $estado);
+        }
             $cursos = $cursos->orderBy('cursos.id')
             ->get();
         return $cursos;
     }
+
+
 }

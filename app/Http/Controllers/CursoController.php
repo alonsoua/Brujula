@@ -17,7 +17,18 @@ class CursoController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        return Curso::getAll($user->idEstablecimientoActivo);
+        return Curso::getAll($user->idEstablecimientoActivo, Null);
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getActivos(Request $request)
+    {
+        $user = $request->user();
+        return Curso::getAll($user->idEstablecimientoActivo, 'Activo');
     }
 
     /**

@@ -6,12 +6,15 @@ use App\Http\Controllers\TipoEnseñanzaController;
 use App\Http\Controllers\GradoController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\EjeController;
+use App\Http\Controllers\DiagnosticoPieController;
+use App\Http\Controllers\PrioritarioController;
 
 use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\CursoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
-use App\Http\Controllers\CursoController;
+use App\Http\Controllers\AlumnoController;
 
 
 // use App\Http\Controllers\Auth\SignInController;
@@ -92,6 +95,10 @@ Route::get('/asignaturas', [AsignaturaController::class, 'index']);
 // Eje
 Route::get('/ejes/asignatura/{idAsignatura}', [EjeController::class, 'getEjesAsignatura']);
 Route::post('/ejes', [EjeController::class, 'store']);
+// Diagnostico pie
+Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
+// Prioritario
+Route::get('/prioritarios', [PrioritarioController::class, 'index']);
 
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
@@ -100,11 +107,15 @@ Route::post('/usuarios', [UserController::class, 'store']);
 Route::put('/usuarios/{id}', [UserController::class, 'update']);
 Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
 
-// Route::get('/usuarios/activos', [UserController::class, 'getActivos']);
-// Route::put('/usuarios/estado/{id}', [UserController::class, 'updateEstado']);
-// Route::put('/usuarios/{id}', [UserController::class, 'update']);
 // Route::put('/usuarios/password/{id}', [UserController::class, 'updatePassword']);
 // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
+
+
+// Alumnos
+Route::get('/alumnos', [AlumnoController::class, 'index']);
+Route::post('/alumnos', [AlumnoController::class, 'store']);
+// Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
+// Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
 
 // Roles
 Route::get('/roles', [RolController::class, 'index']);
@@ -124,8 +135,7 @@ Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::c
 // Cursos
 Route::get('/cursos', [CursoController::class, 'index']);
 Route::post('/cursos', [CursoController::class, 'store']);
-
-// Route::get('/cursos/activos', [UserController::class, 'getActivos']);
+Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
 // Route::put('/cursos/estado/{id}', [UserController::class, 'updateEstado']);
 // Route::put('/cursos/{id}', [UserController::class, 'update']);
 // Route::put('/cursos/password/{id}', [UserController::class, 'updatePassword']);
