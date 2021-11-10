@@ -31,13 +31,15 @@ class AsignaturaController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function getActivosGrado($idgrado)
     {
-        //
+        $asignaturas = Asignatura::getAllGrado($idgrado);
+
+        return $asignaturas;
     }
 
     /**

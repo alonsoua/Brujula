@@ -35,4 +35,19 @@ class Asignatura extends Model
         return DB::select($sql, []);
 
     }
+
+    public static function getAllGrado($idGrado) {
+        $asignaturas = Asignatura::select(
+                        'asignaturas.id'
+                        , 'asignaturas.nombre as nombreAsignatura'
+                        , 'grados.id as idGrado'
+                        , 'grados.nombre as nombreGrado'
+                    )
+            ->leftJoin("grados", "asignaturas.idGrado", "=", "grados.id")
+            ->where('asignaturas.idGrado', $idGrado)
+            ->orderBy('asignaturas.id')
+            ->get();
+
+        return $asignaturas;
+    }
 }

@@ -32,6 +32,16 @@ class CursoController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getActivosEstablecimiento($idEstablecimiento)
+    {
+        return Curso::getAll($idEstablecimiento, 'Activo');
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request

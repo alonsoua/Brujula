@@ -92,6 +92,10 @@ Route::get('/tipoEnseñanza', [TipoEnseñanzaController::class, 'index']);
 Route::get('/grados', [GradoController::class, 'index']);
 // Asignatura
 Route::get('/asignaturas', [AsignaturaController::class, 'index']);
+Route::get(
+    '/asignaturas/activos/grado/{idgrado}',
+    [AsignaturaController::class, 'getActivosGrado']
+);
 // Eje
 Route::get('/ejes/asignatura/{idAsignatura}', [EjeController::class, 'getEjesAsignatura']);
 Route::post('/ejes', [EjeController::class, 'store']);
@@ -136,6 +140,10 @@ Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::c
 Route::get('/cursos', [CursoController::class, 'index']);
 Route::post('/cursos', [CursoController::class, 'store']);
 Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
+Route::get(
+    '/cursos/activos/establecimiento/{idestablecimiento}',
+    [CursoController::class, 'getActivosEstablecimiento']
+);
 // Route::put('/cursos/estado/{id}', [UserController::class, 'updateEstado']);
 // Route::put('/cursos/{id}', [UserController::class, 'update']);
 // Route::put('/cursos/password/{id}', [UserController::class, 'updatePassword']);

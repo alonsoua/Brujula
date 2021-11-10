@@ -28,6 +28,7 @@ class Curso extends Model
                   'cursos.*'
                 , 'users.nombres as nombreProfesorJefe'
                 , 'grados.nombre as nombreGrado'
+                , 'grados.id as idGrado'
                 , 'periodos.nombre as nombrePeriodo'
                 , 'establecimientos.nombre as nombreEstablecimiento'
                 )

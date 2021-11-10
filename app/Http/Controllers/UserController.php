@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Establecimiento;
 use App\Models\UsuarioEstablecimiento;
 use App\Models\model_has_roles;
-
+use App\Models\UsuarioAsignatura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\UrlGenerator;
@@ -94,11 +94,11 @@ class UserController extends Controller
         try {
 
             DB::transaction(function () use ($request) {
-                $establecimiento = $request->input('establecimiento');
+                $avatar    = $request->input('avatar');
+                $rut       = $request->input('rut');
+                $idEstablecimiento = $request->input('idEstablecimiento');
                 $idRol     = $request->input('rol')['id'];
                 $nombreRol = $request->input('rol')['title'];
-                $rut       = $request->input('rut');
-                $avatar    = $request->input('avatar');
 
 
                 if ( !is_null( $avatar ) ) {
@@ -125,7 +125,7 @@ class UserController extends Controller
                     'nombres'            => $request->input('nombres'),
                     'primerApellido'     => $request->input('primerApellido'),
                     'segundoApellido'    => $request->input('segundoApellido'),
-                    'idEstablecimientoActivo' => $establecimiento,
+                    'idEstablecimientoActivo' => $idEstablecimiento,
                     'rolActivo'          => $nombreRol,
                     'estado'             => $request->input('estado'),
                     'idUsuarioCreated'   => $userCreate['id'],
@@ -141,7 +141,7 @@ class UserController extends Controller
                 } else {
                     $usuarioEstablecimiento = UsuarioEstablecimiento::create([
                         'idUsuario'         => $usuario->id,
-                        'idEstablecimiento' => $establecimiento,
+                        'idEstablecimiento' => $idEstablecimiento,
                     ]);
 
                     // * Relaciona rol directo en la Tabla
@@ -151,6 +151,17 @@ class UserController extends Controller
                         'model_type' => 'App\Models\UsuarioEstablecimiento',
                         'model_id'   => $usuarioEstablecimiento->id,
                     ]);
+
+                    // Asignaturas Habilitadas
+                    $asignaturas = $request->input('asignaturas');
+                    foreach ($asignaturas as $key => $asignatura) {
+                        UsuarioAsignatura::create([
+                            'idUsuarioEstablecimiento' => $usuarioEstablecimiento->id,
+                            'idCurso'                  => $asignatura['idCurso'],
+                            'idAsignatura'             => $asignatura['idAsignatura'],
+                        ]);
+                    }
+                    return response($request->input('asignaturas'), 200);
                 }
 
                 return response(null, 200);
