@@ -31,9 +31,11 @@ class Eje extends Model
         //             idAsignatura = ';
         // return DB::select($sql, []);
 
-            return Eje::select('id', 'nombre')
-            ->where('idAsignatura', $idAsignatura)
-            ->get();
+            return Eje::select('ejes.id', 'ejes.nombre')
+                ->leftJoin("objetivos", "objetivos.idEje", "=", "ejes.id")
+                ->where('ejes.idAsignatura', $idAsignatura)
+                ->orderBy('objetivos.abreviatura')
+                ->get();
 
 
     }

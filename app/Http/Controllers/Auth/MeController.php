@@ -105,6 +105,7 @@ class MeController extends Controller
             'primerApellido'          => $user->primerApellido,
             'segundoApellido'         => $user->segundoApellido,
             'idEstablecimientoActivo' => $user->idEstablecimientoActivo,
+            'idPeriodoActivo'         => $user->idPeriodoActivo,
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,

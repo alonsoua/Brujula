@@ -22,7 +22,9 @@ class AlumnoController extends Controller
         return Alumno::getAll($user->idEstablecimientoActivo);
     }
 
-
+    public function getAlumnosCurso($idCurso) {
+        return Alumno::getAlumnosCurso($idCurso);
+    }
     /**
      * Store a newly created resource in storage.
      *

@@ -72,4 +72,23 @@ class Alumno extends Model
 
     }
 
+    public static function getAlumnosCurso($idCurso) {
+
+        return Alumno::select(
+                'alumnos.*'
+                , 'prioritarios.nombre as nombrePrioritario'
+                , 'diagnosticos_pie.nombre as nombreDiagnostico'
+                , 'diagnosticos_pie.abreviatura as abreviaturaDiagnostico'
+                , 'diagnosticos_pie.tipoNee as tipoNee'
+            )
+            ->leftJoin("prioritarios", "alumnos.idPrioritario", "=", "prioritarios.id")
+            ->leftJoin("diagnosticos_pie", "alumnos.idDiagnostico", "=", "diagnosticos_pie.id")
+            ->where('alumnos.idCurso', $idCurso)
+            ->orderBy('alumnos.numLista')
+            ->get();
+
+    }
+
+
+
 }
