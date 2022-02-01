@@ -19,6 +19,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\AlumnoController;
 use App\Http\Controllers\AvanceAprendizajeController;
 use App\Http\Controllers\PuntajeIndicadorController;
+use App\Http\Controllers\NotasConversionController;
 // use App\Http\Controllers\Auth\SignInController;
 // use App\Http\Controllers\Auth\SignOutController;
 // use App\Http\Controllers\Auth\MeController;
@@ -116,6 +117,11 @@ Route::get('/indicadores/objetivo/{idObjetivo}',
 Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
 // Prioritario
 Route::get('/prioritarios', [PrioritarioController::class, 'index']);
+
+// NotasConversion
+Route::get('/notasConversion/{cantidadIndicadores}/{puntajeObtenido}',
+    [NotasConversionController::class, 'getNotasConversion']
+);
 
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
