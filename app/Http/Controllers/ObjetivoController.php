@@ -12,9 +12,11 @@ class ObjetivoController extends Controller
      * * $idAsignatura
      * @return \Illuminate\Http\Response
      */
-    public function getObjetivosActivosAsignatura($idAsignatura)
+    public function getObjetivosActivosAsignatura($idAsignatura, $idPeriodo)
     {
-        return Objetivo::getObjetivosActivosAsignatura($idAsignatura);
+        $objetivos = Objetivo::getObjetivosActivosAsignatura($idAsignatura, $idPeriodo);
+
+        return $objetivos;
     }
 
 }

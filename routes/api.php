@@ -105,7 +105,7 @@ Route::get('/ejes/asignatura/{idAsignatura}',
 );
 Route::post('/ejes', [EjeController::class, 'store']);
 // Objetivos
-Route::get('/objetivos/asignatura/{idAsignatura}',
+Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}',
     [ObjetivoController::class, 'getObjetivosActivosAsignatura']
 );
 // Indicadores
