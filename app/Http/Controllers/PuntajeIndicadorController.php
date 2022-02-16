@@ -73,7 +73,19 @@ class PuntajeIndicadorController extends Controller
             $request->input('idAlumno'),
         );
 
+        $id = $request;
+
         $user = $request->user();
+        if (is_null($request->input('puntaje'))) {
+            try {
+                $id = $puntajeIndicador[0]['id'];
+                $PuntajeIndicador = PuntajeIndicador::findOrFail($id);
+                $PuntajeIndicador->delete();
+                return response('success', 200);
+            } catch (\Throwable $th) {
+                return response($th, 500);
+            }
+        }
         if (count($puntajeIndicador)) {
 
             try {
@@ -98,7 +110,7 @@ class PuntajeIndicadorController extends Controller
 
             try {
                 $usuarioCreate = $user->id;
-                PuntajeIndicador::Create([
+                $PuntajeIndicador = PuntajeIndicador::Create([
                     'idPeriodo'         => $request->input('idPeriodo'),
                     'idCurso'           => $request->input('idCurso'),
                     'idAsignatura'      => $request->input('idAsignatura'),
@@ -109,7 +121,7 @@ class PuntajeIndicadorController extends Controller
                     'idUsuario_created' => $usuarioCreate,
                 ]);
 
-                return response('success', 200);
+                return response($PuntajeIndicador, 200);
             } catch (\Throwable $th) {
                 return response($th, 500);
             }

@@ -56,6 +56,33 @@ class PuntajeIndicador extends Model
             ->get();
     }
 
+    public static function getPuntajesAlumno(
+        $idPeriodo,
+        $idAlumno,
+        $idAsignatura,
+        $idObjetivo
+    ) {
+        return PuntajeIndicador::select(
+                'puntajes_indicadores.id'
+                , 'puntajes_indicadores.idIndicador'
+                , 'puntajes_indicadores.idAlumno'
+                , 'puntajes_indicadores.puntaje'
+                , 'puntajes_indicadores.estado'
+                , 'puntajes_indicadores.idUsuario_created'
+                , 'puntajes_indicadores.idUsuario_updated'
+                , 'puntajes_indicadores.created_at'
+                , 'puntajes_indicadores.updated_at'
+            )
+            ->leftJoin("indicadores",
+                "puntajes_indicadores.idIndicador", "=", "indicadores.id"
+            )
+            ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+            ->where('puntajes_indicadores.idAlumno', $idAlumno)
+            ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+            ->where('indicadores.idObjetivo', $idObjetivo)
+            ->get();
+    }
+
     public static function findPuntajeIndicador(
         $idPeriodo,
         $idCurso,

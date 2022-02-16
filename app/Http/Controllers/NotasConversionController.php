@@ -24,7 +24,12 @@ class NotasConversionController extends Controller
      */
     public function getNotasConversion($cantidadIndicadores, $puntajeObtenido)
     {
-        return NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido);
+        if ($cantidadIndicadores > 0 && $puntajeObtenido > 0) {
+            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido);
+        } else {
+            $notaConversion = '-';
+        }
+        return $notaConversion;
     }
 
     /**
