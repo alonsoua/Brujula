@@ -149,8 +149,8 @@ Route::post('/alumnos', [AlumnoController::class, 'store']);
 Route::get('/alumnos/curso/{idCurso}',
     [AlumnoController::class, 'getAlumnosCurso']
 );
-// Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
-// Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
+Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
+Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
 
 // Roles
 Route::get('/roles', [RolController::class, 'index']);

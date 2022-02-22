@@ -84,6 +84,7 @@ class Alumno extends Model
             ->leftJoin("prioritarios", "alumnos.idPrioritario", "=", "prioritarios.id")
             ->leftJoin("diagnosticos_pie", "alumnos.idDiagnostico", "=", "diagnosticos_pie.id")
             ->where('alumnos.idCurso', $idCurso)
+            ->where('alumnos.estado', 'Activo')
             ->orderBy('alumnos.numLista')
             ->get();
 

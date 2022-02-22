@@ -124,7 +124,66 @@ class AlumnoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        // return response($request, 500);
+
+        Request()->validate([
+            'idEstablecimiento' => 'required',
+            'idCurso' => 'required',
+            'rut' => 'required|max:15|unique:alumnos,rut,'.$id.',id' ,
+            'tipoDocumento' => 'required|max:4',
+            'nombres' => 'required|max:250',
+            'primerApellido' => 'required|max:250',
+            'segundoApellido' => 'required|max:250',
+            'genero' => 'required|max:10',
+            'fechaNacimiento' => 'required|max:250',
+            'estado' => 'required',
+        ]);
+
+        try {
+            $alumno = Alumno::findOrFail($id);
+
+            $idEstablecimiento = $request->input('idEstablecimiento');
+            $idCurso           = $request->input('idCurso');
+            $numMatricula    = $request->input('numMatricula');
+            $nombres         = $request->input('nombres');
+            $primerApellido  = $request->input('primerApellido');
+            $segundoApellido = $request->input('segundoApellido');
+            $correo          = $request->input('correo');
+            $tipoDocumento   = $request->input('tipoDocumento');
+            $rut             = $request->input('rut');
+            $genero          = $request->input('genero');
+            $fechaNacimiento = $request->input('fechaNacimiento');
+            $paci            = $request->input('paci');
+            $pie             = $request->input('pie');
+            $diagnosticoPie  = !is_null($pie)
+                                ? $request->input('idDiagnostico')
+                                : null;
+            $idPrioritario   = $request->input('idPrioritario');
+            $estado          = $request->input('estado');
+
+            $alumno->idEstablecimiento = $idEstablecimiento;
+            $alumno->idCurso         = $idCurso;
+            $alumno->numMatricula    = $numMatricula;
+            $alumno->nombres         = $nombres;
+            $alumno->primerApellido  = $primerApellido;
+            $alumno->segundoApellido = $segundoApellido;
+            $alumno->correo          = $correo;
+            $alumno->tipoDocumento   = $tipoDocumento;
+            $alumno->rut             = $rut;
+            $alumno->genero          = $genero;
+            $alumno->fechaNacimiento = $fechaNacimiento;
+            $alumno->paci            = $paci;
+            $alumno->pie             = $pie;
+            $alumno->idDiagnostico   = $diagnosticoPie;
+            $alumno->idPrioritario   = $idPrioritario;
+            $alumno->estado          = $estado;
+            $alumno->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**
@@ -133,8 +192,13 @@ class AlumnoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        //
+        try {
+            $alumno = Alumno::findOrFail($id);
+            $alumno->delete();
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 }
