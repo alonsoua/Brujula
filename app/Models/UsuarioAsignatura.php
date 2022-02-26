@@ -99,4 +99,13 @@ class UsuarioAsignatura extends Model
             ->distinct()
             ->get();
     }
+
+    public static function deleteUsuarioAsignaturas($idUsuarioEstablecimiento) {
+
+        return UsuarioAsignatura::where('idUsuarioEstablecimiento', $idUsuarioEstablecimiento)
+            ->delete();
+
+    }
+
+
 }

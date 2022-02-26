@@ -49,6 +49,7 @@ class CursoController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'idEstablecimiento' => 'required',
             'cantidad'          => 'required',
@@ -112,8 +113,23 @@ class CursoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
-    }
+        Request()->validate([
+            'letra' => 'required',
+        ]);
+
+        try {
+            $curso = Curso::findOrFail($id);
+
+            $letra    = $request->input('letra');
+
+            $curso->letra   = $letra;
+            $curso->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }    }
 
     /**
      * Remove the specified resource from storage.

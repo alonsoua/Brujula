@@ -104,6 +104,7 @@ class User extends Authenticatable implements JWTSubject
                 $query->where('roles.name', 'Super Administrador')
                       ->orWhere('roles.name', 'Administrador Daem');
             })
+            ->where('users.estado', '!=', 'Eliminado')
             ->orderBy('users.nombres')
             ->get();
 
@@ -135,9 +136,11 @@ class User extends Authenticatable implements JWTSubject
                 WHERE ';
 
         if (!is_null($idEstablecimiento)) {
-            $sql .= 'ue.idEstablecimiento = '. $idEstablecimiento .' ';
+            $sql .= "us.estado != 'Eliminado' AND
+                ue.idEstablecimiento = ". $idEstablecimiento ." ";
         } else {
-            $sql .= "ro.name != 'Super Administrador' AND
+            $sql .= "us.estado != 'Eliminado' AND
+            ro.name != 'Super Administrador' AND
             ro.name != 'Administrador Daem' ";
         }
         // GROUP BY us.id, es.id
@@ -173,6 +176,7 @@ class User extends Authenticatable implements JWTSubject
                 LEFT JOIN roles as ro
                     ON mhr.role_id = ro.id
                 WHERE
+                us.estado != "Eliminado" AND
                 ro.name = "Docente" OR
                 ro.name = "Docente Pie" AND
                 us.estado = "Activo" ';

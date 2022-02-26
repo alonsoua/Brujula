@@ -34,6 +34,7 @@ class UserController extends Controller
         // Si idEstablecimientoActivo es null, es Super Admin o Admin Daem
         $user = $request->user();
         $response = array();
+        // return response($request, 200);
         if (is_null($user->idEstablecimientoActivo)) {
             $admins = User::getAllAdmins();
             foreach ($admins as $adminKey => $admin) {
@@ -71,6 +72,22 @@ class UserController extends Controller
         return User::getDocentesActivos(Null);
         return response($user, 200);
         return User::getDocentesActivos($user->idEstablecimiento);
+    }
+
+    /**
+     * Obtiene listado de Asignaturas por docente
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getDocenteAsignaturas(Request $request, $id, $idEstablecimiento)
+    {
+        $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+            $id,
+            $idEstablecimiento
+        );
+
+        $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
+        return response($asignaturas, 200);
     }
 
     /**
@@ -235,11 +252,41 @@ class UserController extends Controller
             $primerApellido  = $request->input('primerApellido');
             $segundoApellido = $request->input('segundoApellido');
 
+
             $usuario->email   = $email;
             $usuario->rut     = $rut;
             $usuario->nombres = $nombres;
             $usuario->primerApellido  = $primerApellido;
             $usuario->segundoApellido = $segundoApellido;
+
+            if ($request->input('nombreRol') === 'Super Administrador' ||
+                $request->input('nombreRol') === 'Administrador Daem')
+            {
+                //     // * Relaciona rol por medio de spatie
+                //     // model_type = App\Models\User
+                //     // $usuario->assignRole($nombreRol);
+
+                // return response($usuario, 200);
+            } else {
+
+                $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+                    $id,
+                    $request->input('idEstablecimiento'),
+                );
+
+                // Asignaturas Habilitadas
+                $asignaturas = $request->input('asignaturas');
+
+                UsuarioAsignatura::deleteUsuarioAsignaturas($idUsuarioEstablecimiento);
+
+                foreach ($asignaturas as $key => $asignatura) {
+                    UsuarioAsignatura::create([
+                        'idUsuarioEstablecimiento' => $idUsuarioEstablecimiento,
+                        'idCurso'                  => $asignatura['idCurso'],
+                        'idAsignatura'             => $asignatura['idAsignatura'],
+                    ]);
+                }
+            }
             $usuario->save();
 
             return response(null, 200);
@@ -318,6 +365,49 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $user = User::findOrFail($id);
+            $estado = 'Eliminado';
+            $user->estado = $estado;
+            $user->save();
+            if ($user->rolActivo !== 'Super Administrador' && $user->rolActivo !== 'Administrador Daem') {
+                // $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+                //     $user->id,
+                //     $user->idEstablecimientoActivo
+                // );
+
+                // $usuarioEstablecimiento = UsuarioEstablecimiento::findOrFail($idUsuarioEstablecimiento);
+
+                // $id_model_has_roles = model_has_roles::getRolByModel_id(
+                //     $idUsuarioEstablecimiento,
+                //     'App\Models\UsuarioEstablecimiento'
+                // );
+                // $model_has_roles = model_has_roles::where('model_id', $id_model_has_roles[0]->id)->get();
+                // $usuarioAsignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
+                // foreach ($usuarioAsignaturas as $key => $usuarioAsignatura) {
+                //     UsuarioAsignatura::findOrFail($usuarioAsignatura->id)->delete();
+                // }
+
+                // $usuarioEstablecimiento->delete();
+                // $model_has_roles->delete();
+
+                // if ($cantidadEstablecimientos != 1) {
+                //     // dejar por defecto un establecimiento al azar de los que quedan como Activo
+                //     return response($user, 500);
+                // } else {
+                //     // si no tiene más establecimientos, eliminar cuenta
+                //     // * Que el eliminar sea solo un cambio de estado
+                //     // * tener en cuenta que no deberían poder loggearse los usuarios con estado eliminado
+                //     // * Tampoco deben aparecer en el listado de usuarios del sistema
+                //     // * si debería aparecer su nombre en los datos que modificó dentro del sistema
+                //     $user->delete();
+                // }
+
+            }
+            return response(Null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 }

@@ -135,12 +135,13 @@ Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
 // Usuarios
 Route::get('/usuarios', [UserController::class, 'index']);
 Route::get('/usuarios/docentes', [UserController::class, 'getDocentesActivos']);
+Route::get('/usuarios/docente/asignaturas/{id}/{idEstablecimiento}', [UserController::class, 'getDocenteAsignaturas']);
 Route::post('/usuarios', [UserController::class, 'store']);
 Route::put('/usuarios/{id}', [UserController::class, 'update']);
 Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
+Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
 // Route::put('/usuarios/password/{id}', [UserController::class, 'updatePassword']);
-// Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
 
 // Alumnos
@@ -160,9 +161,9 @@ Route::get('/periodos', [PeriodoController::class, 'index']);
 
 // Establecimientos
 Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
+Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
 Route::post('/establecimientos', [EstablecimientoController::class, 'store']);
 Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
-Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
 Route::put('/establecimientos/periodoActivo/{id}',
     [EstablecimientoController::class, 'updatePeriodoActivo']
 );
@@ -171,12 +172,13 @@ Route::put('/establecimientos/periodoActivo/{id}',
 
 // Cursos
 Route::get('/cursos', [CursoController::class, 'index']);
-Route::post('/cursos', [CursoController::class, 'store']);
 Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
 Route::get(
     '/cursos/activos/establecimiento/{idestablecimiento}',
     [CursoController::class, 'getActivosEstablecimiento']
 );
+Route::post('/cursos', [CursoController::class, 'store']);
+Route::put('/cursos/{id}', [CursoController::class, 'update']);
 
 // AvanceAprendizaje
 Route::get(
