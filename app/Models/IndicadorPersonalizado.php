@@ -19,6 +19,7 @@ class IndicadorPersonalizado extends Model
         'nombre',
         'idObjetivo',
         'idPeriodo',
+        'idCurso',
         'estado',
         'idUsuario_created',
         'idUsuario_updated',
@@ -26,10 +27,11 @@ class IndicadorPersonalizado extends Model
         'updated_at',
     ];
 
-    public static function getIndicadorPersonalizados($idObjetivo ,$idPeriodo) {
+    public static function getIndicadorPersonalizados($idObjetivo ,$idPeriodo, $idCurso) {
         $IndicadorPersonalizado = IndicadorPersonalizado::select('id', 'nombre', 'idUsuario_created', 'idUsuario_updated')
             ->where('idObjetivo', $idObjetivo)
             ->where('idPeriodo', $idPeriodo)
+            ->where('idCurso', $idCurso)
             ->where('estado', 'Activo')
             ->get();
 

@@ -22,12 +22,27 @@ class NotasController extends Controller
     public function calcularNota($idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
 
-        $puntajes = PuntajeIndicador::getPuntajesAlumno(
+        $puntajesNormal = PuntajeIndicador::getPuntajesAlumno(
             $idPeriodo,
             $idAlumno,
             $idAsignatura,
             $idObjetivo
         );
+        $puntajesPersonalizados = PuntajeIndicador::getPuntajesAlumnoPersonalizado(
+            $idPeriodo,
+            $idAlumno,
+            $idAsignatura,
+            $idObjetivo
+        );
+        $puntajes = array();
+        foreach ($puntajesNormal as $pn => $puntaje) {
+            array_push($puntajes, $puntaje);
+        }
+
+        foreach ($puntajesPersonalizados as $pp => $puntajePersonalizado) {
+            array_push($puntajes, $puntajePersonalizado);
+        }
+
 
         $notas = Notas::getNotaObjetivo($idAlumno, $idCurso, $idPeriodo, $idAsignatura, $idObjetivo);
         if (count($puntajes) > 0) {

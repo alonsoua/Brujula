@@ -176,7 +176,7 @@ Route::put('/establecimientos/periodoActivo/{id}',
 
 // * Indicador Personalizado
 Route::get('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'index']);
-Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}',
+Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizados']
 );
 Route::post('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'store']);
@@ -211,10 +211,12 @@ Route::get(
     '/puntajes/indicadores/{idperiodo}/{idcurso}/{idasignatura}/{idObjetivo}',
     [PuntajeIndicadorController::class, 'getPuntajesIndicadores']
 );
+
 Route::put(
     '/puntajes/{idPuntaje}',
     [PuntajeIndicadorController::class, 'update']
 );
+
 
 // * Puntaje Indicador Transformacion
 Route::get(

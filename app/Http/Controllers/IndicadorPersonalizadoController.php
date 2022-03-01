@@ -25,9 +25,9 @@ class IndicadorPersonalizadoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getIndicadorPersonalizados($idObjetivo, $idPeriodo)
+    public function getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso)
     {
-        return IndicadorPersonalizado::getIndicadorPersonalizados($idObjetivo, $idPeriodo);
+        return IndicadorPersonalizado::getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso);
     }
 
 
@@ -53,10 +53,10 @@ class IndicadorPersonalizadoController extends Controller
             'nombre' => 'required',
             'idUsuario' => 'required',
             'idObjetivo' => 'required',
+            'idCurso' => 'required',
             'idPeriodo' => 'required',
             'estado' => 'required',
         ]);
-
 
         try {
             DB::transaction(function () use ($request) {
@@ -64,6 +64,7 @@ class IndicadorPersonalizadoController extends Controller
                 IndicadorPersonalizado::Create([
                     'nombre'     => $request->input('nombre'),
                     'idObjetivo' => $request->input('idObjetivo'),
+                    'idCurso'  => $request->input('idCurso'),
                     'idPeriodo'  => $request->input('idPeriodo'),
                     'estado'     => $request->input('estado'),
                     'idUsuario_created'  => $request->input('idUsuario'),

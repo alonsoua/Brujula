@@ -64,17 +64,16 @@ class PuntajeIndicadorController extends Controller
     public function update(Request $request, $puntaje)
     {
         // buscar el puntaje
-
         $puntajeIndicador = PuntajeIndicador::findPuntajeIndicador(
             $request->input('idPeriodo'),
             $request->input('idCurso'),
             $request->input('idAsignatura'),
             $request->input('idIndicador'),
             $request->input('idAlumno'),
+            $request->input('tipoIndicador'),
         );
 
-        $id = $request;
-
+        // $id = $request;
         $user = $request->user();
         if (is_null($request->input('puntaje'))) {
             try {
@@ -87,8 +86,8 @@ class PuntajeIndicadorController extends Controller
             }
         }
         if (count($puntajeIndicador)) {
-
             try {
+
                 $id = $puntajeIndicador[0]['id'];
                 $puntajeIndicador = PuntajeIndicador::findOrFail($id);
 
@@ -107,9 +106,8 @@ class PuntajeIndicadorController extends Controller
             }
 
         } else {
-
+            $usuarioCreate = $user->id;
             try {
-                $usuarioCreate = $user->id;
                 $PuntajeIndicador = PuntajeIndicador::Create([
                     'idPeriodo'         => $request->input('idPeriodo'),
                     'idCurso'           => $request->input('idCurso'),
@@ -117,6 +115,7 @@ class PuntajeIndicadorController extends Controller
                     'idIndicador'       => $request->input('idIndicador'),
                     'idAlumno'          => $request->input('idAlumno'),
                     'puntaje'           => $request->input('puntaje'),
+                    'tipoIndicador'     => $request->input('tipoIndicador'),
                     'estado'            => $request->input('estado'),
                     'idUsuario_created' => $usuarioCreate,
                 ]);

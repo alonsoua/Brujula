@@ -17,6 +17,7 @@ class CreateIndicadorPersonalizadosTable extends Migration
             $table->id();
             $table->longText('nombre');
             $table->integer('idObjetivo');
+            $table->integer('idCurso');
             $table->integer('idPeriodo');
             $table->string('estado')->nullable();
             $table->integer('idUsuario_created');
