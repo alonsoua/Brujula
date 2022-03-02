@@ -2,7 +2,7 @@
 
 // TABLAS PADRE
 use App\Http\Controllers\JsonObjetivosController;
-use App\Http\Controllers\TipoEnseñanzaController;
+use App\Http\Controllers\TipoEnsenanzaController;
 use App\Http\Controllers\GradoController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\EjeController;
@@ -92,7 +92,7 @@ Route::group([
 // Route::post('/jsonObjetivos', [JsonObjetivosController::class, 'store']);
 
 // * Tipo Enseñanza
-Route::get('/tipoEnseñanza', [TipoEnseñanzaController::class, 'index']);
+Route::get('/tipoEnsenanza', [TipoEnsenanzaController::class, 'index']);
 
 // * Grados
 Route::get('/grados', [GradoController::class, 'index']);
