@@ -37,4 +37,23 @@ class AvanceAprendizajeController extends Controller
         return UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
     }
 
+    /**
+     * Obtiene los tipo de enseñanza asignados por idEstablecimiento
+     * * $idEstablecimiento
+     * @return \Illuminate\Http\Response
+     */
+    public function getCursoEstablecimientoActivo($idEstablecimiento) {
+        return UsuarioAsignatura::getCursoEstablecimientoActivo($idEstablecimiento);
+    }
+
+    /**
+     * Obtiene los tipo de enseñanza asignados por idEstablecimiento
+     * * $idEstablecimiento
+     * @return \Illuminate\Http\Response
+     */
+    public function getAsignaturaCursoActiva($idCurso) {
+        return UsuarioAsignatura::getAsignaturaCursoActiva($idCurso);
+    }
+
+
 }

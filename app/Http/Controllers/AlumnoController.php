@@ -161,6 +161,12 @@ class AlumnoController extends Controller
             $idPrioritario   = $request->input('idPrioritario');
             $estado          = $request->input('estado');
 
+            if ($paci == 0) {
+                $paci = null;
+            }
+            if ($pie == 0) {
+                $pie = null;
+            }
             $alumno->idEstablecimiento = $idEstablecimiento;
             $alumno->idCurso         = $idCurso;
             $alumno->numMatricula    = $numMatricula;

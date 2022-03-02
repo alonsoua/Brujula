@@ -99,6 +99,7 @@ Route::get('/grados', [GradoController::class, 'index']);
 
 // * Asignatura
 Route::get('/asignaturas', [AsignaturaController::class, 'index']);
+Route::get('/asignaturas/activos', [AsignaturaController::class, 'getActivos']);
 Route::get(
     '/asignaturas/activos/grado/{idgrado}',
     [AsignaturaController::class, 'getActivosGrado']
@@ -193,6 +194,7 @@ Route::post('/cursos', [CursoController::class, 'store']);
 Route::put('/cursos/{id}', [CursoController::class, 'update']);
 
 // * AvanceAprendizaje
+// Docentes
 Route::get(
     '/avances/tipoEnseñanza/{idusuarioestablecimiento}',
     [AvanceAprendizajeController::class, 'getTipoEnseñanza']
@@ -204,6 +206,15 @@ Route::get(
 Route::get(
     '/avances/asignatura/activa/{idusuarioestablecimiento}',
     [AvanceAprendizajeController::class, 'getAsignaturaActiva']
+);
+// Director - Inspectores
+Route::get(
+    '/avances/curso/establecimiento/activo/{idEstablecimiento}',
+    [AvanceAprendizajeController::class, 'getCursoEstablecimientoActivo']
+);
+Route::get(
+    '/avances/asignatura/curso/activa/{idCurso}',
+    [AvanceAprendizajeController::class, 'getAsignaturaCursoActiva']
 );
 
 // * Puntaje Indicador

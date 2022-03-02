@@ -95,6 +95,47 @@ class UsuarioAsignatura extends Model
             // ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
             ->where('usuario_asignaturas.idUsuarioEstablecimiento', $idUsuarioEstablecimiento)
             ->where('cursos.estado', 'Activo')
+            ->where('asignaturas.estado', 'Activo')
+            ->orderBy('asignaturas.id')
+            ->distinct()
+            ->get();
+    }
+
+    public static function getCursoEstablecimientoActivo($idEstablecimiento) {
+        return UsuarioAsignatura::select(
+                'cursos.id'
+                , 'cursos.letra'
+                , 'cursos.idProfesorJefe'
+                , 'cursos.idGrado'
+                , 'grados.nombre as nombreGrado'
+                , 'grados.idNivel'
+            )
+            ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
+            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+            ->where('cursos.idEstablecimiento', $idEstablecimiento)
+            ->where('cursos.estado', 'Activo')
+            ->orderBy('cursos.idGrado')
+            ->orderBy('cursos.letra')
+            ->distinct()
+            ->get();
+    }
+
+    public static function getAsignaturaCursoActiva() {
+        return UsuarioAsignatura::select(
+                'asignaturas.id'
+                , 'asignaturas.nombre'
+                , 'asignaturas.idGrado'
+                , 'cursos.id as idCurso'
+            )
+            ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
+            // ->leftJoin("asignaturas", "asignaturas.idGrado", "=", "cursos.idGrado")
+            ->leftJoin('asignaturas', function ($join) {
+                $join->on('asignaturas.id', '=', 'usuario_asignaturas.idAsignatura');
+                $join->on('asignaturas.idGrado', '=', 'cursos.idGrado');
+            })
+            // ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+            ->where('cursos.estado', 'Activo')
+            ->where('asignaturas.estado', 'Activo')
             ->orderBy('asignaturas.id')
             ->distinct()
             ->get();

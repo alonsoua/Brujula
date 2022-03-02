@@ -45,9 +45,11 @@ class Asignatura extends Model
                     )
             ->leftJoin("grados", "asignaturas.idGrado", "=", "grados.id")
             ->where('asignaturas.idGrado', $idGrado)
+            ->where('asignaturas.estado', 'Activo')
             ->orderBy('asignaturas.id')
             ->get();
 
         return $asignaturas;
     }
+
 }

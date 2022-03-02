@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asignatura;
 use App\Models\Objetivo;
+use App\Models\UsuarioAsignatura;
 use Illuminate\Http\Request;
 
 class AsignaturaController extends Controller
@@ -26,6 +27,18 @@ class AsignaturaController extends Controller
                 }
             }
         }
+
+        return $asignaturas;
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getActivos()
+    {
+        $asignaturas = UsuarioAsignatura::getAsignaturaCursoActiva();
 
         return $asignaturas;
     }
