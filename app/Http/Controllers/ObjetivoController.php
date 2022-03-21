@@ -26,4 +26,13 @@ class ObjetivoController extends Controller
         return $objetivos;
     }
 
+     /**
+     * Obtiene objetivos por asignatura con
+     * * $idAsignatura
+     * @return \Illuminate\Http\Response
+     */
+    public function getObjetivosBetwen($idCursoInicio, $idCursoFin)
+    {
+        return Objetivo::getObjetivosBetwen($idCursoInicio, $idCursoFin);
+    }
 }

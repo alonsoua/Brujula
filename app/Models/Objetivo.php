@@ -81,4 +81,31 @@ class Objetivo extends Model
         ->get();
     }
 
+    public static function getObjetivosBetwen($idCursoInicio, $idCursoFin) {
+    $sql = 'SELECT
+                o.id
+                , o.nombre as nombreObjetivo
+                , e.nombre as nombreEje
+                , a.nombre as nombreAsignatura
+                , g.nombre as nombreCurso
+                , o.abreviatura
+                , o.priorizacion
+            FROM cursos as c
+            LEFT JOIN asignaturas as a
+                ON c.idGrado = a.idGrado
+            LEFT JOIN ejes as e
+                ON a.id = e.idAsignatura
+            LEFT JOIN objetivos as o
+                ON e.id = o.idEje
+            LEFT JOIN grados as g
+                ON c.idGrado = g.id
+            WHERE
+                c.id >= '.$idCursoInicio.' AND
+                c.id <= '.$idCursoFin.'
+            Order By o.id';
+
+            return DB::select($sql, []);
+    }
+
+
 }

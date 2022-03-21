@@ -116,6 +116,10 @@ Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}',
     [ObjetivoController::class, 'getObjetivosActivosAsignatura']
 );
 
+Route::get('/objetivos/betwen/{idCursoInicio}/{idCursoFin}',
+    [ObjetivoController::class, 'getObjetivosBetwen']
+);
+
 // * Indicadores
 Route::get('/indicadores/objetivo/{idObjetivo}',
     [IndicadorController::class, 'getIndicadoresObjetivo']
