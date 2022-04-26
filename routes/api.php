@@ -136,11 +136,14 @@ Route::get('/notasConversion/{cantidadIndicadores}/{puntajeObtenido}',
 );
 
 // * Notas
+Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
+    [NotasController::class, 'getNotasAsignatura']
+);
 Route::get('/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNota']
 );
-Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
-    [NotasController::class, 'getNotasAsignatura']
+Route::get('/notas/calcularNotaCurso/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
+    [NotasController::class, 'calcularNotaCurso']
 );
 
 // * Roles
@@ -181,11 +184,16 @@ Route::put('/establecimientos/periodoActivo/{id}',
 
 // * Indicador Personalizado
 Route::get('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'index']);
+Route::get('/indicador/personalizado/aprobados/{idObjetivo}/{periodoActual}/{idCurso}',
+    [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizadosAprobados']
+);
 Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizados']
 );
 Route::post('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'store']);
 Route::put('/indicador/personalizado/{id}', [IndicadorPersonalizadoController::class, 'update']);
+Route::delete('/indicador/personalizado/{id}', [IndicadorPersonalizadoController::class, 'destroy']);
+
 
 // * Cursos
 Route::get('/cursos', [CursoController::class, 'index']);

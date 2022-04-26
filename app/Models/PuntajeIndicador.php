@@ -47,6 +47,8 @@ class PuntajeIndicador extends Model
             , 'puntajes_indicadores.idUsuario_updated'
             , 'puntajes_indicadores.created_at'
             , 'puntajes_indicadores.updated_at'
+            , 'indicadores.idObjetivo as idObjetivoIndicador'
+            , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
         )
         ->leftJoin("indicadores",
             "puntajes_indicadores.idIndicador", "=", "indicadores.id"
@@ -57,8 +59,10 @@ class PuntajeIndicador extends Model
         ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
         ->where('puntajes_indicadores.idCurso', $idCurso)
         ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+        ->where('puntajes_indicadores.estado', 'Activo')
         ->where('indicadores.idObjetivo', $idObjetivo)
         ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
+        ->orWhere('indicador_personalizados.estado', 'Aprobado')
         ->get();
     }
 
@@ -90,6 +94,8 @@ class PuntajeIndicador extends Model
             ->where('puntajes_indicadores.idAlumno', $idAlumno)
             ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
             ->where('indicadores.idObjetivo', $idObjetivo)
+            ->where('puntajes_indicadores.tipoIndicador', 'Normal')
+            ->where('puntajes_indicadores.estado', 'Activo')
             // ->where('indicador_personalizados.idObjetivo', $idObjetivo)
             ->get();
     }
@@ -119,6 +125,9 @@ class PuntajeIndicador extends Model
             ->where('puntajes_indicadores.idAlumno', $idAlumno)
             ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
             ->where('indicador_personalizados.idObjetivo', $idObjetivo)
+            ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
+            ->where('puntajes_indicadores.estado', 'Activo')
+            ->where('indicador_personalizados.estado', 'Aprobado')
             ->get();
     }
 
@@ -137,8 +146,15 @@ class PuntajeIndicador extends Model
             ->where('puntajes_indicadores.idIndicador', $idIndicador)
             ->where('puntajes_indicadores.idAlumno', $idAlumno)
             ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
+            ->where('puntajes_indicadores.estado', 'Activo')
             ->get();
     }
 
-
+    public static function findIndicadorPersonalizados($idIndicador) {
+        return PuntajeIndicador::select('puntajes_indicadores.id')
+            ->where('puntajes_indicadores.idIndicador', $idIndicador)
+            ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
+            ->where('puntajes_indicadores.estado', 'Activo')
+            ->get();
+    }
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\IndicadorPersonalizado;
+use App\Models\PuntajeIndicador;
 
 
 class IndicadorPersonalizadoController extends Controller
@@ -25,10 +26,24 @@ class IndicadorPersonalizadoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    public function getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso)
+    {
+        return IndicadorPersonalizado::getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso);
+    }
+
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso)
     {
         return IndicadorPersonalizado::getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso);
     }
+
+
+
 
 
     /**
@@ -68,7 +83,7 @@ class IndicadorPersonalizadoController extends Controller
                     'idPeriodo'  => $request->input('idPeriodo'),
                     'estado'     => $request->input('estado'),
                     'idUsuario_created'  => $request->input('idUsuario'),
-                    'idUsuario_updated'  => Null,
+                    'idUsuario_updated'  => $request->input('idUsuario'),
                 ]);
 
                 return response(null, 200);
@@ -110,7 +125,23 @@ class IndicadorPersonalizadoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        Request()->validate([
+            'nombre' => 'required',
+        ]);
+
+        try {
+            $indicador = IndicadorPersonalizado::findOrFail($id);
+
+            $nombre    = $request->input('nombre');
+
+            $indicador->nombre   = $nombre;
+            $indicador->save();
+
+            return response(null, 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 
     /**
@@ -119,8 +150,22 @@ class IndicadorPersonalizadoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        //
+        try {
+            $indicador = IndicadorPersonalizado::findOrFail($id);
+
+            $puntajesIndicador = PuntajeIndicador::findIndicadorPersonalizados($id);
+
+            foreach ($puntajesIndicador as $key => $pi) {
+                $puntajeIndicador = PuntajeIndicador::findOrFail($pi->id);
+                $puntajeIndicador->estado = 'Inactivo';
+                $puntajeIndicador->save();
+            }
+            $indicador->estado   = 'Eliminado';
+            $indicador->save();
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
 }

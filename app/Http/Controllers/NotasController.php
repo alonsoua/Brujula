@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PuntajeIndicador;
 use App\Models\NotasConversion;
+use App\Models\Alumno;
 use App\Models\Notas;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +22,6 @@ class NotasController extends Controller
 
     public function calcularNota($idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
-
         $puntajesNormal = PuntajeIndicador::getPuntajesAlumno(
             $idPeriodo,
             $idAlumno,
@@ -34,6 +34,7 @@ class NotasController extends Controller
             $idAsignatura,
             $idObjetivo
         );
+
         $puntajes = array();
         foreach ($puntajesNormal as $pn => $puntaje) {
             array_push($puntajes, $puntaje);
@@ -43,9 +44,9 @@ class NotasController extends Controller
             array_push($puntajes, $puntajePersonalizado);
         }
 
-
         $notas = Notas::getNotaObjetivo($idAlumno, $idCurso, $idPeriodo, $idAsignatura, $idObjetivo);
-        if (count($puntajes) > 0) {
+        $cantidadPuntajes = count($puntajes);
+        if ($cantidadPuntajes > 0) {
             $puntajeObtenido = 0;
             foreach ($puntajes as $key => $puntaje) {
                 $puntajeObtenido += $puntaje->puntaje;
@@ -83,10 +84,21 @@ class NotasController extends Controller
         } else {
             // si existe nota, la elimina
             // si no existe nota no hace nada
-            $destroy = $this->destroy($notas[0]->id);
-            return $destroy;
+            if (count($notas) > 0) {
+                $destroy = $this->destroy($notas[0]->id);
+                return $destroy;
+            }
         }
 
+    }
+
+    public function calcularNotaCurso($idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
+    {
+        // consultar alumnos Activos del curso
+        $alumnos = Alumno::getAlumnosCurso($idCurso);
+        foreach ($alumnos as $key => $alumno) {
+            $this->calcularNota($alumno->id, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo);
+        }
     }
 
     /**

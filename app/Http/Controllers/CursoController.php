@@ -129,7 +129,8 @@ class CursoController extends Controller
 
         } catch (\Throwable $th) {
             return response($th, 500);
-        }    }
+        }
+    }
 
     /**
      * Remove the specified resource from storage.

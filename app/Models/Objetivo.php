@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\IndicadorPersonalizado;
 class Objetivo extends Model
 {
     use HasFactory;
@@ -50,16 +50,22 @@ class Objetivo extends Model
         $sql = 'SELECT
                     ob.id
                     , ob.nombre as nombreObjetivo
-                    , un.nombre as nombreUnidad
+                    , ej.nombre as nombreEje
+                    -- , un.nombre as nombreUnidad
                     , ob.abreviatura
                     , ob.priorizacion
                     , ob.estado
                     , ob.idEje
-                FROM unidades as un
+                -- FROM unidades as un
+                -- FROM objetivos as ob
+                -- LEFT JOIN unidades as un
+                --     ON ob.idUnidad = un.id
+                FROM ejes as ej
                 LEFT JOIN objetivos as ob
-                    ON ob.idUnidad = un.id
+                    ON ob.idEje = ej.id
                 WHERE
-                    un.idAsignatura = '.$idAsignatura.'
+                    -- un.idAsignatura = '.$idAsignatura.'
+                    ej.idAsignatura = '.$idAsignatura.'
                     AND ob.estado = "Activo"
                 Order By ob.abreviatura';
 
@@ -76,8 +82,25 @@ class Objetivo extends Model
             ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores.id')
             ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
             ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+            ->where('puntajes_indicadores.tipoIndicador', 'Normal')
         ])
         ->where('indicadores.idObjetivo', $idObjetivo)
+        ->get();
+    }
+
+    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo) {
+        return IndicadorPersonalizado::selectRaw('
+                    indicador_personalizados.id,
+                    indicador_personalizados.nombre
+        ')
+        ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
+            ->whereColumn('puntajes_indicadores.idIndicador', 'indicador_personalizados.id')
+            ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+            ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+            ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
+        ])
+        ->where('indicador_personalizados.idObjetivo', $idObjetivo)
+        ->where('indicador_personalizados.estado', 'Aprobado')
         ->get();
     }
 
