@@ -42,4 +42,11 @@ class Notas extends Model
             ->where('idAsignatura', $idAsignatura)
             ->get();
     }
+
+    public static function getAllNotasCurso($idPeriodo,$idCurso) {
+        return Notas::select('*')
+            ->where('idPeriodo', $idPeriodo)
+            ->where('idCurso', $idCurso)
+            ->get();
+    }
 }

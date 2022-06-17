@@ -139,6 +139,11 @@ Route::get('/notasConversion/{cantidadIndicadores}/{puntajeObtenido}',
 Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
     [NotasController::class, 'getNotasAsignatura']
 );
+
+Route::get('/notas/getAllNotasCurso/{idPeriodo}/{idCurso}',
+    [NotasController::class, 'getAllNotasCurso']
+);
+
 Route::get('/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNota']
 );

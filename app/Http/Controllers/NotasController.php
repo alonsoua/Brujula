@@ -20,6 +20,13 @@ class NotasController extends Controller
         );
     }
 
+    public function getAllNotasCurso($idPeriodo, $idCurso) {
+        return Notas::getAllNotasCurso(
+            $idPeriodo,
+            $idCurso,
+        );
+    }
+
     public function calcularNota($idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
         $puntajesNormal = PuntajeIndicador::getPuntajesAlumno(
