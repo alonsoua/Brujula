@@ -24,7 +24,7 @@ class InformeHogarController extends Controller
      * @param  int  $id
      */
 
-    public function createPDF($idPeriodo, $idAlumno) {
+    public function createPDF($idPeriodo, $idAlumno, $tipo) {
 
         //Obtener
         /* alumnos
@@ -58,8 +58,9 @@ class InformeHogarController extends Controller
             // return $data;
         }
 
+        $alumno = $data[0]['alumno']['numLista'].'-'.$data[0]['alumno']['nombres'].' '.$data[0]['alumno']['primerApellido'].' '.$data[0]['alumno']['segundoApellido'].' - '.$data[0]['curso']['nombre'];
         // print($html);
-        return $this->downloadPDF($html);
+        return $this->downloadPDF($html, $tipo, $alumno);
     }
 
     function downloadPDFEscuelaFrancia($data)
@@ -226,22 +227,20 @@ class InformeHogarController extends Controller
 
     }
 
-    function downloadPDF ($html) {
+    function downloadPDF ($html, $tipo, $alumno) {
 
         $pdf = PDF::loadHTML($html);
 
         $pdf->setPaper('A4');
 
         // $nombrePdf = $compra->rutProveedor.'-'.$compra->nombreProveedor.'-num_'.$correlativo.'.pdf';
-        $nombrePdf = 'test.pdf';
-        return $pdf->stream($nombrePdf);
+        $nombrePdf = $alumno.' - informe_hogar.pdf';
 
-
-
-        // if ($tipoPDF == 'download') {
-        //     return $pdf->download($nombrePdf);
-        // } else if ($tipoPDF == 'view') {
-        // }
+        if ($tipo == 'download') {
+            return $pdf->download($nombrePdf);
+        } else if ($tipo == 'read') {
+            return $pdf->stream($nombrePdf);
+        }
 
     }
 }

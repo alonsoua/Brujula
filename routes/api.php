@@ -255,4 +255,4 @@ Route::get(
 
 // * INFORME HOGAR
 
-Route::get('/informe/hogar/{idPeriodo}/{idAlumno}', [InformeHogarController::class, 'createPDF']);
+Route::get('/informe/hogar/{idPeriodo}/{idAlumno}/{tipo}', [InformeHogarController::class, 'createPDF']);
