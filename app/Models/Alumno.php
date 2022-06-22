@@ -91,5 +91,48 @@ class Alumno extends Model
     }
 
 
+    public static function getAlumno($idAlumno) {
+
+        return Alumno::select(
+                'alumnos.*'
+            )
+            ->where('alumnos.id', $idAlumno)
+            ->where('alumnos.estado', 'Activo')
+            ->get();
+
+    }
+
+    public static function getAlumnoEstablecimiento($idAlumno) {
+
+        return Alumno::select(
+                'establecimientos.*'
+            )
+            ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id")
+            ->where('alumnos.id', $idAlumno)
+            ->where('alumnos.estado', 'Activo')
+            ->get();
+    }
+
+    public static function getAlumnoCurso($idPeriodo, $idAlumno) {
+
+        return Alumno::select(
+                'cursos.id as idCurso',
+                'cursos.*',
+                'grados.id as idTablaGrados',
+                'grados.*'
+            )
+            ->leftJoin("cursos", "alumnos.idCurso", "=", "cursos.id")
+            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+            ->where('alumnos.id', $idAlumno)
+            // ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('alumnos.estado', 'Activo')
+            ->get();
+    }
+
+
+    // Alumno::getAlumnoEstablecimiento($idAlumno);
+        // $curso = Alumno::($idPeriodo, $idAlumno);
+
+
 
 }

@@ -49,4 +49,15 @@ class Notas extends Model
             ->where('idCurso', $idCurso)
             ->get();
     }
+
+    public static function getNotasAlumno($idPeriodo, $idCurso, $idAlumno) {
+        return Notas::select('*')
+            ->leftJoin("objetivos","objetivos.id", "=", "notas.idObjetivo")
+            ->where('idPeriodo', $idPeriodo)
+            ->where('idCurso', $idCurso)
+            ->where('idAlumno', $idAlumno)
+            // ->orderBy('idAsignatura')
+            ->orderBy('abreviatura')
+            ->get();
+    }
 }

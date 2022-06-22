@@ -22,6 +22,7 @@ use App\Http\Controllers\AvanceAprendizajeController;
 use App\Http\Controllers\PuntajeIndicadorController;
 use App\Http\Controllers\NotasConversionController;
 use App\Http\Controllers\NotasController;
+use App\Http\Controllers\InformeHogarController;
 // use App\Http\Controllers\Auth\SignInController;
 // use App\Http\Controllers\Auth\SignOutController;
 // use App\Http\Controllers\Auth\MeController;
@@ -251,3 +252,7 @@ Route::get(
     '/puntajes/indicadores/transformacion',
     [PuntajeIndicadorController::class, 'getPuntajesIndicadoresTransformacion']
 );
+
+// * INFORME HOGAR
+
+Route::get('/informe/hogar/{idPeriodo}/{idAlumno}', [InformeHogarController::class, 'createPDF']);
