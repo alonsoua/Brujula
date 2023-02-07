@@ -8,7 +8,6 @@ use App\Models\Asignatura;
 use App\Models\Notas;
 use App\Traits\InformeHogarPDFTrait;
 
-
 use PDF;
 
 
@@ -26,6 +25,7 @@ class InformeHogarController extends Controller
 
     public function createPDF($idPeriodo, $idAlumno, $tipo) {
 
+
         //Obtener
         /* alumnos
         /* Establecimiento
@@ -33,6 +33,7 @@ class InformeHogarController extends Controller
         /* Asignaturas
         /* Notas
         */
+
         $alumno = Alumno::getAlumno($idAlumno);
         $establecimiento = Alumno::getAlumnoEstablecimiento($idAlumno);
         $curso = Alumno::getAlumnoCurso($idPeriodo, $idAlumno);
@@ -55,13 +56,31 @@ class InformeHogarController extends Controller
                 'notas' => $notas,
             ));
             $html = $this->downloadPDFEscuelaFrancia($data[0]);
-            // return $data;
         }
 
         $alumno = $data[0]['alumno']['numLista'].'-'.$data[0]['alumno']['nombres'].' '.$data[0]['alumno']['primerApellido'].' '.$data[0]['alumno']['segundoApellido'].' - '.$data[0]['curso']['nombre'];
         // print($html);
         return $this->downloadPDF($html, $tipo, $alumno);
     }
+
+
+    function downloadPDF ($html, $tipo, $alumno) {
+        ini_set('max_execution_time', 300);
+        ini_set("memoria_limite","512M");
+        $pdf = PDF::loadHTML($html);
+
+        $pdf->setPaper('A4');
+
+        // $nombrePdf = $compra->rutProveedor.'-'.$compra->nombreProveedor.'-num_'.$correlativo.'.pdf';
+        $nombrePdf = $alumno.' - informe_hogar.pdf';
+
+        if ($tipo == 'download') {
+            return $pdf->download($nombrePdf);
+        } else if ($tipo == 'read') {
+            return $pdf->stream($nombrePdf);
+        }
+    }
+
 
     function downloadPDFEscuelaFrancia($data)
     {
@@ -114,7 +133,7 @@ class InformeHogarController extends Controller
         // '. $htmlProveedor .'
         // //main
         // '. $htmlProductos .'
-        $nivelLogro = '../public/storage/images/nivelLogro_'.$data['establecimiento']['rbd'].'.png';
+        $nivelLogro = '../storage/app/public/images/nivelLogro_'.$data['establecimiento']['rbd'].'.png';
         $footer = '../public/storage/images/diseño_'.$data['establecimiento']['rbd'].'.png';
         return '
         <html>
@@ -224,23 +243,6 @@ class InformeHogarController extends Controller
                 // </footer>
         // die();
 
-
-    }
-
-    function downloadPDF ($html, $tipo, $alumno) {
-
-        $pdf = PDF::loadHTML($html);
-
-        $pdf->setPaper('A4');
-
-        // $nombrePdf = $compra->rutProveedor.'-'.$compra->nombreProveedor.'-num_'.$correlativo.'.pdf';
-        $nombrePdf = $alumno.' - informe_hogar.pdf';
-
-        if ($tipo == 'download') {
-            return $pdf->download($nombrePdf);
-        } else if ($tipo == 'read') {
-            return $pdf->stream($nombrePdf);
-        }
 
     }
 }

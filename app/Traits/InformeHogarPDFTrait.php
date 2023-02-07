@@ -114,6 +114,7 @@ trait InformeHogarPDFTrait {
             border-collapse: collapse;
             border: 1px solid black;
             width: 100% !important;
+            margin-left: -30px !important;
           }
 
           .firmas {
@@ -130,16 +131,16 @@ trait InformeHogarPDFTrait {
             border-collapse: collapse;
             border: 1px solid black;
             height: 25px;
-            padding: 8px;
+            padding: 1px;
           }
 
           .td-notas {
-            min-width: 25px;
+            min-width: 6px;
           }
 
 
           .td-promedio {
-            min-width: 30px;
+            min-width: 15px;
           }
 
 
@@ -200,7 +201,7 @@ trait InformeHogarPDFTrait {
      */
     public function encabezado($establecimiento) {
 
-      $insignia = '../public/storage/insignias_establecimientos/'.$establecimiento['insignia'];
+      $insignia = '../storage/app/public/insignias_establecimientos/'.$establecimiento['insignia'];
 
       return '
         <table class="sin-borde">
@@ -236,7 +237,7 @@ trait InformeHogarPDFTrait {
       $semestre = '1er Semestre';
       $nombreDocente = '';
 
-      $fechaActual = date('m-d-Y', time());
+      $fechaActual = date('d-m-Y');
       // $fechaActual = !is_null($alumno) ? $alumno->telefono : '';
 
       return '
@@ -247,11 +248,11 @@ trait InformeHogarPDFTrait {
               </tr>
               <tr>
                   <td class="border-celeste no-b-left"><b>Curso:</b> '.$curso.'</td>
-                  <td class="border-celeste no-b-right"><b>Semestre:</b> '.$semestre.'</td>
+                  <td class="border-celeste no-b-bottom no-b-right"><b>Fecha:</b> '.$fechaActual.'</td>
               </tr>
               <tr>
                   <td class="border-celeste no-b-bottom no-b-left"><b>Nombre Docente:</b> '.$nombreDocente.'</td>
-                  <td class="border-celeste no-b-bottom no-b-right"><b>Fecha:</b> '.$fechaActual.'</td>
+                  <td class="border-celeste no-b-bottom no-b-right"><b></b></td>
               </tr>
           </tbody>
       </table>
@@ -285,17 +286,19 @@ trait InformeHogarPDFTrait {
             <tr>
                 <th class="text-center">ASIGNATURA</th>
                 <th class="text-center" colspan="'.$columnasNotas.'">NIVEL DE LOGRO</th>
-                <th class="colDescripcion" colspan="2">Promedio 1er Semestre</th>
+                <th class="colDescripcion" colspan="2">Promedio Final</th>
             </tr>
         ';
 
 
         $htmlBodyNotas = '';
+        $promedioFinal = 0;
+        $promedioFinalCount = 0;
         foreach($asignaturas as $key => $asignatura) {
 
           $htmlBodyNotas .= '
             <tr>
-              <td class="text-center" style="margin: 300px! important;">
+              <td class="text-center" style="margin: 200px! important;">
                 '. $asignatura['nombreAsignatura'] .'
               </td>
           ';
@@ -311,7 +314,7 @@ trait InformeHogarPDFTrait {
               $divisorNotas = $divisorNotas + 1;
               $nivelLogro = $this->conversionNota($nota['nota']);
               $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 300px! important;">
+                  <td class="text-center td-notas" style="margin: 100px! important;">
                       '. $nivelLogro .'
                   </td>
               ';
@@ -324,23 +327,27 @@ trait InformeHogarPDFTrait {
 
             for ($i=0; $i < $columnasVacias; $i++) {
               $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 300px! important;">
+                  <td class="text-center td-notas" style="margin: 100px! important;">
                       -
                   </td>
               ';
             }
           } else if ($columnasNotas == 0 && $numNotas == 0) {
             $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 300px! important;">
+                  <td class="text-center td-notas" style="margin: 100px! important;">
                       -
                   </td>
               ';
           }
 
-          // Promedio
+          // Promedios y Promedio Final
           if ($divisorNotas != 0) {
             $promedio = $sumaNotas / $divisorNotas;
             $promedio = number_format($promedio, 1, '.', '');
+
+            $promedioFinal += intval(str_replace('.', '', $promedio));
+            $promedioFinalCount += 1;
+
             $promedioNivelLogro = $this->conversionNota($promedio);
           } else {
             $promedio = '-';
@@ -358,6 +365,17 @@ trait InformeHogarPDFTrait {
 
           $htmlBodyNotas .= '</tr>';
         }
+
+        $promedioFinal = $promedioFinal / $promedioFinalCount;
+        $promedioFinal = str_split($promedioFinal, 1);
+        $promedioFinal = $promedioFinal[0].'.'.$promedioFinal[1];
+        $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
+
+        $htmlBodyNotas .= '<tr>
+            <td class="text-right" colspan="'.$columnasNotas + 1 .'"><b>Final:</b></td>
+            <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinalNivelLogro.'</td>
+            <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
+            </tr>';
 
         return '
           <table class="table-notas">

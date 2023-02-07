@@ -96,6 +96,7 @@ class MeController extends Controller
             );
         }
 
+        $id_periodo_activo = $user->idPeriodoActivo === null ? 4 : $user->idPeriodoActivo;
         return response()->json([
             'id'                      => $user->id,
             'email'                   => $user->email,
@@ -105,7 +106,7 @@ class MeController extends Controller
             'primerApellido'          => $user->primerApellido,
             'segundoApellido'         => $user->segundoApellido,
             'idEstablecimientoActivo' => $user->idEstablecimientoActivo,
-            'idPeriodoActivo'         => $user->idPeriodoActivo,
+            'idPeriodoActivo'         => $id_periodo_activo,
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,
