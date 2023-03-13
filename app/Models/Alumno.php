@@ -36,7 +36,7 @@ class Alumno extends Model
         'idEstablecimiento',
     ];
 
-    public static function getAll($idEstablecimiento) {
+    public static function getAll($idEstablecimiento, $idPeriodo) {
         $alumnos = Alumno::select(
                   'alumnos.*'
                 , 'prioritarios.nombre as nombrePrioritario'
@@ -53,6 +53,9 @@ class Alumno extends Model
             ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id");
         if (!is_null($idEstablecimiento)) {
             $alumnos = $alumnos ->where('establecimientos.id', $idEstablecimiento);
+        }
+        if (!is_null($idPeriodo)) {
+            $alumnos = $alumnos ->where('cursos.idPeriodo', $idPeriodo);
         }
         $alumnos = $alumnos->orderBy('establecimientos.id')
         ->orderBy('grados.id')

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Curso;
+use App\Models\Establecimiento;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -17,7 +18,13 @@ class CursoController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        return Curso::getAll($user->idEstablecimientoActivo, Null);
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+
+        return Curso::getAll($user->idEstablecimientoActivo, $idPeriodo);
     }
 
     /**
@@ -28,7 +35,7 @@ class CursoController extends Controller
     public function getActivos(Request $request)
     {
         $user = $request->user();
-        return Curso::getAll($user->idEstablecimientoActivo, 'Activo');
+        return Curso::getAllEstado($user->idEstablecimientoActivo, 'Activo');
     }
 
     /**
@@ -36,9 +43,15 @@ class CursoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getActivosEstablecimiento($idEstablecimiento)
+    public function getActivosEstablecimiento(Request $request, $idEstablecimiento)
     {
-        return Curso::getAll($idEstablecimiento, 'Activo');
+        $user = $request->user();
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        return Curso::getAll($idEstablecimiento, $idPeriodo);
     }
 
     /**
@@ -61,7 +74,10 @@ class CursoController extends Controller
 
             DB::transaction(function () use ($request) {
 
+                $establecimiento = Establecimiento::getAll($request->idEstablecimiento);
+                $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
                 $cantidad = intval($request->input('cantidad'));
+
                 $letra = 'A';
                 for ($i = 0; $i < $cantidad; $i++) {
                     Curso::Create([
@@ -70,6 +86,7 @@ class CursoController extends Controller
                         'idEstablecimiento' => $request->input('idEstablecimiento'),
                         'idGrado'           => $request->input('idGrado'),
                         'estado'            => $request->input('estado'),
+                        'idPeriodo'         => $idPeriodo,
                     ]);
                     $letra++;
                 }

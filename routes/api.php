@@ -171,6 +171,7 @@ Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
 // * Alumnos
 Route::get('/alumnos', [AlumnoController::class, 'index']);
+Route::get('/alumnos/periodo', [AlumnoController::class, 'getAlumnosPeriodo']);
 Route::post('/alumnos', [AlumnoController::class, 'store']);
 Route::get('/alumnos/curso/{idCurso}',
     [AlumnoController::class, 'getAlumnosCurso']

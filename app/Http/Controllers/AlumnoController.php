@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Alumno;
 use App\Models\DiagnosticoPie;
 use App\Models\Prioritario;
+use App\Models\Establecimiento;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -19,7 +20,18 @@ class AlumnoController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        return Alumno::getAll($user->idEstablecimientoActivo);
+        return Alumno::getAll($user->idEstablecimientoActivo, null);
+    }
+
+    public function getAlumnosPeriodo(Request $request)
+    {
+        $user = $request->user();
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        return Alumno::getAll($user->idEstablecimientoActivo, $idPeriodo);
     }
 
     public function getAlumnosCurso($idCurso) {

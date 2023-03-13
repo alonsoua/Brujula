@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\PuntajeIndicador;
 use App\Models\PuntajeIndicadorTransformacion;
+use App\Models\Establecimiento;
 use App\Models\UsuarioAsignatura;
+use Illuminate\Http\Request;
 
 class AvanceAprendizajeController extends Controller
 {
@@ -22,9 +24,15 @@ class AvanceAprendizajeController extends Controller
      * * $idUsuarioEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    public function getCursoActivo($idUsuarioEstablecimiento)
+    public function getCursoActivo(Request $request, $idUsuarioEstablecimiento)
     {
-        return UsuarioAsignatura::getCursoActivo($idUsuarioEstablecimiento);
+        $user = $request->user();
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        return UsuarioAsignatura::getCursoActivo($idUsuarioEstablecimiento, $idPeriodo);
     }
 
     /**

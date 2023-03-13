@@ -20,10 +20,36 @@ class Curso extends Model
         'idGrado',
         'idProfesorJefe',
         'idEstablecimiento',
+        'idPeriodo',
         'estado',
     ];
 
-    public static function getAll($idEstablecimiento, $estado) {
+    public static function getAll($idEstablecimiento, $idPeriodo) {
+        $cursos = Curso::select(
+                  'cursos.*'
+                , 'users.nombres as nombreProfesorJefe'
+                , 'grados.nombre as nombreGrado'
+                , 'grados.id as idGrado'
+                , 'periodos.nombre as nombrePeriodo'
+                , 'establecimientos.nombre as nombreEstablecimiento'
+                )
+            ->leftJoin("users", "cursos.idProfesorJefe", "=", "users.id")
+            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+            ->leftJoin("periodos", "cursos.idPeriodo", "=", "periodos.id")
+            ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id")
+            ->where('cursos.estado', 'Activo');
+        if (!is_null($idEstablecimiento)) {
+            $cursos = $cursos ->where('establecimientos.id', $idEstablecimiento);
+        }
+        if (!is_null($idPeriodo)) {
+            $cursos = $cursos ->where('cursos.idPeriodo', $idPeriodo);
+        }
+            $cursos = $cursos->orderBy('cursos.id')
+            ->get();
+        return $cursos;
+    }
+
+    public static function getAllEstado($idEstablecimiento, $estado) {
         $cursos = Curso::select(
                   'cursos.*'
                 , 'users.nombres as nombreProfesorJefe'

@@ -33,7 +33,6 @@ class Establecimiento extends Model
         $establecimientos = Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
             ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id");
 
-
         if (!is_null($idEstablecimiento)) {
             $establecimientos = $establecimientos->where('establecimientos.id', $idEstablecimiento);
         }
