@@ -130,5 +130,33 @@ class Objetivo extends Model
             return DB::select($sql, []);
     }
 
+    public static function getObjetivosMinisterio() {
+        $sql = 'SELECT
+                o.id
+                , te.id as idNivel
+                , o.nombre as nombreObjetivo
+                , e.id as idEje
+                , e.nombre as nombreEje
+                , a.id as idAsignatura
+                , a.nombre as nombreAsignatura
+                , g.id as idGrado
+                , g.nombre as nombreCurso
+                , o.abreviatura
+                , o.priorizacion
+                , o.estado -- autorización
+                -- , o.priorizaciónInterna -- autorización
+            FROM objetivos as o
+            LEFT JOIN ejes as e
+                ON e.id = o.idEje
+            LEFT JOIN asignaturas as a
+                ON a.id = e.idAsignatura
+            LEFT JOIN grados as g
+                ON g.id = a.idGrado
+            LEFT JOIN tipo_enseñanza as te
+                ON te.idNivel = g.idNivel
+            Where o.idEje != "null"
+            Order By g.id, a.id, e.id, o.abreviatura';
 
+            return DB::select($sql, []);
+    }
 }

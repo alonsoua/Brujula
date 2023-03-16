@@ -24,9 +24,19 @@ class EjeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getEjesAsignatura($idAsignatura)
+    public function getEjesPorAsignatura($idAsignatura)
     {
         return Eje::getEjesPorAsignatura($idAsignatura);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getEjesAsignatura($idAsignatura)
+    {
+        return Eje::getEjesAsignatura($idAsignatura);
     }
 
     /**

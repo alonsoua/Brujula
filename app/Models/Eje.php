@@ -23,20 +23,16 @@ class Eje extends Model
     ];
 
     public static function getEjesPorAsignatura($idAsignatura) {
-        // $sql = 'SELECT
-        //             id
-        //             , nombre
-        //         FROM ejes
-        //         WHERE
-        //             idAsignatura = ';
-        // return DB::select($sql, []);
+        return Eje::select('ejes.id', 'ejes.nombre')
+            ->leftJoin("objetivos", "objetivos.idEje", "=", "ejes.id")
+            ->where('ejes.idAsignatura', $idAsignatura)
+            ->orderBy('objetivos.abreviatura')
+            ->get();
+    }
 
-            return Eje::select('ejes.id', 'ejes.nombre')
-                ->leftJoin("objetivos", "objetivos.idEje", "=", "ejes.id")
-                ->where('ejes.idAsignatura', $idAsignatura)
-                ->orderBy('objetivos.abreviatura')
-                ->get();
-
-
+    public static function getEjesAsignatura($idAsignatura) {
+        return Eje::select('ejes.id', 'ejes.nombre')
+            ->where('ejes.idAsignatura', $idAsignatura)
+            ->get();
     }
 }

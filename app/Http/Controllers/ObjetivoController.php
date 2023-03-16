@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Objetivo;
+use App\Models\ObjetivoPersonalizado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ObjetivoController extends Controller
 {
@@ -40,4 +42,147 @@ class ObjetivoController extends Controller
     {
         return Objetivo::getObjetivosBetwen($idCursoInicio, $idCursoFin);
     }
+
+    /**
+     * Obtiene objetivos por asignatura con
+     * * $idAsignatura
+     * @return \Illuminate\Http\Response
+     */
+    public function getObjetivosMinisterio()
+    {
+        return Objetivo::getObjetivosMinisterio();
+    }
+
+    /**
+     * Obtiene objetivos por asignatura con
+     * * $idAsignatura
+     * @return \Illuminate\Http\Response
+     */
+    public function getObjetivosEstablecimiento($id_establecimiento)
+    {
+        return ObjetivoPersonalizado::getObjetivosEstablecimiento($id_establecimiento);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storePersonalizado(Request $request)
+    {
+        try {
+            DB::transaction(function () use ($request) {
+                ObjetivoPersonalizado::Create([
+                    'nombre'            => $request['nombre'],
+                    'abreviatura'       => $request['abreviatura'],
+                    'priorizacion'      => $request['priorizacion'],
+                    'idEje'             => $request['idEje'],
+                    'idEstablecimiento' => $request['idEstablecimiento'],
+                    'estado'            => $request['estado'],
+                ]);
+
+                return response(null, 200);
+            });
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePersonalizado(Request $request, $id)
+    {
+        try {
+
+            $objetivo_personalizado = ObjetivoPersonalizado::findOrFail($id);
+            $objetivo_personalizado->nombre = $request['nombre'];
+            $objetivo_personalizado->abreviatura = $request['abreviatura'];
+            $objetivo_personalizado->priorizacion = $request['priorizacion'];
+            $objetivo_personalizado->idEje = $request['idEje'];
+            $objetivo_personalizado->idEstablecimiento = $request['idEstablecimiento'];
+            $objetivo_personalizado->estado = $request['estado'];
+            $objetivo_personalizado->save();
+
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateEstadoMinisterio(Request $request, $id)
+    {
+        try {
+
+            $objetivo = Objetivo::findOrFail($id);
+
+            $objetivo->estado = $request['estado'];
+            $objetivo->save();
+
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateEstadoPersonalizado(Request $request, $id)
+    {
+        try {
+
+            $objetivo_personalizado = ObjetivoPersonalizado::findOrFail($id);
+
+            $objetivo_personalizado->estado = $request['estado'];
+            $objetivo_personalizado->save();
+
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePriorizacionPersonalizado(Request $request, $id)
+    {
+        try {
+
+            $objetivo_personalizado = ObjetivoPersonalizado::findOrFail($id);
+
+            $objetivo_personalizado->priorizacion = $request['priorizacion'];
+            $objetivo_personalizado->save();
+
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
+
+
+
 }
