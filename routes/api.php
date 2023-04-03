@@ -83,6 +83,12 @@ Route::group([
     Route::get('me', 'MeController');
 });
 
+/*
+*Route::get('migrate', function() {
+*    Artisan::call('migrate');
+*});
+*/
+
 /* Funcion para subir relaciones entre
 * Asignaturas
 * Unidades
@@ -116,11 +122,13 @@ Route::get('/ejes/asignatura/distinct/{idAsignatura}',
 Route::post('/ejes', [EjeController::class, 'store']);
 
 // * Objetivos
-Route::get('/objetivos/ministerio', [ObjetivoController::class, 'getObjetivosMinisterio']);
-Route::get('/objetivos/establecimiento/{id}', [ObjetivoController::class, 'getObjetivosEstablecimiento']);
+Route::get('/objetivos', [ObjetivoController::class, 'getObjetivos']);
 Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}', [ObjetivoController::class, 'getObjetivosActivosAsignatura']);
 Route::get('/objetivos/betwen/{idCursoInicio}/{idCursoFin}', [ObjetivoController::class, 'getObjetivosBetwen']);
 Route::put('/objetivos/estado/{id}', [ObjetivoController::class, 'updateEstadoMinisterio']);
+Route::put('/objetivos/priorizacion/interna/{id}', [ObjetivoController::class, 'updatePriorizacionInterna']);
+
+// Route::get('/objetivos/establecimiento/{id}', [ObjetivoController::class, 'getObjetivosEstablecimiento']);
 
 // * Objetivos PERSONALIZADOS
 Route::post('/objetivos/personalizados', [ObjetivoController::class, 'storePersonalizado']);
@@ -131,8 +139,12 @@ Route::put('/objetivos/personalizados/estado/{id}', [ObjetivoController::class, 
 
 
 // * Indicadores
-Route::get('/indicadores/objetivo/{idObjetivo}',
+Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}',
     [IndicadorController::class, 'getIndicadoresObjetivo']
+);
+
+Route::get('/indicadores/personalizados/{idObjetivo}',
+    [IndicadorController::class, 'getIndicadoresPersonalizados']
 );
 
 // * Diagnostico pie
@@ -247,7 +259,7 @@ Route::get(
 
 // * Puntaje Indicador
 Route::get(
-    '/puntajes/indicadores/{idperiodo}/{idcurso}/{idasignatura}/{idObjetivo}',
+    '/puntajes/indicadores/{idperiodo}/{idcurso}/{idasignatura}/{idObjetivo}/{tipo}',
     [PuntajeIndicadorController::class, 'getPuntajesIndicadores']
 );
 

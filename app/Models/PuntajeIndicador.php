@@ -34,36 +34,73 @@ class PuntajeIndicador extends Model
         $idPeriodo,
         $idCurso,
         $idAsignatura,
-        $idObjetivo
+        $idObjetivo,
+        $tipoIndicador
     ) {
-        return PuntajeIndicador::select(
-            'puntajes_indicadores.id'
-            , 'puntajes_indicadores.idIndicador'
-            , 'puntajes_indicadores.idAlumno'
-            , 'puntajes_indicadores.puntaje'
-            , 'puntajes_indicadores.tipoIndicador'
-            , 'puntajes_indicadores.estado'
-            , 'puntajes_indicadores.idUsuario_created'
-            , 'puntajes_indicadores.idUsuario_updated'
-            , 'puntajes_indicadores.created_at'
-            , 'puntajes_indicadores.updated_at'
-            , 'indicadores.idObjetivo as idObjetivoIndicador'
-            , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
-        )
-        ->leftJoin("indicadores",
-            "puntajes_indicadores.idIndicador", "=", "indicadores.id"
-        )
-        ->leftJoin("indicador_personalizados",
-            "puntajes_indicadores.idIndicador", "=", "indicador_personalizados.id"
-        )
-        ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-        ->where('puntajes_indicadores.idCurso', $idCurso)
-        ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-        ->where('puntajes_indicadores.estado', 'Activo')
-        ->where('indicadores.idObjetivo', $idObjetivo)
-        ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
-        ->orWhere('indicador_personalizados.estado', 'Aprobado')
-        ->get();
+        if ($tipoIndicador === 'Ministerio') {
+            $puntajeIndicador = PuntajeIndicador::select(
+                'puntajes_indicadores.id'
+                , 'puntajes_indicadores.idIndicador'
+                , 'puntajes_indicadores.idAlumno'
+                , 'puntajes_indicadores.puntaje'
+                , 'puntajes_indicadores.tipoIndicador'
+                , 'puntajes_indicadores.estado'
+                , 'puntajes_indicadores.idUsuario_created'
+                , 'puntajes_indicadores.idUsuario_updated'
+                , 'puntajes_indicadores.created_at'
+                , 'puntajes_indicadores.updated_at'
+                , 'indicadores.idObjetivo as idObjetivoIndicador'
+                , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
+            )
+            ->leftJoin("indicadores",
+                "puntajes_indicadores.idIndicador", "=", "indicadores.id"
+            )
+            ->leftJoin("indicador_personalizados",
+                "puntajes_indicadores.idIndicador", "=", "indicador_personalizados.id"
+            )
+            ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+            ->where('puntajes_indicadores.idCurso', $idCurso)
+            ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+            ->where('puntajes_indicadores.tipoIndicador', 'Normal')
+            ->where('puntajes_indicadores.estado', 'Activo')
+            ->where('indicadores.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.estado', 'Aprobado')
+            ->get();
+        }
+        else if ($tipoIndicador === 'Interno') {
+            $puntajeIndicador = PuntajeIndicador::select(
+                'puntajes_indicadores.id'
+                , 'puntajes_indicadores.idIndicador'
+                , 'puntajes_indicadores.idAlumno'
+                , 'puntajes_indicadores.puntaje'
+                , 'puntajes_indicadores.tipoIndicador'
+                , 'puntajes_indicadores.estado'
+                , 'puntajes_indicadores.idUsuario_created'
+                , 'puntajes_indicadores.idUsuario_updated'
+                , 'puntajes_indicadores.created_at'
+                , 'puntajes_indicadores.updated_at'
+                , 'indicadores_personalizados.idObjetivo as idObjetivoIndicador'
+                , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
+            )
+            ->leftJoin("indicadores_personalizados",
+                "puntajes_indicadores.idIndicador", "=", "indicadores_personalizados.id"
+            )
+            ->leftJoin("indicador_personalizados",
+                "puntajes_indicadores.idIndicador", "=", "indicador_personalizados.id"
+            )
+            ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+            ->where('puntajes_indicadores.idCurso', $idCurso)
+            ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+            ->where('puntajes_indicadores.tipoIndicador', 'Interno')
+            ->where('puntajes_indicadores.estado', 'Activo')
+            ->where('indicadores_personalizados.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.estado', 'Aprobado')
+            ->get();
+        }
+        // return response($puntajeIndicador, 200);
+        return $puntajeIndicador;
     }
 
     public static function getPuntajesAlumno(

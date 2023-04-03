@@ -35,11 +35,17 @@ class UsuarioEstablecimiento extends Model
                 , 'establecimientos.id as idEstablecimiento'
                 , 'establecimientos.insignia'
                 , 'establecimientos.idPeriodoActivo'
+                , 'periodos.nombre as nombrePeriodo'
                 )
             ->leftJoin("establecimientos",
                 "usuario_establecimientos.idEstablecimiento",
                 "=",
                 "establecimientos.id"
+            )
+            ->leftJoin("periodos",
+                "establecimientos.idPeriodoActivo",
+                "=",
+                "periodos.id"
             )
             ->where('usuario_establecimientos.idUsuario', $idUsuario)
             ->get();

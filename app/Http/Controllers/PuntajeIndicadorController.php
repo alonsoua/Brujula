@@ -26,11 +26,18 @@ class PuntajeIndicadorController extends Controller
      * * $idAsignatura
      * @return \Illuminate\Http\Response
      */
-    public function getPuntajesIndicadores($idPeriodo, $idCurso, $idAsignatura, $idObjetivo)
+    public function getPuntajesIndicadores($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipo)
     {
-        return PuntajeIndicador::getPuntajesIndicadores(
-            $idPeriodo, $idCurso, $idAsignatura, $idObjetivo
+        $puntajeIndicador = PuntajeIndicador::getPuntajesIndicadores(
+            $idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipo
         );
+        // if ($tipo === 'Ministerio') {
+        // } else if ($tipo === 'Interno') {
+        //     $puntajeIndicador = PuntajeIndicador::getPuntajesIndicadoresInternos(
+        //         $idPeriodo, $idCurso, $idAsignatura, $idObjetivo
+        //     );
+        // }
+        return $puntajeIndicador;
     }
 
     /**

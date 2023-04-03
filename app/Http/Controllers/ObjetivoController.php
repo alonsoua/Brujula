@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\IndicadoresPersonalizados;
 use App\Models\Objetivo;
 use App\Models\ObjetivoPersonalizado;
 use Illuminate\Http\Request;
@@ -14,13 +15,16 @@ class ObjetivoController extends Controller
      * * $idAsignatura
      * @return \Illuminate\Http\Response
      */
-    public function getObjetivosActivosAsignatura($idAsignatura, $idPeriodo)
+    public function getObjetivosActivosAsignatura(Request $request, $idAsignatura, $idPeriodo)
     {
+        $user = $request->user();
         $objetivos = Objetivo::getObjetivosActivosAsignatura($idAsignatura, $idPeriodo);
+        $objetivos_personalizados = ObjetivoPersonalizado::getObjetivosActivosAsignatura($idAsignatura, $user->idEstablecimientoActivo);
         foreach ($objetivos as $key => $objetivo) {
             $objetivo->puntajes_indicadores = 0;
             $objetivo->puntajes_indicadores_personalizado = 0;
-            $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo->id, $idAsignatura, $idPeriodo);
+            $objetivo->tipo = 'Ministerio';
+            $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo->id, $idAsignatura, $idPeriodo, 'Normal');
             foreach ($trabajados_normal as $key => $trabajado) {
                 $objetivo->puntajes_indicadores += $trabajado->puntajes_indicadores;
             }
@@ -30,10 +34,39 @@ class ObjetivoController extends Controller
                 $objetivo->puntajes_indicadores_personalizado += $trabajado->puntajes_indicadores;
             }
         }
+        foreach ($objetivos_personalizados as $key => $objetivo) {
+            $objetivo->puntajes_indicadores = 0;
+            $objetivo->puntajes_indicadores_personalizado = 0;
+            $objetivo->priorizacion = null;
+            $objetivo->tipo = 'Interno';
+            $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo->id, $idAsignatura, $idPeriodo, 'Interno');
+            foreach ($trabajados_normal as $key => $trabajado) {
+                $objetivo->puntajes_indicadores += $trabajado->puntajes_indicadores;
+            }
+
+            array_push($objetivos, $objetivo);
+        }
+
         return $objetivos;
     }
 
-     /**
+    /**
+     * Obtiene objetivos por asignatura con
+     * * $idAsignatura
+     * @return \Illuminate\Http\Response
+     */
+    public function getObjetivos(Request $request)
+    {
+        $user = $request->user();
+        $objetivos = Objetivo::getObjetivosMinisterio();
+        $objetivos_personalizados = ObjetivoPersonalizado::getObjetivosPersonalizados($user->idEstablecimientoActivo);
+        foreach ($objetivos_personalizados as $key => $objetivo) {
+            array_push($objetivos, $objetivo);
+        }
+        return $objetivos;
+    }
+
+    /**
      * Obtiene objetivos por asignatura con
      * * $idAsignatura
      * @return \Illuminate\Http\Response
@@ -41,26 +74,6 @@ class ObjetivoController extends Controller
     public function getObjetivosBetwen($idCursoInicio, $idCursoFin)
     {
         return Objetivo::getObjetivosBetwen($idCursoInicio, $idCursoFin);
-    }
-
-    /**
-     * Obtiene objetivos por asignatura con
-     * * $idAsignatura
-     * @return \Illuminate\Http\Response
-     */
-    public function getObjetivosMinisterio()
-    {
-        return Objetivo::getObjetivosMinisterio();
-    }
-
-    /**
-     * Obtiene objetivos por asignatura con
-     * * $idAsignatura
-     * @return \Illuminate\Http\Response
-     */
-    public function getObjetivosEstablecimiento($id_establecimiento)
-    {
-        return ObjetivoPersonalizado::getObjetivosEstablecimiento($id_establecimiento);
     }
 
     /**
@@ -73,7 +86,7 @@ class ObjetivoController extends Controller
     {
         try {
             DB::transaction(function () use ($request) {
-                ObjetivoPersonalizado::Create([
+                $objetivo_personalizado = ObjetivoPersonalizado::Create([
                     'nombre'            => $request['nombre'],
                     'abreviatura'       => $request['abreviatura'],
                     'priorizacion'      => $request['priorizacion'],
@@ -81,6 +94,14 @@ class ObjetivoController extends Controller
                     'idEstablecimiento' => $request['idEstablecimiento'],
                     'estado'            => $request['estado'],
                 ]);
+
+                foreach ($request['indicadores'] as $key => $indicador) {
+                    IndicadoresPersonalizados::Create([
+                        'nombre'     => $indicador['nombre'],
+                        'idObjetivo' => $objetivo_personalizado->id,
+                        'estado'     => 'Activo',
+                    ]);
+                }
 
                 return response(null, 200);
             });
@@ -109,6 +130,37 @@ class ObjetivoController extends Controller
             $objetivo_personalizado->idEstablecimiento = $request['idEstablecimiento'];
             $objetivo_personalizado->estado = $request['estado'];
             $objetivo_personalizado->save();
+
+            $indicadores = IndicadoresPersonalizados::select('id as idIndicador', 'nombre')
+                                        ->where('idObjetivo',$id)->get();
+            // Pasa a array el get
+            $indicadores_eliminar = Array();
+            foreach ($indicadores as $key => $indicador) {
+                array_push($indicadores_eliminar, $indicador->idIndicador);
+            }
+
+            foreach ($request['indicadores'] as $key => $indicador) {
+                if (isset($indicador['idIndicador'])) {
+                    $indicador_personalizado = IndicadoresPersonalizados::findOrFail($indicador['idIndicador']);
+                    $indicador_personalizado->nombre = $indicador['nombre'];
+                    $indicador_personalizado->save();
+                    if (($key = array_search($indicador['idIndicador'], $indicadores_eliminar)) !== false) {
+                        unset($indicadores_eliminar[$key]);
+                    }
+                } else {
+                    IndicadoresPersonalizados::Create([
+                        'nombre'     => $indicador['nombre'],
+                        'idObjetivo' => $id,
+                        'estado'     => 'Activo',
+                    ]);
+                }
+            }
+
+            foreach ($indicadores_eliminar as $key => $idIndicador) {
+                $indicador_eliminar = IndicadoresPersonalizados::findOrFail($idIndicador);
+                $indicador_eliminar->estado = 'Inactivo';
+                $indicador_eliminar->save();
+            }
 
             return response('success', 200);
         } catch (\Throwable $th) {
@@ -182,7 +234,25 @@ class ObjetivoController extends Controller
         }
     }
 
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updatePriorizacionInterna(Request $request, $id)
+    {
+        try {
 
+            $objetivo = Objetivo::findOrFail($id);
 
+            $objetivo->priorizacionInterna = $request['priorizacionInterna'];
+            $objetivo->save();
 
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
 }

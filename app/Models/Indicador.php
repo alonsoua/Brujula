@@ -22,6 +22,7 @@ class Indicador extends Model
         'estado',
     ];
 
+
     public static function getIndicadoresObjetivo($idObjetivo) {
         $sql = 'SELECT
                     ind.id

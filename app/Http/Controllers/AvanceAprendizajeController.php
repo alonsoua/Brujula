@@ -50,8 +50,9 @@ class AvanceAprendizajeController extends Controller
      * * $idEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    public function getCursoEstablecimientoActivo($idEstablecimiento) {
-        return UsuarioAsignatura::getCursoEstablecimientoActivo($idEstablecimiento);
+    public function getCursoEstablecimientoActivo(Request $request, $idEstablecimiento) {
+        $establecimiento = Establecimiento::getAllActivos($idEstablecimiento);
+        return UsuarioAsignatura::getCursoEstablecimientoActivo($idEstablecimiento, $establecimiento[0]->idPeriodoActivo);
     }
 
     /**

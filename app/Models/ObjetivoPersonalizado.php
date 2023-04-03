@@ -28,7 +28,37 @@ class ObjetivoPersonalizado extends Model
         'estado',
     ];
 
-    public static function getObjetivosEstablecimiento($id_establecimiento) {
+    public static function getObjetivosActivosAsignatura($idAsignatura, $idEstablecimiento) {
+
+        $sql = 'SELECT
+                    ob.id
+                    , ob.nombre as nombreObjetivo
+                    , ej.nombre as nombreEje
+                    -- , un.nombre as nombreUnidad
+                    , ob.abreviatura
+                    , ob.priorizacion as priorizacionInterna
+                    , ob.idEstablecimiento
+                    , ob.estado
+                    , ob.idEje
+                -- FROM unidades as un
+                -- FROM objetivos as ob
+                -- LEFT JOIN unidades as un
+                --     ON ob.idUnidad = un.id
+                FROM ejes as ej
+                LEFT JOIN objetivos_personalizados as ob
+                    ON ob.idEje = ej.id
+                WHERE
+                    -- un.idAsignatura = '.$idAsignatura.'
+                    ej.idAsignatura = '.$idAsignatura.'
+                    AND ob.idEstablecimiento = '.$idEstablecimiento.'
+                    AND ob.estado = "Activo"
+                Order By ob.abreviatura';
+
+        return DB::select($sql, []);
+
+    }
+
+    public static function getObjetivosPersonalizados($id_establecimiento) {
         $sql = 'SELECT
                 o.id
                 , te.id as idNivel
@@ -40,7 +70,7 @@ class ObjetivoPersonalizado extends Model
                 , g.id as idGrado
                 , g.nombre as nombreCurso
                 , o.abreviatura
-                , o.priorizacion as priorizacionEstablecimiento
+                , o.priorizacion as priorizacionInterna
                 , o.idEstablecimiento
                 , o.estado -- autorización
                 -- , o.priorizaciónInterna -- autorización
