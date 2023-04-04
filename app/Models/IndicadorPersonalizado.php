@@ -31,6 +31,7 @@ class IndicadorPersonalizado extends Model
         'idObjetivo',
         'idPeriodo',
         'idCurso',
+        'tipo_objetivo',
         'estado',
         'idUsuario_created',
         'idUsuario_updated',
@@ -38,7 +39,7 @@ class IndicadorPersonalizado extends Model
         'updated_at',
     ];
 
-    public static function getIndicadorPersonalizados($idObjetivo ,$idPeriodo, $idCurso) {
+    public static function getIndicadorPersonalizados($idObjetivo ,$idPeriodo, $idCurso, $tipo) {
 
         return IndicadorPersonalizado::selectRaw('
               indicador_personalizados.id
@@ -68,12 +69,13 @@ class IndicadorPersonalizado extends Model
         ->where('indicador_personalizados.idObjetivo', $idObjetivo)
         ->where('indicador_personalizados.idPeriodo', $idPeriodo)
         ->where('indicador_personalizados.idCurso', $idCurso)
+        ->where('indicador_personalizados.tipo_objetivo', $tipo)
         ->where('indicador_personalizados.estado', '!=', 'Eliminado')
         ->get();
 
     }
 
-    public static function getIndicadorPersonalizadosAprobados($idObjetivo ,$idPeriodo, $idCurso) {
+    public static function getIndicadorPersonalizadosAprobados($idObjetivo ,$idPeriodo, $idCurso, $tipo) {
 
         return IndicadorPersonalizado::selectRaw('
               indicador_personalizados.id
@@ -87,6 +89,7 @@ class IndicadorPersonalizado extends Model
         ->where('indicador_personalizados.idObjetivo', $idObjetivo)
         ->where('indicador_personalizados.idPeriodo', $idPeriodo)
         ->where('indicador_personalizados.idCurso', $idCurso)
+        ->where('indicador_personalizados.tipo_objetivo', $tipo)
         ->where('indicador_personalizados.estado', 'Aprobado')
         ->get();
 

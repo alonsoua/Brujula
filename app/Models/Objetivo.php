@@ -109,7 +109,7 @@ class Objetivo extends Model
     }
 
 
-    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo) {
+    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $tipo) {
         return IndicadorPersonalizado::selectRaw('
                     indicador_personalizados.id,
                     indicador_personalizados.nombre
@@ -121,6 +121,7 @@ class Objetivo extends Model
             ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
         ])
         ->where('indicador_personalizados.idObjetivo', $idObjetivo)
+        ->where('indicador_personalizados.estado', $tipo)
         ->where('indicador_personalizados.estado', 'Aprobado')
         ->get();
     }

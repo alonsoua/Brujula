@@ -29,7 +29,7 @@ class ObjetivoController extends Controller
                 $objetivo->puntajes_indicadores += $trabajado->puntajes_indicadores;
             }
 
-            $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo->id, $idAsignatura, $idPeriodo);
+            $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo->id, $idAsignatura, $idPeriodo, 'Ministerio');
             foreach ($trabajados_personalizado as $key => $trabajado) {
                 $objetivo->puntajes_indicadores_personalizado += $trabajado->puntajes_indicadores;
             }
@@ -42,6 +42,11 @@ class ObjetivoController extends Controller
             $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo->id, $idAsignatura, $idPeriodo, 'Interno');
             foreach ($trabajados_normal as $key => $trabajado) {
                 $objetivo->puntajes_indicadores += $trabajado->puntajes_indicadores;
+            }
+
+            $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo->id, $idAsignatura, $idPeriodo, 'Interno');
+            foreach ($trabajados_personalizado as $key => $trabajado) {
+                $objetivo->puntajes_indicadores_personalizado += $trabajado->puntajes_indicadores;
             }
 
             array_push($objetivos, $objetivo);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PuntajeIndicador;
+use App\Models\Establecimiento;
 use App\Models\NotasConversion;
 use App\Models\Alumno;
 use App\Models\Notas;
@@ -27,8 +28,10 @@ class NotasController extends Controller
         );
     }
 
-    public function calcularNota($idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
+    public function calcularNota(Request $request, $idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
+        $user = $request->user();
+        $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
         $puntajesNormal = PuntajeIndicador::getPuntajesAlumno(
             $idPeriodo,
             $idAlumno,
@@ -61,7 +64,7 @@ class NotasController extends Controller
 
             $cantidadIndicadores = count($puntajes);
             if ($puntajeObtenido > 0) {
-                $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido);
+                $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $establecimiento[0]->idPeriodoActivo, $user->idEstablecimientoActivo);
                 $notaConvertida = $notaConversion[0]->nota;
             } else {
                 $notaConvertida = '2.0';

@@ -26,9 +26,9 @@ class IndicadorPersonalizadoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso)
+    public function getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso, $tipo)
     {
-        return IndicadorPersonalizado::getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso);
+        return IndicadorPersonalizado::getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso, $tipo);
     }
 
 
@@ -37,24 +37,11 @@ class IndicadorPersonalizadoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso)
+    public function getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso, $tipo)
     {
-        return IndicadorPersonalizado::getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso);
+        return IndicadorPersonalizado::getIndicadorPersonalizados($idObjetivo, $idPeriodo, $idCurso, $tipo);
     }
 
-
-
-
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -70,6 +57,7 @@ class IndicadorPersonalizadoController extends Controller
             'idObjetivo' => 'required',
             'idCurso' => 'required',
             'idPeriodo' => 'required',
+            'tipo_objetivo' => 'required',
             'estado' => 'required',
         ]);
 
@@ -81,6 +69,7 @@ class IndicadorPersonalizadoController extends Controller
                     'idObjetivo' => $request->input('idObjetivo'),
                     'idCurso'  => $request->input('idCurso'),
                     'idPeriodo'  => $request->input('idPeriodo'),
+                    'tipo_objetivo'  => $request->input('tipo_objetivo'),
                     'estado'     => $request->input('estado'),
                     'idUsuario_created'  => $request->input('idUsuario'),
                     'idUsuario_updated'  => $request->input('idUsuario'),

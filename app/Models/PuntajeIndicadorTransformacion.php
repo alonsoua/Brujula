@@ -20,5 +20,15 @@ class PuntajeIndicadorTransformacion extends Model
         'rangoDesde',
         'rangoHasta',
         'nivelLogro',
+        'idPeriodo',
+        'idEstablecimiento',
+        'estado',
     ];
+
+    public static function getPuntajes($idPeriodo, $idEstablecimiento) {
+        return PuntajeIndicadorTransformacion::select('*')
+        ->where('puntajes_indicadores_transformacion.idPeriodo', $idPeriodo)
+        ->where('puntajes_indicadores_transformacion.idEstablecimiento', $idEstablecimiento)
+        ->get();
+    }
 }

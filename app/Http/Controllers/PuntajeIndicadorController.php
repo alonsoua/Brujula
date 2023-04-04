@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PuntajeIndicador;
 use App\Models\PuntajeIndicadorTransformacion;
+use App\Models\Establecimiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,8 @@ class PuntajeIndicadorController extends Controller
      * * $idPeriodo
      * * $idCurso
      * * $idAsignatura
+     * * $idObjetivo
+     * * $tipo
      * @return \Illuminate\Http\Response
      */
     public function getPuntajesIndicadores($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipo)
@@ -31,12 +34,6 @@ class PuntajeIndicadorController extends Controller
         $puntajeIndicador = PuntajeIndicador::getPuntajesIndicadores(
             $idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipo
         );
-        // if ($tipo === 'Ministerio') {
-        // } else if ($tipo === 'Interno') {
-        //     $puntajeIndicador = PuntajeIndicador::getPuntajesIndicadoresInternos(
-        //         $idPeriodo, $idCurso, $idAsignatura, $idObjetivo
-        //     );
-        // }
         return $puntajeIndicador;
     }
 
@@ -45,20 +42,11 @@ class PuntajeIndicadorController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getPuntajesIndicadoresTransformacion()
+    public function getPuntajesIndicadoresTransformacion(Request $request)
     {
-        return PuntajeIndicadorTransformacion::all();
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
+        $user = $request->user();
+        $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+        return PuntajeIndicadorTransformacion::getPuntajes($establecimiento[0]->idPeriodoActivo, $user->idEstablecimientoActivo);
     }
 
     /**
@@ -80,7 +68,6 @@ class PuntajeIndicadorController extends Controller
             $request->input('tipoIndicador'),
         );
 
-        // $id = $request;
         $user = $request->user();
         if (is_null($request->input('puntaje'))) {
             try {

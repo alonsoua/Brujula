@@ -19,12 +19,17 @@ class NotasConversion extends Model
         'cantidadIndicadores',
         'puntajeObtenido',
         'nota',
+        'idPeriodo',
+        'idEstablecimiento',
+        'estado',
     ];
 
-    public static function getNotasConversion($cantidadIndicadores, $puntajeObtenido) {
+    public static function getNotasConversion($cantidadIndicadores, $puntajeObtenido, $idPeriodo, $idEstablecimiento) {
         return NotasConversion::select('nota')
             ->where('cantidadIndicadores', $cantidadIndicadores)
             ->where('puntajeObtenido', $puntajeObtenido)
+            ->where('idPeriodo', $idPeriodo)
+            ->where('idEstablecimiento', $idEstablecimiento)
             ->get();
     }
 }

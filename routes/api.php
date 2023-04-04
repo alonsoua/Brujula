@@ -212,10 +212,10 @@ Route::put('/establecimientos/periodoActivo/{id}',
 
 // * Indicador Personalizado
 Route::get('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'index']);
-Route::get('/indicador/personalizado/aprobados/{idObjetivo}/{periodoActual}/{idCurso}',
+Route::get('/indicador/personalizado/aprobados/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizadosAprobados']
 );
-Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}',
+Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizados']
 );
 Route::post('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'store']);

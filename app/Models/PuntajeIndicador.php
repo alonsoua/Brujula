@@ -51,6 +51,7 @@ class PuntajeIndicador extends Model
                 , 'puntajes_indicadores.updated_at'
                 , 'indicadores.idObjetivo as idObjetivoIndicador'
                 , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
+                , 'indicador_personalizados.tipo_objetivo'
             )
             ->leftJoin("indicadores",
                 "puntajes_indicadores.idIndicador", "=", "indicadores.id"
@@ -64,6 +65,7 @@ class PuntajeIndicador extends Model
             ->where('puntajes_indicadores.tipoIndicador', 'Normal')
             ->where('puntajes_indicadores.estado', 'Activo')
             ->where('indicadores.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.tipo_objetivo', 'Ministerio')
             ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
             ->orWhere('indicador_personalizados.estado', 'Aprobado')
             ->get();
@@ -82,6 +84,7 @@ class PuntajeIndicador extends Model
                 , 'puntajes_indicadores.updated_at'
                 , 'indicadores_personalizados.idObjetivo as idObjetivoIndicador'
                 , 'indicador_personalizados.idObjetivo as idObjetivoIndicadorPersonalizado'
+                , 'indicador_personalizados.tipo_objetivo'
             )
             ->leftJoin("indicadores_personalizados",
                 "puntajes_indicadores.idIndicador", "=", "indicadores_personalizados.id"
@@ -95,6 +98,7 @@ class PuntajeIndicador extends Model
             ->where('puntajes_indicadores.tipoIndicador', 'Interno')
             ->where('puntajes_indicadores.estado', 'Activo')
             ->where('indicadores_personalizados.idObjetivo', $idObjetivo)
+            ->orWhere('indicador_personalizados.tipo_objetivo', 'Interno')
             ->orWhere('indicador_personalizados.idObjetivo', $idObjetivo)
             ->orWhere('indicador_personalizados.estado', 'Aprobado')
             ->get();
