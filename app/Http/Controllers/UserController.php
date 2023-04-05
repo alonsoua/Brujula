@@ -85,8 +85,13 @@ class UserController extends Controller
             $id,
             $idEstablecimiento
         );
-
-        $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
+        $user = $request->user();
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo);
         return response($asignaturas, 200);
     }
 

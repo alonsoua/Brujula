@@ -89,6 +89,8 @@ Route::group([
 *});
 */
 
+Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
+
 /* Funcion para subir relaciones entre
 * Asignaturas
 * Unidades
@@ -232,6 +234,10 @@ Route::get(
 );
 Route::post('/cursos', [CursoController::class, 'store']);
 Route::put('/cursos/{id}', [CursoController::class, 'update']);
+
+Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
+
+
 
 // * AvanceAprendizaje
 // Docentes

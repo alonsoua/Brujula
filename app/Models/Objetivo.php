@@ -121,7 +121,7 @@ class Objetivo extends Model
             ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
         ])
         ->where('indicador_personalizados.idObjetivo', $idObjetivo)
-        ->where('indicador_personalizados.estado', $tipo)
+        ->where('indicador_personalizados.tipo_objetivo', $tipo)
         ->where('indicador_personalizados.estado', 'Aprobado')
         ->get();
     }

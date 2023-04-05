@@ -6,6 +6,7 @@ use App\Models\Alumno;
 use App\Models\DiagnosticoPie;
 use App\Models\Prioritario;
 use App\Models\Establecimiento;
+use App\Models\Curso;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -202,6 +203,167 @@ class AlumnoController extends Controller
         } catch (\Throwable $th) {
             return response($th, 500);
         }
+    }
+
+    /**
+     * Import Alumnos en excel.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function importAlumnos()
+    {
+        $sql = 'SELECT * FROM IMPORT_ALUMNOS';
+        $alumnos_nuevos = DB::select($sql, []);
+        // return response($alumnos_nuevos, 200);
+
+        $nombre_curso = null;
+        $letra_curso = null;
+        $num_lista = 1;
+        foreach ($alumnos_nuevos as $key => $nuevo) {
+            $rut = $nuevo->rut.''.$nuevo->dv;
+            $alumno_encontrado = Alumno::select('*')
+                ->where('rut', '=', $rut)
+                ->first();
+            if ($nuevo->nombre_grado === $nombre_curso && $nuevo->letra_curso === $letra_curso) {
+                $num_lista++;
+            } else {
+                $nombre_curso = $nuevo->nombre_grado;
+                $letra_curso = $nuevo->letra_curso;
+                $num_lista = 1;
+            }
+
+            $idEstablecimiento = 2;
+            $idPeriodo = 4;
+            $tipo_ensenanza = $nuevo->tipo_ensenanza;
+            $cod_grado = $nuevo->cod_grado;
+            $letra_curso = $nuevo->letra_curso;
+            $curso = Curso::getCursosAlumno($idPeriodo, $idEstablecimiento, $cod_grado, $tipo_ensenanza, $letra_curso);
+
+            if ($alumno_encontrado) {
+                $fechaInscripcion = $nuevo->fecha_incorporacion;
+                $numMatricula = null;
+                $rut = $nuevo->rut.''.$nuevo->dv;
+                $tipoDocumento = substr($rut, 0, 3) === '100' ? 'IPE' : 'RUT';
+                $nombres = $nuevo->nombres;
+                $primerApellido = $nuevo->primer_apellido;
+                $segundoApellido = $nuevo->segundo_apellido;
+                $correo = $nuevo->email;
+
+                if ($nuevo->genero === 'M') {
+                    $genero = 'Masculino';
+                }
+                else if ($nuevo->genero === 'F') {
+                    $genero = 'Femenino';
+                } else {
+                    $genero = 'Otro';
+                }
+
+                $fechaNacimiento = $nuevo->fecha_nacimiento;
+
+                $numLista = $num_lista;
+                $estado = 'Activo';
+                $idCurso = $curso->id;
+                $idEstablecimiento = $idEstablecimiento;
+
+                $alumno = Alumno::findOrFail($alumno_encontrado->id);
+                $alumno->fechaInscripcion = $fechaInscripcion;
+                $alumno->numMatricula    = $numMatricula;
+                $alumno->tipoDocumento   = $tipoDocumento;
+                $alumno->nombres         = $nombres;
+                $alumno->primerApellido  = $primerApellido;
+                $alumno->segundoApellido = $segundoApellido;
+                $alumno->correo          = $correo;
+                $alumno->genero          = $genero;
+                $alumno->fechaNacimiento = $fechaNacimiento;
+                $alumno->numLista        = $numLista;
+                $alumno->estado          = $estado;
+                $alumno->idCurso         = $idCurso;
+                $alumno->save();
+            } else {
+                // CREAR
+
+
+                $fechaInscripcion = $nuevo->fecha_incorporacion;
+                $numMatricula = null;
+                // Si empieza en 100 es ipe si no es rut
+                $rut = $nuevo->rut.''.$nuevo->dv;
+                $tipoDocumento = substr($rut, 0, 3) === '100' ? 'IPE' : 'RUT';
+                $nombres = $nuevo->nombres;
+                $primerApellido = $nuevo->primer_apellido;
+                $segundoApellido = $nuevo->segundo_apellido;
+                $correo = $nuevo->email;
+
+                // si es M = Masculino, si es F = Femenino
+                // $nuevo->genero
+                if ($nuevo->genero === 'M') {
+                    $genero = 'Masculino';
+                }
+                else if ($nuevo->genero === 'F') {
+                    $genero = 'Femenino';
+                } else {
+                    $genero = 'Otro';
+                }
+
+                $fechaNacimiento = $nuevo->fecha_nacimiento;
+                $paci = null;
+                $pie = null;
+
+                $numLista = $num_lista;
+                $estado = 'Activo';
+                $idDiagnostico = null;
+                $idPrioritario = null;
+                $idCurso = $curso->id;
+                $idEstablecimiento = $idEstablecimiento;
+
+                $alumno = new Alumno();
+                $alumno->fechaInscripcion  = $fechaInscripcion;
+                $alumno->numMatricula      = $numMatricula;
+                $alumno->tipoDocumento     = $tipoDocumento;
+                $alumno->rut               = $rut;
+                $alumno->nombres           = $nombres;
+                $alumno->primerApellido    = $primerApellido;
+                $alumno->segundoApellido   = $segundoApellido;
+                $alumno->correo            = $correo;
+                $alumno->genero            = $genero;
+                $alumno->fechaNacimiento   = $fechaNacimiento;
+                $alumno->paci              = $paci;
+                $alumno->pie               = $pie;
+                $alumno->numLista          = $numLista;
+                $alumno->estado            = $estado;
+                $alumno->idDiagnostico     = $idDiagnostico;
+                $alumno->idPrioritario     = $idPrioritario;
+                $alumno->idCurso           = $idCurso;
+                $alumno->idEstablecimiento = $idEstablecimiento;
+                $alumno->save();
+            }
+        }
+        return response(1111, 200);
+
+
+
+        // * ------------------------------------------------------
+        // foreach ($alumnos_actuales as $key => $actual) {
+        //     $rut = substr($actual->rut, 0, -1);
+        //     $sql = 'SELECT * FROM IMPORT_ALUMNOS WHERE rut='. $rut ;
+        //     $alumno_encontrado = DB::select($sql, []);
+        //     if (!$alumno_encontrado) {
+        //         $alumno_retirar = Alumno::findOrFail($actual->id);
+        //         $alumno_retirar->estado = 'Retirado';
+        //         $alumno_retirar->save();
+        //     }
+        // }
+        // * ------------------------------------------------------
+        // $sql = 'SELECT * FROM alumnos';
+        // $alumnos = DB::select($sql, []);
+        // foreach ($alumnos as $key => $alumno) {
+        //     if (strlen($alumno->rut) > 10) {
+        //         var_dump('<pre>');
+        //         var_dump('- rut: ', $alumno->rut);
+        //         var_dump('</pre>');
+        //     }
+        // }
+        // * ------------------------------------------------------
     }
 
     /**

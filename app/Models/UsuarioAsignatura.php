@@ -80,7 +80,7 @@ class UsuarioAsignatura extends Model
             ->get();
     }
 
-    public static function getAsignaturaActiva($idUsuarioEstablecimiento) {
+    public static function getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo) {
         return UsuarioAsignatura::select(
                 'asignaturas.id'
                 , 'asignaturas.nombre'
@@ -97,6 +97,7 @@ class UsuarioAsignatura extends Model
             ->where('usuario_asignaturas.idUsuarioEstablecimiento', $idUsuarioEstablecimiento)
             ->where('cursos.estado', 'Activo')
             ->where('asignaturas.estado', 'Activo')
+            ->where('cursos.idPeriodo', $idPeriodo)
             ->orderBy('asignaturas.id')
             ->distinct()
             ->get();

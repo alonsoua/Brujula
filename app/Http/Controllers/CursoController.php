@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Curso;
 use App\Models\Establecimiento;
+use App\Models\alumno;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -35,7 +36,12 @@ class CursoController extends Controller
     public function getActivos(Request $request)
     {
         $user = $request->user();
-        return Curso::getAllEstado($user->idEstablecimientoActivo, 'Activo');
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        return Curso::getAllEstado($user->idEstablecimientoActivo, 'Activo', $idPeriodo);
     }
 
     /**
@@ -150,13 +156,27 @@ class CursoController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Update the specified resource in storage.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function ordenarLista(Request $request, $idCurso)
     {
-        //
+        try {
+
+            foreach ($request->input('lista') as $key => $lista_alumno) {
+                $alumno = Alumno::findOrFail($lista_alumno['id']);
+                $alumno->numLista = $lista_alumno['orden'];
+                $alumno->save();
+            }
+
+            return response('success', 200);
+
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
     }
+
 }

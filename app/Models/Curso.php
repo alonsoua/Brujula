@@ -44,12 +44,12 @@ class Curso extends Model
         if (!is_null($idPeriodo)) {
             $cursos = $cursos ->where('cursos.idPeriodo', $idPeriodo);
         }
-            $cursos = $cursos->orderBy('cursos.id')
+            $cursos = $cursos->orderBy('cursos.idGrado')
             ->get();
         return $cursos;
     }
 
-    public static function getAllEstado($idEstablecimiento, $estado) {
+    public static function getAllEstado($idEstablecimiento, $estado, $idPeriodo) {
         $cursos = Curso::select(
                   'cursos.*'
                 , 'users.nombres as nombreProfesorJefe'
@@ -68,9 +68,25 @@ class Curso extends Model
         if (!is_null($estado)) {
             $cursos = $cursos ->where('cursos.estado', $estado);
         }
-            $cursos = $cursos->orderBy('cursos.id')
+        if (!is_null($idPeriodo)) {
+            $cursos = $cursos ->where('cursos.idPeriodo', $idPeriodo);
+        }
+            $cursos = $cursos->orderBy('cursos.idGrado')
             ->get();
         return $cursos;
     }
 
+    public static function getCursosAlumno($idPeriodo, $idEstablecimiento, $cod_grado, $tipo_ensenanza, $letra_curso) {
+        $cursos = Curso::select('cursos.*')
+            ->leftJoin("grados", "grados.id", "=", "cursos.idGrado")
+            ->where('grados.idGrado', $cod_grado)
+            ->where('grados.idNivel', $tipo_ensenanza)
+            ->where('cursos.letra', $letra_curso)
+            ->where('cursos.idEstablecimiento', $idEstablecimiento)
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('cursos.estado', 'Activo')
+            ->orderBy('cursos.id')
+            ->first();
+        return $cursos;
+    }
 }
