@@ -37,13 +37,14 @@ class Curso extends Model
             ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
             ->leftJoin("periodos", "cursos.idPeriodo", "=", "periodos.id")
             ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id")
-            ->where('cursos.estado', 'Activo');
+            ->where('cursos.estado', 'Activo')
+            ->where('cursos.idPeriodo', $idPeriodo);
         if (!is_null($idEstablecimiento)) {
-            $cursos = $cursos ->where('establecimientos.id', $idEstablecimiento);
+            $cursos = $cursos->where('establecimientos.id', $idEstablecimiento);
         }
-        if (!is_null($idPeriodo)) {
-            $cursos = $cursos ->where('cursos.idPeriodo', $idPeriodo);
-        }
+        // if (!is_null($idPeriodo)) {
+        //     $cursos = $cursos->where('cursos.idPeriodo', $idPeriodo);
+        // }
             $cursos = $cursos->orderBy('cursos.idGrado')
             ->get();
         return $cursos;

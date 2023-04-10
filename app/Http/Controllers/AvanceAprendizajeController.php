@@ -40,9 +40,15 @@ class AvanceAprendizajeController extends Controller
      * * $idUsuarioEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    public function getAsignaturaActiva($idUsuarioEstablecimiento)
+    public function getAsignaturaActiva(Request $request, $idUsuarioEstablecimiento)
     {
-        return UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
+        $user = $request->user();
+        $idPeriodo = $user->idPeriodoActivo;
+        if ($idPeriodo === null) {
+            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+        }
+        return UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo);
     }
 
     /**

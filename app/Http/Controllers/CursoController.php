@@ -57,6 +57,7 @@ class CursoController extends Controller
             $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
             $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
         }
+
         return Curso::getAll($idEstablecimiento, $idPeriodo);
     }
 
