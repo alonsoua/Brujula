@@ -22,4 +22,14 @@ class Periodo extends Model
         'created_at',
         'updated_at',
     ];
+
+    public static function getPeriodoActual() {
+        $ano_actual = date("Y");
+        $sql = 'SELECT *
+                FROM periodos
+                WHERE nombre = '. $ano_actual;
+
+        return DB::select($sql, []);
+
+    }
 }

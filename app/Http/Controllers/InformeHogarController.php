@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Alumno;
+use App\Models\Periodo;
 use App\Models\Asignatura;
 use App\Models\Notas;
 use App\Traits\InformeHogarPDFTrait;
@@ -36,9 +37,17 @@ class InformeHogarController extends Controller
 
         $alumno = Alumno::getAlumno($idAlumno);
         $establecimiento = Alumno::getAlumnoEstablecimiento($idAlumno);
-        $curso = Alumno::getAlumnoCurso($idPeriodo, $idAlumno);
+
+        // * $idPeriodo por el momento no se utiliza
+        // Para hacer últmos cambios que nos pidieron, es más rápido consultar
+        // el periodo actual de esta forma en un futuro la idea es que esta info
+        // venga desde el front
+        $id_periodo_actual = Periodo::getPeriodoActual();
+
+        $curso = Alumno::getAlumnoCurso($id_periodo_actual[0]->id, $idAlumno);
         $asignaturas = Asignatura::getAllGrado($curso[0]['idTablaGrados']);
-        $notas = Notas::getNotasAlumno($idPeriodo, $curso[0]['idCurso'], $idAlumno);
+
+        $notas = Notas::getNotasAlumno($id_periodo_actual[0]->id, $curso[0]['idCurso'], $idAlumno);
 
         //  = Alumno::getAlumnoCurso($idPeriodo, $idAlumno);
         // $notas = Alumno::getAlumnoCurso($idPeriodo, $idAlumno);
@@ -55,6 +64,7 @@ class InformeHogarController extends Controller
                 'asignaturas' => $asignaturas,
                 'notas' => $notas,
             ));
+
             $html = $this->downloadPDFEscuelaFrancia($data[0]);
         }
 
@@ -87,6 +97,7 @@ class InformeHogarController extends Controller
 
         // return $data;
         $style = $this->style();
+
 
         $htmlEncabezado = $this->encabezado(
             $data['establecimiento']

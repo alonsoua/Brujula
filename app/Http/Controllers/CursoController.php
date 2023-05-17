@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Curso;
 use App\Models\Establecimiento;
-use App\Models\alumno;
+use App\Models\Alumno;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;

@@ -271,22 +271,25 @@ trait InformeHogarPDFTrait {
         // Para saber cuantas columnas van sin notas.
         $columnasNotas = 0;
         foreach($asignaturas as $key => $asignatura) {
-          $numNotas = 0;
-          foreach($notas as $key2 => $nota) {
-            $numNotas = $asignatura['id'] === $nota['idAsignatura']
-              ? $numNotas + 1
-              : $numNotas;
+
+          if ($asignatura['nombreAsignatura'] !== 'Orientación') {
+            $numNotas = 0;
+            foreach($notas as $key2 => $nota) {
+              $numNotas = $asignatura['id'] === $nota['idAsignatura']
+                ? $numNotas + 1
+                : $numNotas;
+            }
+            $columnasNotas = $numNotas > $columnasNotas
+              ? $numNotas
+              : $columnasNotas;
           }
-          $columnasNotas = $numNotas > $columnasNotas
-            ? $numNotas
-            : $columnasNotas;
         }
 
         $htmlHeadNotas = '
             <tr>
                 <th class="text-center">ASIGNATURA</th>
                 <th class="text-center" colspan="'.$columnasNotas.'">NIVEL DE LOGRO</th>
-                <th class="colDescripcion" colspan="2">Promedio Final</th>
+                <th class="colDescripcion" colspan="1">PROMEDIO</th>
             </tr>
         ';
 
@@ -296,74 +299,77 @@ trait InformeHogarPDFTrait {
         $promedioFinalCount = 0;
         foreach($asignaturas as $key => $asignatura) {
 
-          $htmlBodyNotas .= '
-            <tr>
-              <td class="text-center" style="margin: 200px! important;">
-                '. $asignatura['nombreAsignatura'] .'
-              </td>
-          ';
+          if ($asignatura['nombreAsignatura'] !== 'Orientación') {
 
-          // Columnas con NOTAS
-          $numNotas = 0;
-          $sumaNotas = 0;
-          $divisorNotas = 0;
-          foreach($notas as $key2 => $nota) {
-            if ($asignatura['id'] === $nota['idAsignatura']) {
-              $numNotas = $numNotas + 1;
-              $sumaNotas = $sumaNotas + $nota['nota'];
-              $divisorNotas = $divisorNotas + 1;
-              $nivelLogro = $this->conversionNota($nota['nota']);
-              $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 100px! important;">
-                      '. $nivelLogro .'
-                  </td>
-              ';
-            }
-          }
-
-          // Columnas sin NOTAS
-          if ($columnasNotas > $numNotas) {
-            $columnasVacias = $columnasNotas - $numNotas;
-
-            for ($i=0; $i < $columnasVacias; $i++) {
-              $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 100px! important;">
-                      -
-                  </td>
-              ';
-            }
-          } else if ($columnasNotas == 0 && $numNotas == 0) {
             $htmlBodyNotas .= '
-                  <td class="text-center td-notas" style="margin: 100px! important;">
-                      -
-                  </td>
-              ';
+              <tr>
+                <td class="text-center" style="margin: 200px! important;">
+                  '. $asignatura['nombreAsignatura'] .'
+                </td>
+            ';
+
+            // Columnas con NOTAS
+            $numNotas = 0;
+            $sumaNotas = 0;
+            $divisorNotas = 0;
+            foreach($notas as $key2 => $nota) {
+              if ($asignatura['id'] === $nota['idAsignatura']) {
+                $numNotas = $numNotas + 1;
+                $sumaNotas = $sumaNotas + $nota['nota'];
+                $divisorNotas = $divisorNotas + 1;
+                $nivelLogro = $this->conversionNota($nota['nota']);
+                $htmlBodyNotas .= '
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        '. $nivelLogro .'
+                    </td>
+                ';
+              }
+            }
+
+            // Columnas sin NOTAS
+            if ($columnasNotas > $numNotas) {
+              $columnasVacias = $columnasNotas - $numNotas;
+
+              for ($i=0; $i < $columnasVacias; $i++) {
+                $htmlBodyNotas .= '
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        -
+                    </td>
+                ';
+              }
+            } else if ($columnasNotas == 0 && $numNotas == 0) {
+              $htmlBodyNotas .= '
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        -
+                    </td>
+                ';
+            }
+
+            // Promedios y Promedio Final
+            if ($divisorNotas != 0) {
+              $promedio = $sumaNotas / $divisorNotas;
+              $promedio = number_format($promedio, 1, '.', '');
+
+              $promedioFinal += intval(str_replace('.', '', $promedio));
+              $promedioFinalCount += 1;
+
+              $promedioNivelLogro = $this->conversionNota($promedio);
+            } else {
+              $promedio = '-';
+              $promedioNivelLogro = '-';
+            }
+
+            $htmlBodyNotas .= '
+                <td class="text-center td-promedio" style="margin: 300px! important;">
+                  '. $promedioNivelLogro .'
+                </td>
+            ';
+            // <td class="text-center td-promedio" style="margin: 300px! important;">
+            //   '. $promedio .'
+            // </td>
+
+            $htmlBodyNotas .= '</tr>';
           }
-
-          // Promedios y Promedio Final
-          if ($divisorNotas != 0) {
-            $promedio = $sumaNotas / $divisorNotas;
-            $promedio = number_format($promedio, 1, '.', '');
-
-            $promedioFinal += intval(str_replace('.', '', $promedio));
-            $promedioFinalCount += 1;
-
-            $promedioNivelLogro = $this->conversionNota($promedio);
-          } else {
-            $promedio = '-';
-            $promedioNivelLogro = '-';
-          }
-
-          $htmlBodyNotas .= '
-              <td class="text-center td-promedio" style="margin: 300px! important;">
-                '. $promedioNivelLogro .'
-              </td>
-              <td class="text-center td-promedio" style="margin: 300px! important;">
-                '. $promedio .'
-              </td>
-          ';
-
-          $htmlBodyNotas .= '</tr>';
         }
 
         $promedioFinal = $promedioFinal / $promedioFinalCount;
@@ -372,10 +378,11 @@ trait InformeHogarPDFTrait {
         $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
 
         $htmlBodyNotas .= '<tr>
-            <td class="text-right" colspan="'.$columnasNotas + 1 .'"><b>Final:</b></td>
+            <td class="text-right mr-1" colspan="'.$columnasNotas + 1 .'"><b>PROMEDIO GENERAL &nbsp;</b></td>
             <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinalNivelLogro.'</td>
-            <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
-            </tr>';
+          </tr>';
+
+        // <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
 
         return '
           <table class="table-notas">
