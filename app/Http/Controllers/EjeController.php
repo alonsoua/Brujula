@@ -26,7 +26,24 @@ class EjeController extends Controller
      */
     public function getEjesPorAsignatura($idAsignatura)
     {
-        return Eje::getEjesPorAsignatura($idAsignatura);
+        try {
+            $sql_o =
+                'SELECT
+                      ejes.id
+                    , ejes.nombre
+                FROM ejes
+                WHERE
+                    ejes.idAsignatura = '.$idAsignatura.'
+                ';
+
+            $ejes = DB::select($sql_o, []);
+            if ($ejes != null) {
+                return $ejes;
+            }
+            return response()->json(['status' => 'error', 'message' => 'Sin Registros']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -36,7 +53,9 @@ class EjeController extends Controller
      */
     public function getEjesAsignatura($idAsignatura)
     {
-        return Eje::getEjesAsignatura($idAsignatura);
+        return Eje::select('ejes.id', 'ejes.nombre')
+            ->where('ejes.idAsignatura', $idAsignatura)
+            ->get();
     }
 
     /**

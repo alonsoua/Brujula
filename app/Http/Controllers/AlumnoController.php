@@ -36,7 +36,20 @@ class AlumnoController extends Controller
     }
 
     public function getAlumnosCurso($idCurso) {
-        return Alumno::getAlumnosCurso($idCurso);
+        return Alumno::select(
+            'alumnos.*'
+            , 'prioritarios.nombre as nombrePrioritario'
+            , 'diagnosticos_pie.nombre as nombreDiagnostico'
+            , 'diagnosticos_pie.abreviatura as abreviaturaDiagnostico'
+            , 'diagnosticos_pie.tipoNee as tipoNee'
+        )
+        ->leftJoin("prioritarios", "alumnos.idPrioritario", "=", "prioritarios.id")
+        ->leftJoin("diagnosticos_pie", "alumnos.idDiagnostico", "=", "diagnosticos_pie.id")
+        ->where('alumnos.idCurso', $idCurso)
+        ->where('alumnos.estado', 'Activo')
+        ->orderBy('alumnos.numLista')
+        ->get();
+        // return Alumno::getAlumnosCurso($idCurso);
     }
     /**
      * Store a newly created resource in storage.

@@ -28,6 +28,39 @@ class IndicadorPersonalizadoController extends Controller
      */
     public function getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso, $tipo)
     {
+        // return  DB::select(
+        //     'SELECT
+        //         ip.id
+        //         , ip.nombre
+        //         , ip.idUsuario_created
+        //         , ip.idUsuario_updated
+        //         , ip.estado
+        //         , ip.created_at
+        //         , ip.updated_at
+        //     FROM indicador_personalizados as ip
+        //     WHERE
+        //         ip.idObjetivo = ' . $idObjetivo . ' AND
+        //         ip.idPeriodo = ' . $idPeriodo . ' AND
+        //         ip.idCurso = ' . $idCurso . ' AND
+        //         ip.tipo_objetivo = ' . $tipo . ' AND
+        //         ip.estado = "Aprobado"
+        //     '
+        // );
+        // return IndicadorPersonalizado::selectRaw('
+        //         indicador_personalizados.id
+        //     , indicador_personalizados.nombre
+        //     , indicador_personalizados.idUsuario_created
+        //     , indicador_personalizados.idUsuario_updated
+        //     , indicador_personalizados.estado
+        //     , indicador_personalizados.created_at
+        //     , indicador_personalizados.updated_at
+        // ')
+        //     ->where('indicador_personalizados.idObjetivo', $idObjetivo)
+        //     ->where('indicador_personalizados.idPeriodo', $idPeriodo)
+        //     ->where('indicador_personalizados.idCurso', $idCurso)
+        //     ->where('indicador_personalizados.tipo_objetivo', $tipo)
+        //     ->where('indicador_personalizados.estado', 'Aprobado')
+        //     ->get();
         return IndicadorPersonalizado::getIndicadorPersonalizadosAprobados($idObjetivo, $idPeriodo, $idCurso, $tipo);
     }
 
@@ -77,7 +110,6 @@ class IndicadorPersonalizadoController extends Controller
 
                 return response(null, 200);
             });
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -127,7 +159,6 @@ class IndicadorPersonalizadoController extends Controller
             $indicador->save();
 
             return response(null, 200);
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }

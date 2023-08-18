@@ -75,7 +75,7 @@ class Objetivo extends Model
 
     }
 
-    public static function countObjetivosTrabajados($idObjetivo, $idAsignatura, $idPeriodo, $tipoIndicador) {
+    public static function countObjetivosTrabajados($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipoIndicador) {
 
         if ($tipoIndicador === 'Normal') {
             $indicadores = Indicador::selectRaw('
@@ -85,6 +85,7 @@ class Objetivo extends Model
             ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
                 ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores.id')
                 ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+                ->where('puntajes_indicadores.idCurso', $idCurso)
                 ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
                 ->where('puntajes_indicadores.tipoIndicador', 'Normal')
             ])
@@ -98,6 +99,7 @@ class Objetivo extends Model
             ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
                 ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores_personalizados.id')
                 ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+                ->where('puntajes_indicadores.idCurso', $idCurso)
                 ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
                 ->where('puntajes_indicadores.tipoIndicador', 'Interno')
             ])
@@ -109,7 +111,7 @@ class Objetivo extends Model
     }
 
 
-    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $tipo) {
+    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipo) {
         return IndicadorPersonalizado::selectRaw('
                     indicador_personalizados.id,
                     indicador_personalizados.nombre
@@ -117,6 +119,7 @@ class Objetivo extends Model
         ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
             ->whereColumn('puntajes_indicadores.idIndicador', 'indicador_personalizados.id')
             ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+            ->where('puntajes_indicadores.idCurso', $idCurso)
             ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
             ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
         ])

@@ -115,10 +115,12 @@ Route::get(
 );
 
 // * Eje
-Route::get('/ejes/asignatura/{idAsignatura}',
+Route::get(
+    '/ejes/asignatura/{idAsignatura}',
     [EjeController::class, 'getEjesPorAsignatura']
 );
-Route::get('/ejes/asignatura/distinct/{idAsignatura}',
+Route::get(
+    '/ejes/asignatura/distinct/{idAsignatura}',
     [EjeController::class, 'getEjesAsignatura']
 );
 Route::post('/ejes', [EjeController::class, 'store']);
@@ -129,6 +131,10 @@ Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}', [ObjetivoControll
 Route::get('/objetivos/betwen/{idCursoInicio}/{idCursoFin}', [ObjetivoController::class, 'getObjetivosBetwen']);
 Route::put('/objetivos/estado/{id}', [ObjetivoController::class, 'updateEstadoMinisterio']);
 Route::put('/objetivos/priorizacion/interna/{id}', [ObjetivoController::class, 'updatePriorizacionInterna']);
+Route::post('/objetivos/trabajados', [ObjetivoController::class, 'objetivosTrabajados']);
+
+
+
 
 // Route::get('/objetivos/establecimiento/{id}', [ObjetivoController::class, 'getObjetivosEstablecimiento']);
 
@@ -141,11 +147,13 @@ Route::put('/objetivos/personalizados/estado/{id}', [ObjetivoController::class, 
 
 
 // * Indicadores
-Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}',
+Route::get(
+    '/indicadores/objetivo/{idObjetivo}/{tipo}',
     [IndicadorController::class, 'getIndicadoresObjetivo']
 );
 
-Route::get('/indicadores/personalizados/{idObjetivo}',
+Route::get(
+    '/indicadores/personalizados/{idObjetivo}',
     [IndicadorController::class, 'getIndicadoresPersonalizados']
 );
 
@@ -155,23 +163,28 @@ Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
 Route::get('/prioritarios', [PrioritarioController::class, 'index']);
 
 // * NotasConversion
-Route::get('/notasConversion/{cantidadIndicadores}/{puntajeObtenido}',
+Route::get(
+    '/notasConversion/{cantidadIndicadores}/{puntajeObtenido}',
     [NotasConversionController::class, 'getNotasConversion']
 );
 
 // * Notas
-Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
+Route::get(
+    '/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}',
     [NotasController::class, 'getNotasAsignatura']
 );
 
-Route::get('/notas/getAllNotasCurso/{idPeriodo}/{idCurso}',
+Route::get(
+    '/notas/getAllNotasCurso/{idPeriodo}/{idCurso}',
     [NotasController::class, 'getAllNotasCurso']
 );
 
-Route::get('/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
+Route::get(
+    '/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNota']
 );
-Route::get('/notas/calcularNotaCurso/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
+Route::get(
+    '/notas/calcularNotaCurso/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNotaCurso']
 );
 
@@ -196,7 +209,8 @@ Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 Route::get('/alumnos', [AlumnoController::class, 'index']);
 Route::get('/alumnos/periodo', [AlumnoController::class, 'getAlumnosPeriodo']);
 Route::post('/alumnos', [AlumnoController::class, 'store']);
-Route::get('/alumnos/curso/{idCurso}',
+Route::get(
+    '/alumnos/curso/{idCurso}',
     [AlumnoController::class, 'getAlumnosCurso']
 );
 Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
@@ -207,17 +221,20 @@ Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
 Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
 Route::post('/establecimientos', [EstablecimientoController::class, 'store']);
 Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
-Route::put('/establecimientos/periodoActivo/{id}',
+Route::put(
+    '/establecimientos/periodoActivo/{id}',
     [EstablecimientoController::class, 'updatePeriodoActivo']
 );
 // Route::delete('/establecimientos/{id}', [EstablecimientoController::class, 'destroy']);
 
 // * Indicador Personalizado
 Route::get('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'index']);
-Route::get('/indicador/personalizado/aprobados/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
+Route::get(
+    '/indicador/personalizado/aprobados/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizadosAprobados']
 );
-Route::get('/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
+Route::get(
+    '/indicador/personalizado/{idObjetivo}/{periodoActual}/{idCurso}/{tipo}',
     [IndicadorPersonalizadoController::class, 'getIndicadorPersonalizados']
 );
 Route::post('/indicador/personalizado/', [IndicadorPersonalizadoController::class, 'store']);
@@ -273,7 +290,6 @@ Route::put(
     '/puntajes/{idPuntaje}',
     [PuntajeIndicadorController::class, 'update']
 );
-
 
 // * Puntaje Indicador Transformacion
 Route::get(

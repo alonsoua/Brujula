@@ -25,4 +25,20 @@ class NotasConversionController extends Controller
         }
         return $notaConversion;
     }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getPromedio($cantidadIndicadores, $puntajeObtenido, $idEstablecimiento)
+    {
+        if ($cantidadIndicadores > 0) {
+            $establecimiento = Establecimiento::getAll($idEstablecimiento);
+            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $establecimiento[0]->idPeriodoActivo, $idEstablecimiento);
+        } else {
+            $notaConversion = '-';
+        }
+        return $notaConversion;
+    }
 }
