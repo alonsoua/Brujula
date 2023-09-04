@@ -13,15 +13,17 @@ use Illuminate\Support\Facades\DB;
 class NotasController extends Controller
 {
 
-    public function getNotasAsignatura($idPeriodo, $idCurso, $idAsignatura) {
-        return Notas::getNotasAsignatura(
-            $idPeriodo,
-            $idCurso,
-            $idAsignatura,
-        );
+    public function getNotasAsignatura($idPeriodo, $idCurso, $idAsignatura)
+    {
+        return Notas::select('*')
+            ->where('idPeriodo', $idPeriodo)
+            ->where('idCurso', $idCurso)
+            ->where('idAsignatura', $idAsignatura)
+            ->get();
     }
 
-    public function getAllNotasCurso($idPeriodo, $idCurso) {
+    public function getAllNotasCurso($idPeriodo, $idCurso)
+    {
         return Notas::getAllNotasCurso(
             $idPeriodo,
             $idCurso,
@@ -89,8 +91,6 @@ class NotasController extends Controller
                 $store = $this->store($data);
                 return $store;
             }
-
-
         } else {
             // si existe nota, la elimina
             // si no existe nota no hace nada
@@ -99,7 +99,6 @@ class NotasController extends Controller
                 return $destroy;
             }
         }
-
     }
 
     public function calcularNotaCurso($idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
@@ -125,14 +124,12 @@ class NotasController extends Controller
                     'nota'        => floatval($data['nota']),
                     'idAlumno'    => $data['idAlumno'],
                     'idCurso'     => $data['idCurso'],
-                    'idAsignatura'=> $data['idAsignatura'],
+                    'idAsignatura' => $data['idAsignatura'],
                     'idPeriodo'   => $data['idPeriodo'],
                     'idObjetivo'  => $data['idObjetivo'],
                 ]);
-
-                return response(null, 200);
             });
-
+            return response()->json(['status' => 'success', 'message' => 'Nota Creada']);
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -153,10 +150,47 @@ class NotasController extends Controller
             $nota->nota = $data['nota'];
             $nota->save();
 
-            return response('success', 200);
+            return response()->json(['status' => 'success', 'message' => 'Nota Actualizada']);
         } catch (\Throwable $th) {
             return response($th, 500);
         }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function updateNota(Request $request)
+    {
+        $nota = DB::select(
+            'SELECT
+                n.id
+            FROM notas as n
+            WHERE
+                n.idAlumno = ' . $request['idAlumno'] . ' AND
+                n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+                n.idCurso = ' . $request['idCurso'] . ' AND
+                n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+                n.idObjetivo = ' . $request['idObjetivo'] . '
+            '
+        );
+        if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
+            $response = $this->store($request);
+        } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
+            $data = array(
+                'idNota' => $nota[0]->id,
+                'nota' => $request['nota'],
+            );
+            $response = $this->update($data);
+        } else if ($request['nota'] === 0) { // Eliminar
+            $response = $this->destroy($nota[0]->id);
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'Notas Duplicadas']);
+        }
+
+        return $response;
     }
 
     /**
@@ -170,6 +204,7 @@ class NotasController extends Controller
         try {
             $nota = Notas::findOrFail($id);
             $nota->delete();
+            return response()->json(['status' => 'success', 'message' => 'Nota Eliminada']);
         } catch (\Throwable $th) {
             return response($th, 500);
         }

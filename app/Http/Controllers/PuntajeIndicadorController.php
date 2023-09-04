@@ -189,8 +189,6 @@ class PuntajeIndicadorController extends Controller
         return $alumnosPuntajes;
     }
 
-
-
     /**
      * Obtiene el promedio del alumno
      * * $puntajes
@@ -233,9 +231,6 @@ class PuntajeIndicadorController extends Controller
     public function getPuntajesIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipoIndicador, $idAlumno, $idEstablecimiento)
     {
         $promedio = null;
-        // if ($tipoIndicador === 'Personalizado') {
-        // } else {
-        // }
         $puntajes = array();
         $puntajesIndicador =  DB::select(
             'SELECT

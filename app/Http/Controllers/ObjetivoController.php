@@ -35,7 +35,7 @@ class ObjetivoController extends Controller
             LEFT JOIN objetivos as ob
                 ON ob.idEje = ej.id
             WHERE
-                ej.idAsignatura = '.$idAsignatura.' AND
+                ej.idAsignatura = ' . $idAsignatura . ' AND
                 ob.estado = "Activo"
             Order By ob.abreviatura
             ';
@@ -56,8 +56,69 @@ class ObjetivoController extends Controller
             LEFT JOIN objetivos_personalizados as ob
                 ON ob.idEje = ej.id
             WHERE
-                ej.idAsignatura = '.$idAsignatura.' AND
-                ob.idEstablecimiento = '.$user->idEstablecimientoActivo.' AND
+                ej.idAsignatura = ' . $idAsignatura . ' AND
+                ob.idEstablecimiento = ' . $user->idEstablecimientoActivo . ' AND
+                ob.estado = "Activo"
+            Order By ob.abreviatura
+            ';
+
+        $objetivos_personalizados = DB::select($sql_oobjetivos_personalizados, []);
+
+        foreach ($objetivos as $key => $objetivo) {
+            $objetivo->puntajes_indicadores = 0;
+            $objetivo->puntajes_indicadores_personalizado = 0;
+            $objetivo->tipo = 'Ministerio';
+        }
+        foreach ($objetivos_personalizados as $key => $objetivo_personalizado) {
+            $objetivo_personalizado->puntajes_indicadores = 0;
+            $objetivo_personalizado->puntajes_indicadores_personalizado = 0;
+            $objetivo_personalizado->priorizacion = null;
+            $objetivo_personalizado->tipo = 'Interno';
+            array_push($objetivos, $objetivo_personalizado);
+        }
+
+        return $objetivos;
+    }
+
+    public function getObjetivosActivosAsignaturaEstablecimiento($idEstablecimientoActivo, $idAsignatura)
+    {
+        $sql_oobjetivos =
+            'SELECT
+                ob.id
+                , ob.nombre as nombreObjetivo
+                , ej.nombre as nombreEje
+                , ob.abreviatura
+                , ob.priorizacion
+                , ob.priorizacionInterna
+                , ob.estado
+                , ob.idEje
+            FROM ejes as ej
+            LEFT JOIN objetivos as ob
+                ON ob.idEje = ej.id
+            WHERE
+                ej.idAsignatura = ' . $idAsignatura . ' AND
+                ob.estado = "Activo"
+            Order By ob.abreviatura
+            ';
+
+        $objetivos = DB::select($sql_oobjetivos, []);
+
+        $sql_oobjetivos_personalizados =
+            'SELECT
+                ob.id
+                , ob.nombre as nombreObjetivo
+                , ej.nombre as nombreEje
+                , ob.abreviatura
+                , ob.priorizacion as priorizacionInterna
+                , ob.idEstablecimiento
+                , ob.estado
+                , ob.idEje
+            FROM ejes as ej
+            LEFT JOIN objetivos_personalizados as ob
+                ON ob.idEje = ej.id
+            WHERE
+                ej.idAsignatura = ' . $idAsignatura . ' AND
+                ob.idEstablecimiento = ' . $idEstablecimientoActivo . ' AND
                 ob.estado = "Activo"
             Order By ob.abreviatura
             ';
@@ -86,7 +147,8 @@ class ObjetivoController extends Controller
      * * $tipoObjetivo
      * @return \Illuminate\Http\Response
      */
-    public function objetivosTrabajados(Request $request) {
+    public function objetivosTrabajados(Request $request)
+    {
 
         try {
             $idPeriodo = $request->idPeriodo;
@@ -101,20 +163,20 @@ class ObjetivoController extends Controller
                     $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Normal');
 
                     foreach ($trabajados_normal as $key => $trabajado) {
-                        $objetivo['puntajes_indicadores'] += (Int)$trabajado['puntajes_indicadores'];
+                        $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
                     }
                     $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Ministerio');
                     foreach ($trabajados_personalizado as $key => $trabajado) {
-                        $objetivo['puntajes_indicadores_personalizado'] += (Int)$trabajado['puntajes_indicadores'];
+                        $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
                     }
                 } else if ($objetivo['tipo'] === 'Interno') {
                     $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Normal');
                     foreach ($trabajados_normal as $key => $trabajado) {
-                        $objetivo['puntajes_indicadores'] += (Int)$trabajado['puntajes_indicadores'];
+                        $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
                     }
                     $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Ministerio');
                     foreach ($trabajados_personalizado as $key => $trabajado) {
-                        $objetivo['puntajes_indicadores_personalizado'] += (Int)$trabajado['puntajes_indicadores'];
+                        $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
                     }
                 }
 
@@ -190,7 +252,6 @@ class ObjetivoController extends Controller
 
                 return response(null, 200);
             });
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -217,9 +278,9 @@ class ObjetivoController extends Controller
             $objetivo_personalizado->save();
 
             $indicadores = IndicadoresPersonalizados::select('id as idIndicador', 'nombre')
-                                        ->where('idObjetivo',$id)->get();
+                ->where('idObjetivo', $id)->get();
             // Pasa a array el get
-            $indicadores_eliminar = Array();
+            $indicadores_eliminar = array();
             foreach ($indicadores as $key => $indicador) {
                 array_push($indicadores_eliminar, $indicador->idIndicador);
             }

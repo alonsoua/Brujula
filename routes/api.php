@@ -23,6 +23,8 @@ use App\Http\Controllers\PuntajeIndicadorController;
 use App\Http\Controllers\NotasConversionController;
 use App\Http\Controllers\NotasController;
 use App\Http\Controllers\InformeHogarController;
+use App\Http\Controllers\InformesController;
+
 // use App\Http\Controllers\Auth\SignInController;
 // use App\Http\Controllers\Auth\SignOutController;
 // use App\Http\Controllers\Auth\MeController;
@@ -188,6 +190,13 @@ Route::get(
     [NotasController::class, 'calcularNotaCurso']
 );
 
+Route::post(
+    '/notas/updateNota/',
+    [NotasController::class, 'updateNota']
+);
+
+
+
 // * Roles
 Route::get('/roles', [RolController::class, 'index']);
 
@@ -286,6 +295,12 @@ Route::get(
     [PuntajeIndicadorController::class, 'getPuntajesIndicadores']
 );
 
+
+Route::get(
+    '/puntajes/resumen/{idperiodo}/{idcurso}/{idasignatura}',
+    [PuntajeIndicadorController::class, 'getNotasResumen']
+);
+
 Route::put(
     '/puntajes/{idPuntaje}',
     [PuntajeIndicadorController::class, 'update']
@@ -300,3 +315,12 @@ Route::get(
 // * INFORME HOGAR
 
 Route::get('/informe/hogar/{idPeriodo}/{idAlumno}/{tipo}', [InformeHogarController::class, 'createPDF']);
+
+Route::post(
+    '/informes/resumenAnualPdf',
+    [InformesController::class, 'resumenAnualPdf']
+);
+// Route::get(
+//     '/informes/resumenAnualPdf/{idCurso}/{fields}/{alumnosNotas}/{tipo}',
+//     [InformesController::class, 'resumenAnualPdf']
+//);
