@@ -1,40 +1,46 @@
 <?php
+
 namespace App\Traits;
+
 use Illuminate\Support\Facades\Storage;
 
-trait InformeHogarPDFTrait {
+trait InformeHogarPDFTrait
+{
 
 
-    public function formatCorrelativo($correlativo) {
-        $largoCorrelativo = strlen($correlativo);
+  public function formatCorrelativo($correlativo)
+  {
+    $largoCorrelativo = strlen($correlativo);
 
-        if ( $largoCorrelativo <= 4 ) {
-          $largo = 4 - $largoCorrelativo;
-          for ($i = 0; $i < $largo; $i++) {
-            $correlativo = '0'.$correlativo;
-          }
-        }
-
-        return $correlativo;
+    if ($largoCorrelativo <= 4) {
+      $largo = 4 - $largoCorrelativo;
+      for ($i = 0; $i < $largo; $i++) {
+        $correlativo = '0' . $correlativo;
+      }
     }
 
-    public function formatoPesos($numero) {
-      $numero = '$'.number_format($numero, 0, '', '.');
-      return $numero;
-    }
+    return $correlativo;
+  }
 
-    public function formatoMiles($numero) {
-      $numero = number_format($numero, 0, '', '.');
-      return $numero;
-    }
+  public function formatoPesos($numero)
+  {
+    $numero = '$' . number_format($numero, 0, '', '.');
+    return $numero;
+  }
 
-    /**
-     * Hoja de estilo
-     *
-     */
-    public function style()
-    {
-      return "
+  public function formatoMiles($numero)
+  {
+    $numero = number_format($numero, 0, '', '.');
+    return $numero;
+  }
+
+  /**
+   * Hoja de estilo
+   *
+   */
+  public function style()
+  {
+    return "
           body {
             font-size: 13px;
           }
@@ -90,7 +96,7 @@ trait InformeHogarPDFTrait {
 
           .nivel-logro {
             align: center;
-            margin-top: 30px;
+            margin-top: 50px;
             margin-bottom: 30px;
           }
           .datos-alumno {
@@ -109,6 +115,11 @@ trait InformeHogarPDFTrait {
           .div-footer {
             margin-top: 40px;
           }
+          .div-footerRetirado {
+            margin-top: 10px;
+          }
+
+
 
           .tabla-notas {
             border-collapse: collapse;
@@ -191,31 +202,32 @@ trait InformeHogarPDFTrait {
           }
 
       ";
-    }
+  }
 
-    /**
-     * ENCABEZADO
-     *
-     * @param  int  $correlativo
-     * @param  String  $fecha
-     */
-    public function encabezado($establecimiento) {
+  /**
+   * ENCABEZADO
+   *
+   * @param  int  $correlativo
+   * @param  String  $fecha
+   */
+  public function encabezado($establecimiento)
+  {
 
-      $insignia = '../storage/app/public/insignias_establecimientos/'.$establecimiento['insignia'];
+    $insignia = '../storage/app/public/insignias_establecimientos/' . $establecimiento['insignia'];
 
-      return '
+    return '
         <table class="sin-borde">
           <tbody>
             <tr>
                 <td class="sin-borde header-l">
-                    <img src="'. $insignia .'" alt="Insignia" width="100"/>
+                    <img src="' . $insignia . '" alt="Insignia" width="100"/>
                 </td>
 
                 <td class="sin-borde header-c">
                 </td>
 
                 <td class="sin-borde header-r txt-sm">
-                    <p><i>'. $establecimiento['nombre'] .'</i></p>
+                    <p><i>' . $establecimiento['nombre'] . '</i></p>
                     <p><i>Quintero</i></p>
                     <p><i>"Donde tod@s podemos aprender"</i></p>
                 </td>
@@ -223,198 +235,337 @@ trait InformeHogarPDFTrait {
           </tbody>
         </table>
       ';
-    }
+  }
 
 
-    /**
-     * ALUMNOS
-     *
-     */
-    public function datosAlumno($alumno, $curso) {
+  /**
+   * ALUMNOS
+   *
+   */
+  public function datosAlumno($alumno, $curso)
+  {
 
-      $nombreCompleto    = $alumno['nombres'].' '.$alumno['primerApellido'].' '.$alumno['segundoApellido'];
-      $curso       = $curso['nombre'].' '. $curso['letra'];
-      $semestre = '1er Semestre';
-      $nombreDocente = '';
+    $nombreCompleto    = $alumno['nombres'] . ' ' . $alumno['primerApellido'] . ' ' . $alumno['segundoApellido'];
+    $curso       = $curso['nombre'] . ' ' . $curso['letra'];
+    $semestre = '1er Semestre';
+    $nombreDocente = '';
 
-      $fechaActual = date('d-m-Y');
-      // $fechaActual = !is_null($alumno) ? $alumno->telefono : '';
+    $fechaActual = date('d-m-Y');
+    // $fechaActual = !is_null($alumno) ? $alumno->telefono : '';
 
-      return '
+    return '
         <table class="sin-borde">
           <tbody>
               <tr>
-                  <td class="border-celeste no-b-top no-b-left no-b-right" colspan="2"><b>Nombre Estudiante:</b> '.$nombreCompleto.'</td>
+                  <td class="border-celeste no-b-top no-b-left no-b-right" colspan="2"><b>Nombre Estudiante:</b> ' . $nombreCompleto . '</td>
               </tr>
               <tr>
-                  <td class="border-celeste no-b-left"><b>Curso:</b> '.$curso.'</td>
-                  <td class="border-celeste no-b-bottom no-b-right"><b>Fecha:</b> '.$fechaActual.'</td>
+                  <td class="border-celeste no-b-left"><b>Curso:</b> ' . $curso . '</td>
+                  <td class="border-celeste no-b-bottom no-b-right"><b>Fecha:</b> ' . $fechaActual . '</td>
               </tr>
               <tr>
-                  <td class="border-celeste no-b-bottom no-b-left"><b>Nombre Docente:</b> '.$nombreDocente.'</td>
+                  <td class="border-celeste no-b-bottom no-b-left"><b>Nombre Docente:</b> ' . $nombreDocente . '</td>
                   <td class="border-celeste no-b-bottom no-b-right"><b></b></td>
               </tr>
           </tbody>
       </table>
 
       ';
+  }
+
+  /**
+   * HTML TABLA NOTAS
+   *
+   * @param  Array  $asignaturas
+   * @param  Array  $notas
+   */
+  public function notas($asignaturas, $notas)
+  {
+
+    // Contamos la cantidad de notas por asignatura,
+    // Para saber cuantas columnas van sin notas.
+    $columnasNotas = 0;
+    foreach ($asignaturas as $key => $asignatura) {
+
+      if ($asignatura['nombreAsignatura'] !== 'Orientación') {
+        $numNotas = 0;
+        foreach ($notas as $key2 => $nota) {
+          $numNotas = $asignatura['id'] === $nota['idAsignatura']
+            ? $numNotas + 1
+            : $numNotas;
+        }
+        $columnasNotas = $numNotas > $columnasNotas
+          ? $numNotas
+          : $columnasNotas;
+      }
     }
 
-    /**
-     * PRODUCTOS
-     *
-     * @param  Array  $productos
-     */
-    public function notas($asignaturas, $notas) {
-
-        // Contamos la cantidad de notas por asignatura,
-        // Para saber cuantas columnas van sin notas.
-        $columnasNotas = 0;
-        foreach($asignaturas as $key => $asignatura) {
-
-          if ($asignatura['nombreAsignatura'] !== 'Orientación') {
-            $numNotas = 0;
-            foreach($notas as $key2 => $nota) {
-              $numNotas = $asignatura['id'] === $nota['idAsignatura']
-                ? $numNotas + 1
-                : $numNotas;
-            }
-            $columnasNotas = $numNotas > $columnasNotas
-              ? $numNotas
-              : $columnasNotas;
-          }
-        }
-
-        $htmlHeadNotas = '
+    $htmlHeadNotas = '
             <tr>
                 <th class="text-center">ASIGNATURA</th>
-                <th class="text-center" colspan="'.$columnasNotas.'">NIVEL DE LOGRO</th>
+                <th class="text-center" colspan="' . $columnasNotas . '">NIVEL DE LOGRO</th>
                 <th class="colDescripcion" colspan="1">PROMEDIO</th>
             </tr>
         ';
 
 
-        $htmlBodyNotas = '';
-        $promedioFinal = 0;
-        $promedioFinalCount = 0;
-        foreach($asignaturas as $key => $asignatura) {
+    $htmlBodyNotas = '';
+    $promedioFinal = 0;
+    $promedioFinalCount = 0;
+    foreach ($asignaturas as $key => $asignatura) {
 
-          if ($asignatura['nombreAsignatura'] !== 'Orientación') {
+      if ($asignatura['nombreAsignatura'] !== 'Orientación') {
 
-            $htmlBodyNotas .= '
+        $htmlBodyNotas .= '
               <tr>
                 <td class="text-center" style="margin: 200px! important;">
-                  '. $asignatura['nombreAsignatura'] .'
+                  ' . $asignatura['nombreAsignatura'] . '
                 </td>
             ';
 
-            // Columnas con NOTAS
-            $numNotas = 0;
-            $sumaNotas = 0;
-            $divisorNotas = 0;
-            foreach($notas as $key2 => $nota) {
-              if ($asignatura['id'] === $nota['idAsignatura']) {
-                $numNotas = $numNotas + 1;
-                $sumaNotas = $sumaNotas + $nota['nota'];
-                $divisorNotas = $divisorNotas + 1;
-                $nivelLogro = $this->conversionNota($nota['nota']);
-                $htmlBodyNotas .= '
-                    <td class="text-center td-notas" style="margin: 100px! important;">
-                        '. $nivelLogro .'
-                    </td>
-                ';
-              }
-            }
-
-            // Columnas sin NOTAS
-            if ($columnasNotas > $numNotas) {
-              $columnasVacias = $columnasNotas - $numNotas;
-
-              for ($i=0; $i < $columnasVacias; $i++) {
-                $htmlBodyNotas .= '
-                    <td class="text-center td-notas" style="margin: 100px! important;">
-                        -
-                    </td>
-                ';
-              }
-            } else if ($columnasNotas == 0 && $numNotas == 0) {
-              $htmlBodyNotas .= '
-                    <td class="text-center td-notas" style="margin: 100px! important;">
-                        -
-                    </td>
-                ';
-            }
-
-            // Promedios y Promedio Final
-            if ($divisorNotas != 0) {
-              $promedio = $sumaNotas / $divisorNotas;
-              $promedio = number_format($promedio, 1, '.', '');
-
-              $promedioFinal += intval(str_replace('.', '', $promedio));
-              $promedioFinalCount += 1;
-
-              $promedioNivelLogro = $this->conversionNota($promedio);
-            } else {
-              $promedio = '-';
-              $promedioNivelLogro = '-';
-            }
-
+        // Columnas con NOTAS
+        $numNotas = 0;
+        $sumaNotas = 0;
+        $divisorNotas = 0;
+        foreach ($notas as $key2 => $nota) {
+          if ($asignatura['id'] === $nota['idAsignatura']) {
+            $numNotas = $numNotas + 1;
+            $sumaNotas = $sumaNotas + $nota['nota'];
+            $divisorNotas = $divisorNotas + 1;
+            $nivelLogro = $this->conversionNota($nota['nota']);
             $htmlBodyNotas .= '
-                <td class="text-center td-promedio" style="margin: 300px! important;">
-                  '. $promedioNivelLogro .'
-                </td>
-            ';
-            // <td class="text-center td-promedio" style="margin: 300px! important;">
-            //   '. $promedio .'
-            // </td>
-
-            $htmlBodyNotas .= '</tr>';
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        ' . $nivelLogro . '
+                    </td>
+                ';
           }
         }
 
-        $promedioFinal = $promedioFinal / $promedioFinalCount;
-        $promedioFinal = str_split($promedioFinal, 1);
-        $promedioFinal = $promedioFinal[0].'.'.$promedioFinal[1];
-        $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
+        // Columnas sin NOTAS
+        if ($columnasNotas > $numNotas) {
+          $columnasVacias = $columnasNotas - $numNotas;
 
-        $htmlBodyNotas .= '<tr>
-            <td class="text-right mr-1" colspan="'.$columnasNotas + 1 .'"><b>PROMEDIO GENERAL &nbsp;</b></td>
-            <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinalNivelLogro.'</td>
+          for ($i = 0; $i < $columnasVacias; $i++) {
+            $htmlBodyNotas .= '
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        -
+                    </td>
+                ';
+          }
+        } else if ($columnasNotas == 0 && $numNotas == 0) {
+          $htmlBodyNotas .= '
+                    <td class="text-center td-notas" style="margin: 100px! important;">
+                        -
+                    </td>
+                ';
+        }
+
+        // Promedios y Promedio Final
+        if ($divisorNotas != 0) {
+          $promedio = $sumaNotas / $divisorNotas;
+          $promedio = number_format($promedio, 1, '.', '');
+
+          $promedioFinal += intval(str_replace('.', '', $promedio));
+          $promedioFinalCount += 1;
+
+          $promedioNivelLogro = $this->conversionNota($promedio);
+        } else {
+          $promedio = '-';
+          $promedioNivelLogro = '-';
+        }
+
+        $htmlBodyNotas .= '
+                <td class="text-center td-promedio" style="margin: 300px! important;">
+                  ' . $promedioNivelLogro . '
+                </td>
+            ';
+        // <td class="text-center td-promedio" style="margin: 300px! important;">
+        //   '. $promedio .'
+        // </td>
+
+        $htmlBodyNotas .= '</tr>';
+      }
+    }
+
+    $promedioFinal = $promedioFinal / $promedioFinalCount;
+    $promedioFinal = str_split($promedioFinal, 1);
+    $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
+    $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
+
+    $htmlBodyNotas .= '<tr>
+            <td class="text-right mr-1" colspan="' . $columnasNotas + 1 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
+            <td class="text-center td-promedio" style="margin: 300px! important;">' . $promedioFinalNivelLogro . '</td>
           </tr>';
 
-        // <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
+    // <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
 
-        return '
+    return '
           <table class="table-notas">
               <thead>
-                  '. $htmlHeadNotas .'
+                  ' . $htmlHeadNotas . '
               </thead>
               <tbody>
-                  '. $htmlBodyNotas .'
+                  ' . $htmlBodyNotas . '
               </tbody>
           </table>';
+  }
+
+  /**
+   * HTML TABLA NOTAS
+   *
+   * @param  Array  $asignaturas
+   * @param  Array  $notas
+   */
+  public function notasAlumnoRetirado($asignaturas, $notas)
+  {
+
+    // Contamos la cantidad de notas por asignatura,
+    // Para saber cuantas columnas van sin notas.
+    $columnasNotas = 0;
+    foreach ($asignaturas as $key => $asignatura) {
+
+      if ($asignatura['nombreAsignatura'] !== 'Orientación') {
+        $numNotas = 0;
+        foreach ($notas as $key2 => $nota) {
+          $numNotas = $asignatura['id'] === $nota['idAsignatura']
+            ? $numNotas + 1
+            : $numNotas;
+        }
+        $columnasNotas = $numNotas > $columnasNotas
+          ? $numNotas
+          : $columnasNotas;
+      }
     }
 
-    public function conversionNota($nota) {
+    $htmlHeadNotas = '
+          <tr>
+              <th class="text-center">ASIGNATURA</th>
+              <th class="text-center" colspan="' . $columnasNotas . '">Notas</th>
+              <th class="colDescripcion" colspan="1">PROMEDIO</th>
+          </tr>
+      ';
 
-      if ($nota >= 2.0 && $nota <= 3.9) {
-        $nivelLogro = 'SL';
+
+    $htmlBodyNotas = '';
+    $promedioFinal = 0;
+    $promedioFinalCount = 0;
+    foreach ($asignaturas as $key => $asignatura) {
+
+      if ($asignatura['nombreAsignatura'] !== 'Orientación') {
+
+        $htmlBodyNotas .= '
+            <tr>
+              <td class="text-center" style="margin: 200px! important;">
+                ' . $asignatura['nombreAsignatura'] . '
+              </td>
+          ';
+
+        // Columnas con NOTAS
+        $numNotas = 0;
+        $sumaNotas = 0;
+        $divisorNotas = 0;
+        foreach ($notas as $key2 => $nota) {
+          if ($asignatura['id'] === $nota['idAsignatura']) {
+            $numNotas = $numNotas + 1;
+            $sumaNotas = $sumaNotas + $nota['nota'];
+            $divisorNotas = $divisorNotas + 1;
+            // $nivelLogro = $this->conversionNota($nota['nota']);
+            $htmlBodyNotas .= '
+                  <td class="text-center td-notas" style="margin: 100px! important;">
+                      ' . $nota['nota'] . '
+                  </td>
+              ';
+          }
+        }
+
+        // Columnas sin NOTAS
+        if ($columnasNotas > $numNotas) {
+          $columnasVacias = $columnasNotas - $numNotas;
+
+          for ($i = 0; $i < $columnasVacias; $i++) {
+            $htmlBodyNotas .= '
+                  <td class="text-center td-notas" style="margin: 100px! important;">
+                      -
+                  </td>
+              ';
+          }
+        } else if ($columnasNotas == 0 && $numNotas == 0) {
+          $htmlBodyNotas .= '
+                  <td class="text-center td-notas" style="margin: 100px! important;">
+                      -
+                  </td>
+              ';
+        }
+
+        // Promedios y Promedio Final
+        if ($divisorNotas != 0) {
+          $promedio = $sumaNotas / $divisorNotas;
+          $promedio = number_format($promedio, 1, '.', '');
+
+          $promedioFinal += intval(str_replace('.', '', $promedio));
+          $promedioFinalCount += 1;
+
+          // $promedioNivelLogro = $this->conversionNota($promedio);
+        } else {
+          $promedio = '-';
+          // $promedioNivelLogro = '-';
+        }
+
+        $htmlBodyNotas .= '
+              <td class="text-center td-promedio" style="margin: 300px! important;">
+                ' . $promedio . '
+              </td>
+          ';
+        // <td class="text-center td-promedio" style="margin: 300px! important;">
+        //   '. $promedio .'
+        // </td>
+
+        $htmlBodyNotas .= '</tr>';
       }
-
-      if ($nota >= 4.0 && $nota <= 4.9) {
-        $nivelLogro = 'PL';
-      }
-
-      if ($nota >= 5.0 && $nota <= 5.9) {
-        $nivelLogro = 'ML';
-      }
-
-      if ($nota >= 6.0 && $nota <= 7.0) {
-        $nivelLogro = 'L';
-      }
-
-      return $nivelLogro;
     }
 
+    $promedioFinal = $promedioFinal / $promedioFinalCount;
+    $promedioFinal = str_split($promedioFinal, 1);
+    $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
+    // $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
 
+    $htmlBodyNotas .= '<tr>
+          <td class="text-right mr-1" colspan="' . $columnasNotas + 1 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
+          <td class="text-center td-promedio" style="margin: 300px! important;">' . $promedioFinal . '</td>
+        </tr>';
+
+    // <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
+
+    return '
+        <table class="table-notasRetirado">
+            <thead>
+                ' . $htmlHeadNotas . '
+            </thead>
+            <tbody>
+                ' . $htmlBodyNotas . '
+            </tbody>
+        </table>';
+  }
+
+  public function conversionNota($nota)
+  {
+
+    if ($nota >= 2.0 && $nota <= 3.9) {
+      $nivelLogro = 'SL';
+    }
+
+    if ($nota >= 4.0 && $nota <= 4.9) {
+      $nivelLogro = 'PL';
+    }
+
+    if ($nota >= 5.0 && $nota <= 5.9) {
+      $nivelLogro = 'ML';
+    }
+
+    if ($nota >= 6.0 && $nota <= 7.0) {
+      $nivelLogro = 'L';
+    }
+
+    return $nivelLogro;
+  }
 }

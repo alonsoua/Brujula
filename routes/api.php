@@ -314,7 +314,7 @@ Route::get(
 
 // * INFORME HOGAR
 
-Route::get('/informe/hogar/{idPeriodo}/{idAlumno}/{tipo}', [InformeHogarController::class, 'createPDF']);
+Route::get('/informe/hogar/{idPeriodo}/{idAlumno}/{tipo}/{tipoInforme}', [InformeHogarController::class, 'createPDF']);
 
 Route::post(
     '/informes/resumenAnualPdf',
