@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use App\Models\IndicadoresPersonalizados;
+
 class Objetivo extends Model
 {
     use HasFactory;
@@ -26,7 +27,8 @@ class Objetivo extends Model
         'estado',
     ];
 
-    public static function getObjetivosAsignatura($idAsignatura) {
+    public static function getObjetivosAsignatura($idAsignatura)
+    {
         $sql = 'SELECT
                     ob.id
                     , ob.nombre as nombreObjetivo
@@ -39,14 +41,14 @@ class Objetivo extends Model
                 LEFT JOIN objetivos as ob
                     ON ob.idUnidad = un.id
                 WHERE
-                    un.idAsignatura = '.$idAsignatura.'
+                    un.idAsignatura = ' . $idAsignatura . '
                 Order By ob.abreviatura';
 
         return DB::select($sql, []);
-
     }
 
-    public static function getObjetivosActivosAsignatura($idAsignatura, $idPeriodo) {
+    public static function getObjetivosActivosAsignatura($idAsignatura, $idPeriodo)
+    {
 
         $sql = 'SELECT
                     ob.id
@@ -66,71 +68,78 @@ class Objetivo extends Model
                 LEFT JOIN objetivos as ob
                     ON ob.idEje = ej.id
                 WHERE
-                    -- un.idAsignatura = '.$idAsignatura.'
-                    ej.idAsignatura = '.$idAsignatura.'
+                    -- un.idAsignatura = ' . $idAsignatura . '
+                    ej.idAsignatura = ' . $idAsignatura . '
                     AND ob.estado = "Activo"
                 Order By ob.abreviatura';
 
         return DB::select($sql, []);
-
     }
 
-    public static function countObjetivosTrabajados($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipoIndicador) {
+    public static function countObjetivosTrabajados($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipoIndicador)
+    {
 
         if ($tipoIndicador === 'Normal') {
             $indicadores = Indicador::selectRaw('
                         indicadores.id,
                         indicadores.nombre
             ')
-            ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-                ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores.id')
-                ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-                ->where('puntajes_indicadores.idCurso', $idCurso)
-                ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-                ->where('puntajes_indicadores.tipoIndicador', 'Normal')
-            ])
-            ->where('indicadores.idObjetivo', $idObjetivo)
-            ->get();
+                ->addSelect([
+                    'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
+                        ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores.id')
+                        ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+                        ->where('puntajes_indicadores.idCurso', $idCurso)
+                        ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+                        ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
+                ])
+                ->where('indicadores.idObjetivo', $idObjetivo)
+                ->get();
         } else if ($tipoIndicador === 'Interno') {
             $indicadores = IndicadoresPersonalizados::selectRaw('
                         indicadores_personalizados.id,
                         indicadores_personalizados.nombre
             ')
-            ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-                ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores_personalizados.id')
-                ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-                ->where('puntajes_indicadores.idCurso', $idCurso)
-                ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-                ->where('puntajes_indicadores.tipoIndicador', 'Interno')
-            ])
-            ->where('indicadores_personalizados.idObjetivo', $idObjetivo)
-            ->get();
+                ->addSelect([
+                    'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
+                        ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores_personalizados.id')
+                        ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+                        ->where('puntajes_indicadores.idCurso', $idCurso)
+                        ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+                        ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
+                ])
+                ->where('indicadores_personalizados.idObjetivo', $idObjetivo)
+                ->get();
         }
 
         return $indicadores;
     }
 
 
-    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipo) {
+    public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipo)
+    {
         return IndicadorPersonalizado::selectRaw('
                     indicador_personalizados.id,
                     indicador_personalizados.nombre
         ')
-        ->addSelect(['puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-            ->whereColumn('puntajes_indicadores.idIndicador', 'indicador_personalizados.id')
-            ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-            ->where('puntajes_indicadores.idCurso', $idCurso)
-            ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-            ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
-        ])
-        ->where('indicador_personalizados.idObjetivo', $idObjetivo)
-        ->where('indicador_personalizados.tipo_objetivo', $tipo)
-        ->where('indicador_personalizados.estado', 'Aprobado')
-        ->get();
+            ->addSelect([
+                'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
+                    ->whereColumn('puntajes_indicadores.idIndicador', 'indicador_personalizados.id')
+                    ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
+                    ->where('puntajes_indicadores.idCurso', $idCurso)
+                    ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+                    ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
+            ])
+            ->where('indicador_personalizados.idObjetivo', $idObjetivo)
+            ->where('indicador_personalizados.idCurso', $idCurso)
+            ->where('indicador_personalizados.idPeriodo', $idPeriodo)
+            ->where('indicador_personalizados.tipo_objetivo', $tipo)
+            ->where('indicador_personalizados.estado', 'Aprobado')
+            ->get();
     }
 
-    public static function getObjetivosBetwen($idCursoInicio, $idCursoFin) {
-    $sql = 'SELECT
+    public static function getObjetivosBetwen($idCursoInicio, $idCursoFin)
+    {
+        $sql = 'SELECT
                 o.id
                 , o.nombre as nombreObjetivo
                 , e.nombre as nombreEje
@@ -148,14 +157,15 @@ class Objetivo extends Model
             LEFT JOIN grados as g
                 ON c.idGrado = g.id
             WHERE
-                c.id >= '.$idCursoInicio.' AND
-                c.id <= '.$idCursoFin.'
+                c.id >= ' . $idCursoInicio . ' AND
+                c.id <= ' . $idCursoFin . '
             Order By o.id';
 
-            return DB::select($sql, []);
+        return DB::select($sql, []);
     }
 
-    public static function getObjetivosMinisterio() {
+    public static function getObjetivosMinisterio()
+    {
         $sql = 'SELECT
                 o.id
                 , te.id as idNivel
@@ -183,6 +193,6 @@ class Objetivo extends Model
             Where o.idEje != "null"
             Order By g.id, a.id, e.id, o.abreviatura';
 
-            return DB::select($sql, []);
+        return DB::select($sql, []);
     }
 }

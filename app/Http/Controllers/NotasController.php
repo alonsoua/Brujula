@@ -176,7 +176,7 @@ class NotasController extends Controller
                 n.idObjetivo = ' . $request['idObjetivo'] . '
             '
         );
-        // return $request['nota'];
+
         if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
             $response = $this->store($request);
         } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE

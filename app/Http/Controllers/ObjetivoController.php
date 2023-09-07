@@ -165,21 +165,20 @@ class ObjetivoController extends Controller
                     foreach ($trabajados_normal as $key => $trabajado) {
                         $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
                     }
-                    $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Ministerio');
+                    $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
                     foreach ($trabajados_personalizado as $key => $trabajado) {
                         $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
                     }
                 } else if ($objetivo['tipo'] === 'Interno') {
-                    $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Normal');
+                    $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
                     foreach ($trabajados_normal as $key => $trabajado) {
                         $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
                     }
-                    $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Ministerio');
+                    $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
                     foreach ($trabajados_personalizado as $key => $trabajado) {
                         $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
                     }
                 }
-
                 if ($objetivo['puntajes_indicadores'] !== 0 || $objetivo['puntajes_indicadores_personalizado'] !== 0) {
                     array_push($objetivos_trabajados, array(
                         'id' => $objetivo['id'],
