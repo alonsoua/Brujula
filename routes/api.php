@@ -12,6 +12,7 @@ use App\Http\Controllers\IndicadorPersonalizadoController;
 use App\Http\Controllers\DiagnosticoPieController;
 use App\Http\Controllers\PrioritarioController;
 
+use App\Http\Controllers\DashController;
 use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\CursoController;
@@ -111,6 +112,10 @@ Route::get('/grados', [GradoController::class, 'index']);
 // * Asignatura
 Route::get('/asignaturas', [AsignaturaController::class, 'index']);
 Route::get('/asignaturas/activos', [AsignaturaController::class, 'getActivos']);
+
+Route::get('/asignaturas/getDocentesAsignaturas/{idPeriodo}', [AsignaturaController::class, 'getDocentesAsignaturas']);
+
+
 Route::get(
     '/asignaturas/activos/grado/{idgrado}',
     [AsignaturaController::class, 'getActivosGrado']
@@ -185,6 +190,11 @@ Route::get(
     '/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNota']
 );
+
+Route::get(
+    '/notas/getAll/{idPeriodo}/{idCurso}',
+    [NotasController::class, 'getAll']
+);
 Route::get(
     '/notas/calcularNotaCurso/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}',
     [NotasController::class, 'calcularNotaCurso']
@@ -194,7 +204,6 @@ Route::post(
     '/notas/updateNota/',
     [NotasController::class, 'updateNota']
 );
-
 
 
 // * Roles
@@ -324,3 +333,20 @@ Route::post(
 //     '/informes/resumenAnualPdf/{idCurso}/{fields}/{alumnosNotas}/{tipo}',
 //     [InformesController::class, 'resumenAnualPdf']
 //);
+
+Route::get(
+    '/notas/update/notas',
+    [NotasController::class, 'updateNotasScript']
+);
+
+// * DASH
+
+// ? CONEXIÓN BRÚJULA > LD
+Route::get(
+    '/dash/conexionLd/getLogs/{idPeriodo}',
+    [DashController::class, 'getLdConexions']
+);
+Route::post(
+    '/dash/conexionLd/addLog',
+    [DashController::class, 'addLdConexion']
+);

@@ -56,6 +56,38 @@ class AsignaturaController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getDocentesAsignaturas($idPeriodo)
+    {
+        $asignaturas = Asignatura::select(
+            'asignaturas.id',
+            'asignaturas.nombre as nombreAsignatura',
+            'cursos.id as idCurso',
+            'users.rut as rutDocente',
+            'users.nombres',
+            'users.primerApellido',
+            'users.segundoApellido',
+            'users.email'
+        )
+            ->leftJoin("cursos", "cursos.idGrado", "=", "asignaturas.idGrado")
+            ->leftJoin("usuario_asignaturas", "asignaturas.id", "=", "usuario_asignaturas.idAsignatura")
+            ->leftJoin("usuario_establecimientos", "usuario_asignaturas.idUsuarioEstablecimiento", "=", "usuario_establecimientos.id")
+            ->leftJoin("users", "users.id", "=", "usuario_establecimientos.idUsuario")
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('asignaturas.estado', 'Activo')
+            ->where('cursos.estado', 'Activo')
+            ->where('cursos.estado', 'Activo')
+            ->distinct('asignaturas.id')
+            ->get();
+
+        return $asignaturas;
+    }
+
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
