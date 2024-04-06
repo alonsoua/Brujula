@@ -249,7 +249,7 @@ class NotasController extends Controller
         try {
             $user = $request->user();
             $idEstablecimientoActivo = $user->idEstablecimientoActivo;
-            $idPeriodo = 4;
+            $idPeriodo = null;
             $response = array();
             // foreach ($cursos as $key => $curso) {
             $asignaturas = $this->asignaturaController->getActivosGrado($idGrado);
@@ -399,7 +399,9 @@ class NotasController extends Controller
     public function updateNota(Request $request)
     {
         $tipoObjetivo = $request['idEstablecimiento'] ? 'Interno' : 'Ministerio';
-        return $nota = DB::select(
+        // return $request;
+        // die();
+        $nota = DB::select(
             'SELECT
                 n.id,
                 n.nota,
