@@ -213,7 +213,7 @@ trait InformeHogarPDFTrait
   public function encabezado($establecimiento)
   {
 
-    $insignia = '../storage/app/public/insignias_establecimientos/' . $establecimiento['insignia'];
+    $insignia =  base_path() . '/storage/app/public/insignias_establecimientos/' . $establecimiento['insignia'];
 
     return '
         <table class="sin-borde">
@@ -386,11 +386,16 @@ trait InformeHogarPDFTrait
         $htmlBodyNotas .= '</tr>';
       }
     }
-
-    $promedioFinal = $promedioFinal / $promedioFinalCount;
-    $promedioFinal = str_split($promedioFinal, 1);
-    $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
-    $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
+    if ($promedioFinal !== 0 && $promedioFinalCount !== 0) {
+      $promedioFinal = $promedioFinal / $promedioFinalCount;
+      $promedioFinal = str_split($promedioFinal, 1);
+      $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
+      $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
+    } else {
+      $promedioFinal = '-';
+      $promedioFinalNivelLogro = '-';
+      $columnasNotas = 1;
+    }
 
     $htmlBodyNotas .= '<tr>
             <td class="text-right mr-1" colspan="' . $columnasNotas + 1 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
@@ -524,15 +529,24 @@ trait InformeHogarPDFTrait
       }
     }
 
-    $promedioFinal = $promedioFinal / $promedioFinalCount;
-    $promedioFinal = str_split($promedioFinal, 1);
-    $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
+    if ($promedioFinalCount !== 0) {
+
+      $promedioFinal = $promedioFinal / $promedioFinalCount;
+      $promedioFinal = str_split($promedioFinal, 1);
+      $promedioFinal = $promedioFinal[0] . '.' . $promedioFinal[1];
+      $htmlBodyNotas .= '<tr>
+            <td class="text-right mr-1" colspan="' . $columnasNotas + 1 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
+            <td class="text-center td-promedio" style="margin: 300px! important;">' . $promedioFinal . '</td>
+          </tr>';
+    } else {
+      $promedioFinal = '-';
+      $htmlBodyNotas .= '<tr>
+            <td class="text-right mr-1" colspan="' . $columnasNotas + 2 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
+            <td class="text-center td-promedio" style="margin: 300px! important;">' . $promedioFinal . '</td>
+          </tr>';
+    }
     // $promedioFinalNivelLogro = $this->conversionNota($promedioFinal);
 
-    $htmlBodyNotas .= '<tr>
-          <td class="text-right mr-1" colspan="' . $columnasNotas + 1 . '"><b>PROMEDIO GENERAL &nbsp;</b></td>
-          <td class="text-center td-promedio" style="margin: 300px! important;">' . $promedioFinal . '</td>
-        </tr>';
 
     // <td class="text-center td-promedio" style="margin: 300px! important;">'.$promedioFinal.'</td>
 
@@ -550,7 +564,11 @@ trait InformeHogarPDFTrait
   public function conversionNota($nota)
   {
 
-    if ($nota >= 2.0 && $nota <= 3.9) {
+    if ($nota >= 2.0 && $nota <= 2.9) {
+      $nivelLogro = 'NO';
+    }
+
+    if ($nota >= 3.0 && $nota <= 3.9) {
       $nivelLogro = 'SL';
     }
 
