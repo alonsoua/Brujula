@@ -15,14 +15,14 @@ class AddIdPeriodoToPuntajesIndicadoresTransformacion extends Migration
     {
         Schema::table('puntajes_indicadores_transformacion', function (Blueprint $table) {
             $table->string('idPeriodo')
-                  ->after('nivelLogro')
-                  ->nullable();
+                ->after('nivelLogro')
+                ->nullable();
             $table->string('idEstablecimiento')
-                  ->after('idPeriodo')
-                  ->nullable();
+                ->after('idPeriodo')
+                ->nullable();
             $table->string('estado')
-                    ->after('idEstablecimiento')
-                    ->nullable();
+                ->after('idEstablecimiento')
+                ->nullable();
         });
     }
 
