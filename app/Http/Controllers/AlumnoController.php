@@ -37,6 +37,7 @@ class AlumnoController extends Controller
         }
         $alumnos = Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado',
             'prioritarios.nombre as nombrePrioritario',
             'diagnosticos_pie.nombre as nombreDiagnostico',

@@ -38,6 +38,7 @@ class Alumno extends Model
     {
         $alumnos = Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado',
             'prioritarios.nombre as nombrePrioritario',
             'diagnosticos_pie.nombre as nombreDiagnostico',
@@ -83,6 +84,7 @@ class Alumno extends Model
 
         return Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado',
             'prioritarios.nombre as nombrePrioritario',
             'diagnosticos_pie.nombre as nombreDiagnostico',
@@ -105,6 +107,7 @@ class Alumno extends Model
 
         return Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado'
 
         )
@@ -129,7 +132,7 @@ class Alumno extends Model
     public static function getAlumnoCurso($idPeriodo, $idAlumno)
     {
         return Alumno::select(
-            'cursos.id as idCurso',
+            'alumnos_cursos.idCurso',
             'cursos.*',
             'grados.id as idTablaGrados',
             'grados.*'
