@@ -44,11 +44,33 @@ class NotasController extends Controller
 
     public function getNotasAsignatura($idPeriodo, $idCurso, $idAsignatura)
     {
-        return Notas::select('*')
-            ->where('idPeriodo', $idPeriodo)
-            ->where('idCurso', $idCurso)
-            ->where('idAsignatura', $idAsignatura)
+        $notasObjetivos = Notas::select('notas.*')
+            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
+            ->where('notas.idPeriodo', $idPeriodo)
+            ->where('notas.idCurso', $idCurso)
+            ->where('notas.idAsignatura', $idAsignatura)
+            ->where('notas.tipoObjetivo', 'Ministerio')
+            ->orderBy('objetivos.abreviatura')
             ->get();
+
+        $notasObjetivosPersonalizados = Notas::select('notas.*')
+            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
+            ->where('notas.idPeriodo', $idPeriodo)
+            ->where('notas.idCurso', $idCurso)
+            ->where('notas.idAsignatura', $idAsignatura)
+            ->where('notas.tipoObjetivo', 'Interno')
+            ->orderBy('objetivos_personalizados.abreviatura')
+            ->get();
+
+        $notas = array();
+        foreach ($notasObjetivos as $key => $nota) {
+            array_push($notas, $nota);
+        }
+
+        foreach ($notasObjetivosPersonalizados as $key => $nota) {
+            array_push($notas, $nota);
+        }
+        return $notas;
     }
 
     public function getAllNotasCurso($idPeriodo, $idCurso)
@@ -165,8 +187,8 @@ class NotasController extends Controller
                     'idPeriodo' => $idPeriodo,
                     'idObjetivo' => $idObjetivo,
                 );
-                $store = $this->store($data);
-                return $store;
+                // $store = $this->store($data);
+                return 'store agregar nota';
             }
         } else {
             // si existe nota, la elimina
@@ -178,12 +200,12 @@ class NotasController extends Controller
         }
     }
 
-    public function calcularNotaCurso($idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
+    public function calcularNotaCurso(Request $request, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
         // consultar alumnos Activos del curso
         $alumnos = Alumno::getAlumnosCurso($idCurso);
         foreach ($alumnos as $key => $alumno) {
-            $this->calcularNota($alumno->id, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo);
+            $this->calcularNota($request, $alumno->id, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo);
         }
     }
 
@@ -197,6 +219,7 @@ class NotasController extends Controller
     {
         try {
             DB::transaction(function () use ($data) {
+                $tipoObjetivo = $data['idEstablecimiento'] ? 'Interno' : 'Ministerio';
                 Notas::Create([
                     'nota'        => floatval($data['nota']),
                     'idAlumno'    => $data['idAlumno'],
@@ -204,6 +227,7 @@ class NotasController extends Controller
                     'idAsignatura' => $data['idAsignatura'],
                     'idPeriodo'   => $data['idPeriodo'],
                     'idObjetivo'  => $data['idObjetivo'],
+                    'tipoObjetivo' => $tipoObjetivo,
                 ]);
             });
             return response()->json(['status' => 'success', 'message' => 'Nota Creada']);
@@ -220,28 +244,36 @@ class NotasController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateNotasScript(Request $request)
+    public function updateNotasScript(Request $request, $idCurso, $idGrado)
     {
-        // try {
-        $user = $request->user();
-        $idEstablecimientoActivo = $user->idEstablecimientoActivo;
-        $cursos = $this->cursoController->getActivos($request);
-        $idPeriodo = 4;
-        $response = array();
-        foreach ($cursos as $key => $curso) {
-            $idCurso = $curso->id;
-            $asignaturas = $this->asignaturaController->getActivosGrado($curso->idGrado);
-
+        try {
+            $user = $request->user();
+            $idEstablecimientoActivo = $user->idEstablecimientoActivo;
+            $idPeriodo = 4;
+            $response = array();
+            // foreach ($cursos as $key => $curso) {
+            $asignaturas = $this->asignaturaController->getActivosGrado($idGrado);
             foreach ($asignaturas as $key => $asignatura) {
                 $idAsignatura = $asignatura->id;
-                $objetivos = $this->objetivoController->getObjetivosActivosAsignaturaEstablecimiento($idEstablecimientoActivo, $idAsignatura);
+                $objetivos = $this->objetivoController->getObjetivosActivosAsignaturaEstablecimiento(
+                    $idEstablecimientoActivo,
+                    $idAsignatura
+                );
 
                 foreach ($objetivos as $key => $objetivo) {
                     $idObjetivo = $objetivo->id;
                     $tipoObjetivo = $objetivo->tipo;
-                    $alumnosNotas = $this->puntajeIndicadorController->getPuntajesIndicadores($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $tipoObjetivo);
+                    $alumnosNotas = $this->puntajeIndicadorController->getPuntajesIndicadores(
+                        $idPeriodo,
+                        $idCurso,
+                        $idAsignatura,
+                        $idObjetivo,
+                        $tipoObjetivo
+                    );
+                    // return response()->json(['asignatura' => $asignatura, 'alumnosNotas' => $alumnosNotas]);
                     foreach ($alumnosNotas as $key => $alumno) {
                         if ($alumno['promedio'] !== 'undefined') {
+
                             $idAlumno = $alumno['idAlumno'];
                             $promedio = $alumno['promedio'];
                             if (is_object($promedio)) {
@@ -252,35 +284,31 @@ class NotasController extends Controller
                                     'idAsignatura' => $idAsignatura,
                                     'idPeriodo' => $idPeriodo,
                                     'idObjetivo' => $idObjetivo,
+                                    'tipoObjetivo' => $tipoObjetivo,
                                     'nota' => floatval($nota),
                                 );
-                                $res = $this->updateNotaNew($data);
 
+                                $res = $this->updateNotaNew($data);
                                 array_push($response, array(
-                                    'data' => $data,
+                                    'idCurso' => $data['idCurso'],
+                                    'idAlumno' => $data['idAlumno'],
+                                    'idAsignatura' => $data['idAsignatura'],
+                                    'tipoObjetivo' => $data['tipoObjetivo'],
+                                    'nota' => $data['nota'],
                                     'response' => $res,
                                 ));
+                                // return $response;
                             }
-                            // $idAsignatura
-                            // $idCurso
-                            // $idPeriodo == 4
-                            // $idObjetivo
-
-                            // $response = json_decode($res, false);
-                            // // return $response->status;
-                            // if ($response->status === 'error') {
-                            //     return $response;
-                            // }
                         }
                     }
                 }
             }
+            // }
+            return $response;
+            // return response()->json(['status' => 'success', 'message' => 'Notas Actualizadas']);
+        } catch (\Exception $th) {
+            return response()->json(['status' => 'error', 'message' => $th]);
         }
-        return $response;
-        return response()->json(['status' => 'success', 'message' => 'Notas Actualizadas']);
-        // } catch (\Throwable $th) {
-        //     return response()->json(['status' => 'error', 'message' => $th]);
-        // }
     }
 
     /**
@@ -293,31 +321,50 @@ class NotasController extends Controller
     {
         $nota = DB::select(
             'SELECT
-                n.id
+                n.id,
+                n.nota,
+                n.tipoObjetivo
             FROM notas as n
             WHERE
                 n.idAlumno = ' . $request['idAlumno'] . ' AND
                 n.idAsignatura = ' . $request['idAsignatura'] . ' AND
                 n.idCurso = ' . $request['idCurso'] . ' AND
                 n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                n.idObjetivo = ' . $request['idObjetivo'] . '
+                n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+                n.tipoObjetivo IS NULL
             '
         );
+        // n.tipoObjetivo = "' . $request['tipoObjetivo'] . '"
+        $response = null;
 
         if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
             $response = $this->store($request);
-        } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
-            $data = array(
-                'idNota' => $nota[0]->id,
-                'nota' => $request['nota'],
-            );
-            $response = $this->update($data);
-        } else if ($request['nota'] === 0) { // Eliminar
-            $response = $this->destroy($nota[0]->id);
-        } else {
-            return response()->json(['status' => 'error', 'message' => 'Notas Duplicadas']);
+        } else if (count($nota) === 1) {
+            if (is_null($nota[0]->tipoObjetivo)) {
+                $data = array(
+                    'idNota' => $nota[0]->id,
+                    'nota' => $request['nota'],
+                    'tipoObjetivo' => $request['tipoObjetivo'],
+                );
+                $response = $this->update($data);
+            } else {
+                $response = 'Nota ya formateada.';
+            }
+        } else if (count($nota) === 2) {
+            // si ambas son null
+            // $this->destroy($nota[1]->id);
+            if ($nota[0]->tipoObjetivo === null && $nota[1]->tipoObjetivo === null) {
+                $data = array(
+                    'idNota' => $nota[0]->id,
+                    'nota' => $request['nota'],
+                    'tipoObjetivo' => $request['tipoObjetivo'],
+                );
+                $response = $this->update($data);
+            }
+            // else {
+            //     return $nota;
+            // }
         }
-
         return $response;
     }
 
@@ -332,11 +379,11 @@ class NotasController extends Controller
     {
         try {
             $nota = Notas::findOrFail($data['idNota']);
-
             $nota->nota = $data['nota'];
+            $nota->tipoObjetivo = $data['tipoObjetivo'];
             $nota->save();
 
-            return response()->json(['status' => 'success', 'message' => 'Nota Actualizada']);
+            return response()->json(['status' => 'success', 'message' => 'Nota actualizada', 'data' => $data]);
         } catch (\Throwable $th) {
             return response()->json(['status' => 'error', 'message update' => $th]);
             // return response($th, 500);
@@ -351,31 +398,61 @@ class NotasController extends Controller
      */
     public function updateNota(Request $request)
     {
-        $nota = DB::select(
+        $tipoObjetivo = $request['idEstablecimiento'] ? 'Interno' : 'Ministerio';
+        return $nota = DB::select(
             'SELECT
-                n.id
+                n.id,
+                n.nota,
+                n.tipoObjetivo
             FROM notas as n
             WHERE
                 n.idAlumno = ' . $request['idAlumno'] . ' AND
                 n.idAsignatura = ' . $request['idAsignatura'] . ' AND
                 n.idCurso = ' . $request['idCurso'] . ' AND
                 n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                n.idObjetivo = ' . $request['idObjetivo'] . '
+                n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+                n.tipoObjetivo = "' . $tipoObjetivo . '"
             '
         );
 
         if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
-            $response = $this->store($request);
+            $nota2 = DB::select(
+                'SELECT
+                    n.id,
+                    n.nota,
+                    n.tipoObjetivo
+                FROM notas as n
+                WHERE
+                    n.idAlumno = ' . $request['idAlumno'] . ' AND
+                    n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+                    n.idCurso = ' . $request['idCurso'] . ' AND
+                    n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+                    n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+                    n.tipoObjetivo IS NULL
+                '
+            );
+            if (count($nota2) === 0 && $request['nota'] !== 0) {
+                $response = $this->store($request);
+            } else if (count($nota2) === 1) {
+                $data = array(
+                    'idNota' => $nota[0]->id,
+                    'nota' => $request['nota'],
+                    'tipoObjetivo' => $tipoObjetivo,
+                );
+                $response = $this->update($data);
+            }
         } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
             $data = array(
                 'idNota' => $nota[0]->id,
                 'nota' => $request['nota'],
+                'tipoObjetivo' => $tipoObjetivo,
             );
             $response = $this->update($data);
         } else if ($request['nota'] === 0) { // Eliminar
             $response = $this->destroy($nota[0]->id);
-        } else {
-            return response()->json(['status' => 'error', 'message' => 'Notas Duplicadas']);
+        } else if (count($nota) === 2) {
+            $response = $this->destroy($nota[0]->id);
+            return response()->json(['status' => 'error', 'message' => 'Notas más de 2', 'notas' => $nota]);
         }
 
         return $response;
