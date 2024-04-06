@@ -62,6 +62,31 @@ class CursoController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getCursoMatricula($tipo, $grado, $letra, $idPeriodo, $idestablecimiento)
+    {
+        try {
+            $curso = Curso::select('cursos.id as id_curso')
+                ->join('grados', 'cursos.idGrado', '=', 'grados.id')
+                ->where('grados.idNivel', '=', $tipo)
+                ->where('grados.idGrado', '=', $grado)
+                ->where('cursos.letra', '=', $letra)
+                ->where('cursos.idPeriodo', '=', $idPeriodo)
+                ->where('cursos.idEstablecimiento', '=', $idestablecimiento)
+                ->where('cursos.estado', 'Activo')
+                ->first();
+            if ($curso != null) {
+                return $curso;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -100,7 +125,41 @@ class CursoController extends Controller
 
                 return response(null, 200);
             });
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
 
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storeImportCSV(Request $request)
+    {
+
+        $request->validate([
+            'letra'             => 'required',
+            'idGrado'           => 'required',
+            'idEstablecimiento' => 'required',
+            'idPeriodo'         => 'required',
+        ]);
+
+        try {
+
+            DB::transaction(function () use ($request) {
+                Curso::Create([
+                    'letra'             => $request->input('letra'),
+                    'idProfesorJefe'    => Null,
+                    'idGrado'           => $request->input('idGrado'),
+                    'idEstablecimiento' => $request->input('idEstablecimiento'),
+                    'idPeriodo'         => $request->input('idPeriodo'),
+                    'estado'            => 'Activo',
+                ]);
+
+                return response(null, 200);
+            });
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -150,7 +209,6 @@ class CursoController extends Controller
             $curso->save();
 
             return response(null, 200);
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -174,10 +232,8 @@ class CursoController extends Controller
             }
 
             return response('success', 200);
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
     }
-
 }

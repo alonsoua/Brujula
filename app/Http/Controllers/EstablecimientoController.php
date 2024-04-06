@@ -32,8 +32,8 @@ class EstablecimientoController extends Controller
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {
-                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url(
-                    'insignias_establecimientos/'.$establecimiento['insignia']
+                $establecimiento['insignia'] = $this->url->to('/') . '' . Storage::url(
+                    'insignias_establecimientos/' . $establecimiento['insignia']
                 );
             }
         }
@@ -53,13 +53,32 @@ class EstablecimientoController extends Controller
         foreach ($establecimientos as $key => $establecimiento) {
             // agregamos código y nombre
             if ($establecimiento['insignia']) {
-                $establecimiento['insignia'] = $this->url->to('/').''.Storage::url(
-                    'insignias_establecimientos/'.$establecimiento['insignia']
+                $establecimiento['insignia'] = $this->url->to('/') . '' . Storage::url(
+                    'insignias_establecimientos/' . $establecimiento['insignia']
                 );
             }
         }
 
         return $establecimientos;
+    }
+
+
+    public function getrbd($rbd)
+    {
+        try {
+            $establecimiento = Establecimiento::select(
+                'establecimientos.id',
+                'establecimientos.rbd',
+                'establecimientos.idPeriodoActivo',
+            )
+                ->where('establecimientos.rbd', '=', $rbd)
+                ->first();
+            if ($establecimiento != null) {
+                return $establecimiento;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -85,15 +104,15 @@ class EstablecimientoController extends Controller
             DB::transaction(function () use ($request) {
                 $insignia = $request->input('insignia');
                 $rbd = $request->input('rbd');
-                if ( !is_null( $insignia ) ) {
+                if (!is_null($insignia)) {
                     $nombreInsignia = formatNameImage(
-                        $insignia
-                        , $rbd
+                        $insignia,
+                        $rbd
                     );
                     saveStorageImagen(
-                        'insignias_establecimientos'
-                        , $insignia
-                        , $nombreInsignia
+                        'insignias_establecimientos',
+                        $insignia,
+                        $nombreInsignia
                     );
                     $insignia = $nombreInsignia;
                 }
@@ -115,7 +134,6 @@ class EstablecimientoController extends Controller
 
                 return response(null, 200);
             });
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -142,7 +160,7 @@ class EstablecimientoController extends Controller
     public function update(Request $request, $id)
     {
         Request()->validate([
-            'rbd' => 'required|max:10|unique:establecimientos,rbd,'.$id.',id' ,
+            'rbd' => 'required|max:10|unique:establecimientos,rbd,' . $id . ',id',
             'nombre' => 'required|max:200',
             'correo' => 'required|email|max:80',
             'telefono' => 'required|max:25',
@@ -160,18 +178,18 @@ class EstablecimientoController extends Controller
             $insignia = $request->input('insignia');
             if (!is_null($insignia)) {
                 $nombreInsignia = formatNameImage(
-                    $insignia
-                    , $rbd
+                    $insignia,
+                    $rbd
                 );
-                if ( !is_null($nombreInsignia) ) {
+                if (!is_null($nombreInsignia)) {
                     $insigniaAntigua = $establecimiento->insignia;
                     if ($insigniaAntigua) {
                         Storage::disk('insignias_establecimientos')->delete($insigniaAntigua);
                     }
                     saveStorageImagen(
-                        'insignias_establecimientos'
-                        , $insignia
-                        , $nombreInsignia
+                        'insignias_establecimientos',
+                        $insignia,
+                        $nombreInsignia
                     );
                     $establecimiento->insignia = $nombreInsignia;
                 }
@@ -199,7 +217,6 @@ class EstablecimientoController extends Controller
             $establecimiento->save();
 
             return response(null, 200);
-
         } catch (\Throwable $th) {
             return response($th, 500);
         }
@@ -248,5 +265,4 @@ class EstablecimientoController extends Controller
             return response($th, 500);
         }
     }
-
 }
