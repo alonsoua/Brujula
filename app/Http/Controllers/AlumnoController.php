@@ -182,13 +182,13 @@ class AlumnoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $idAlumno)
     {
         // return response($request, 500);
         Request()->validate([
             'idEstablecimiento' => 'required',
             'idCurso' => 'required',
-            'rut' => 'required|max:15|unique:alumnos,rut,' . $id . ',id',
+            'rut' => 'required|max:15|unique:alumnos,rut,' . $idAlumno . ',id',
             'tipoDocumento' => 'required|max:4',
             'nombres' => 'required|max:250',
             'primerApellido' => 'required|max:250',
@@ -199,7 +199,7 @@ class AlumnoController extends Controller
         ]);
 
         try {
-            $alumno = Alumno::findOrFail($id);
+            $alumno = Alumno::findOrFail($idAlumno);
 
             $idEstablecimiento = $request->input('idEstablecimiento');
             $idCurso           = $request->input('idCurso');
@@ -241,17 +241,38 @@ class AlumnoController extends Controller
             $alumno->idDiagnostico   = $diagnosticoPie;
             $alumno->idPrioritario   = $idPrioritario;
             if ($alumno->save()) {
-                $alumnos_cursos = Alumnos_Cursos::where('idAlumno', $id)->where('idCurso', $idCurso)->where('estado', 'Activo')->get();
-                if (count($alumnos_cursos) !== 0) {
-                    $alumno_c = Alumnos_Cursos::findOrFail($alumnos_cursos[0]['id']);
-                    $alumno_c->estado = 'Inactivo';
-                    $alumno_c->save();
+                // * Solo si el curso es distinto
+                $existeCurso = Alumnos_Cursos::where('idAlumno', $idAlumno)
+                    ->where('idCurso', $idCurso)
+                    ->where('estado', 'Activo')
+                    ->exists();
+                if (!$existeCurso) {
+
+                    // * Cambia curso anterior a inactivo
+                    $id_periodo = Curso::select('cursos.idPeriodo')
+                        ->where('cursos.id', $idCurso)
+                        ->get()
+                        ->first();
+                    $curso_anterior = Curso::select('alumnos_cursos.id')
+                        ->where('cursos.idPeriodo', '=', $id_periodo->idPeriodo)
+                        ->leftJoin("alumnos_cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
+                        ->where('alumnos_cursos.idAlumno', $idAlumno)
+                        ->where('alumnos_cursos.estado', 'Activo')
+                        ->get()
+                        ->first();
+                    if (!empty($curso_anterior)) {
+                        $alumno_c = Alumnos_Cursos::findOrFail($curso_anterior->id);
+                        $alumno_c->estado = 'Retirado';
+                        $alumno_c->save();
+                    }
+
+                    // * Crea el nuevo curso
+                    Alumnos_Cursos::Create([
+                        'idAlumno' => $idAlumno,
+                        'idCurso'  => $idCurso,
+                        'estado'   => $estado,
+                    ]);
                 }
-                Alumnos_Cursos::Create([
-                    'idAlumno' => $id,
-                    'idCurso'  => $idCurso,
-                    'estado'   => $estado,
-                ]);
             }
 
             return response()->json([
