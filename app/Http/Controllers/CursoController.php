@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Curso;
 use App\Models\Establecimiento;
 use App\Models\Alumno;
-
+use App\Models\UsuarioAsignatura;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -26,6 +26,32 @@ class CursoController extends Controller
         }
 
         return Curso::getAll($user->idEstablecimientoActivo, $idPeriodo);
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getCursoEstablecimientoActivo(Request $request, $idEstablecimiento, $idPeriodo)
+    {
+        return UsuarioAsignatura::select(
+            'cursos.id',
+            'cursos.letra',
+            'cursos.idProfesorJefe',
+            'cursos.idGrado',
+            'grados.nombre as nombreGrado',
+            'grados.idNivel'
+        )
+            ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
+            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+            ->where('cursos.idEstablecimiento', $idEstablecimiento)
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('cursos.estado', 'Activo')
+            ->orderBy('cursos.idGrado')
+            ->orderBy('cursos.letra')
+            ->distinct()
+            ->get();
     }
 
     /**

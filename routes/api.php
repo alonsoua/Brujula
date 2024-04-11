@@ -257,9 +257,14 @@ Route::group(['middleware' => ['cors']], function () {
     );
 
     Route::get(
-        '/avances/curso/establecimiento/activo/{idEstablecimiento}',
+        '/avances/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
         [AvanceAprendizajeController::class, 'getCursoEstablecimientoActivo']
     );
+    Route::get(
+        '/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
+        [CursoController::class, 'getCursoEstablecimientoActivo']
+    );
+
     Route::get(
         '/avances/asignatura/curso/activa/{idCurso}',
         [AvanceAprendizajeController::class, 'getAsignaturaCursoActiva']

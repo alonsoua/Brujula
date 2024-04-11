@@ -15,7 +15,8 @@ class AvanceAprendizajeController extends Controller
      * * $idUsuarioEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    public function getTipoEnseñanza($idUsuarioEstablecimiento) {
+    public function getTipoEnseñanza($idUsuarioEstablecimiento)
+    {
         return UsuarioAsignatura::getTipoEnseñanza($idUsuarioEstablecimiento);
     }
 
@@ -56,19 +57,8 @@ class AvanceAprendizajeController extends Controller
      * * $idEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    public function getCursoEstablecimientoActivo(Request $request, $idEstablecimiento) {
-        $establecimiento = Establecimiento::getAllActivos($idEstablecimiento);
-        return UsuarioAsignatura::getCursoEstablecimientoActivo($idEstablecimiento, $establecimiento[0]->idPeriodoActivo);
-    }
-
-    /**
-     * Obtiene los tipo de enseñanza asignados por idEstablecimiento
-     * * $idEstablecimiento
-     * @return \Illuminate\Http\Response
-     */
-    public function getAsignaturaCursoActiva($idCurso) {
+    public function getAsignaturaCursoActiva($idCurso)
+    {
         return UsuarioAsignatura::getAsignaturaCursoActiva($idCurso);
     }
-
-
 }

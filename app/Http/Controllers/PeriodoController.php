@@ -13,9 +13,21 @@ class PeriodoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Periodo::get();
+        $user = $request->user();
+        $periodos = Periodo::select('*')->orderBy('nombre', 'DESC')->get();
+        $response = array();
+        if ($user->idEstablecimientoActivo === 2) {
+            foreach ($periodos as $key => $periodo) {
+                if ($periodo->id > 3) {
+                    array_push($response, $periodo);
+                }
+            }
+        } else {
+            $response = $periodos;
+        }
+        return $response;
     }
 
     /**
