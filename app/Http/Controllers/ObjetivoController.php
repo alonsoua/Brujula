@@ -188,11 +188,11 @@ class ObjetivoController extends Controller
                 }
             }
             if ($objetivos_trabajados != null) {
-                return $objetivos_trabajados;
+                return response()->json($objetivos_trabajados);
             }
-            return response()->json(['status' => 'error', 'message' => 'Registro no existe']);
+            return response()->json(['status' => 'error', 'message' => 'Registro no existe'], 404);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 

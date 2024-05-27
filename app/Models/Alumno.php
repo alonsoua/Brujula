@@ -124,8 +124,9 @@ class Alumno extends Model
             'establecimientos.*'
         )
             ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id")
+            ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->where('alumnos.id', $idAlumno)
-            ->where('alumnos.estado', 'Activo')
+            ->where('alumnos_cursos.estado', 'Activo')
             ->get();
     }
 

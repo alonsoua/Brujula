@@ -98,6 +98,16 @@ Route::group(['middleware' => ['cors']], function () {
         [AsignaturaController::class, 'getActivosGrado']
     );
 
+    Route::get(
+        '/asignaturas/usuario/{idCurso}/{idPeriodoHistorico}',
+        [AsignaturaController::class, 'getAsignaturasUsuario']
+    );
+
+    Route::get(
+        '/asignaturas/curso/{idCurso}/{idPeriodoHistorico}',
+        [AsignaturaController::class, 'getAsignaturasCurso']
+    );
+
     // * Eje
     Route::get(
         '/ejes/asignatura/{idAsignatura}',
@@ -234,41 +244,47 @@ Route::group(['middleware' => ['cors']], function () {
         '/cursos/activos/establecimiento/{idestablecimiento}',
         [CursoController::class, 'getActivosEstablecimiento']
     );
+    Route::get('/cursos/usuario/{idPeriodoHistorico}', [CursoController::class, 'getCursosUsuario']);
     Route::post('/cursos', [CursoController::class, 'store']);
     Route::put('/cursos/{id}', [CursoController::class, 'update']);
-
     Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
-
 
 
     // * AvanceAprendizaje
     // Docentes
+
+
+
+
     Route::get(
         '/avances/tipoEnseñanza/{idusuarioestablecimiento}',
         [AvanceAprendizajeController::class, 'getTipoEnseñanza']
     );
-    Route::get(
-        '/avances/curso/activo/{idusuarioestablecimiento}',
-        [AvanceAprendizajeController::class, 'getCursoActivo']
-    );
-    Route::get(
-        '/avances/asignatura/activa/{idusuarioestablecimiento}',
-        [AvanceAprendizajeController::class, 'getAsignaturaActiva']
-    );
 
-    Route::get(
-        '/avances/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
-        [AvanceAprendizajeController::class, 'getCursoEstablecimientoActivo']
-    );
-    Route::get(
-        '/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
-        [CursoController::class, 'getCursoEstablecimientoActivo']
-    );
 
-    Route::get(
-        '/avances/asignatura/curso/activa/{idCurso}',
-        [AvanceAprendizajeController::class, 'getAsignaturaCursoActiva']
-    );
+    // Route::get(
+    //     '/avances/curso/activo/{idusuarioestablecimiento}/{idPeriodoHistorico}',
+    //     [AvanceAprendizajeController::class, 'getCursoActivo']
+    // );
+    // Route::get(
+    //     '/avances/asignatura/activa/{idusuarioestablecimiento}/{idPeriodoHistorico}',
+    //     [AvanceAprendizajeController::class, 'getAsignaturaActiva']
+    // );
+
+
+    // Route::get(
+    //     '/avances/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
+    //     [AvanceAprendizajeController::class, 'getCursoEstablecimientoActivo']
+    // );
+    // Route::get(
+    //     '/curso/establecimiento/activo/{idEstablecimiento}/{idPeriodo}',
+    //     [CursoController::class, 'getCursoEstablecimientoActivo']
+    // );
+
+    // Route::get(
+    //     '/avances/asignatura/curso/activa/{idCurso}',
+    //     [AvanceAprendizajeController::class, 'getAsignaturaCursoActiva']
+    // );
 
     // * Puntaje Indicador
     Route::get(
@@ -293,7 +309,7 @@ Route::group(['middleware' => ['cors']], function () {
     );
 
     // * INFORME HOGAR
-    Route::get('/informe/hogar/{idPeriodo}/{idAlumno}/{tipo}/{tipoInforme}', [InformeHogarController::class, 'createPDF']);
+    Route::get('/informe/hogar/{idAlumno}/{tipo}/{tipoInforme}', [InformeHogarController::class, 'createPDF']);
 
     Route::post(
         '/informes/resumenAnualPdf',
