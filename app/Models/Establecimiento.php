@@ -64,4 +64,8 @@ class Establecimiento extends Model
 
     }
 
+    public static function getIDPeriodoActivo($idEstablecimiento) {
+        return Establecimiento::where('id', $idEstablecimiento)->value('idPeriodoActivo');
+    }
+
 }

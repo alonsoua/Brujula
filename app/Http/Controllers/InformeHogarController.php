@@ -24,16 +24,12 @@ class InformeHogarController extends Controller
      * @param  int  $id
      */
 
-    public function createPDF($idPeriodo, $idAlumno, $tipo, $tipoInforme)
+    public function createPDF($idAlumno, $tipo, $tipoInforme)
     {
 
         $alumno = Alumno::getAlumno($idAlumno);
         $establecimiento = Alumno::getAlumnoEstablecimiento($idAlumno);
 
-        // * $idPeriodo por el momento no se utiliza
-        // Para hacer últmos cambios que nos pidieron, es más rápido consultar
-        // el periodo actual de esta forma en un futuro lo ideal es que esta info
-        // venga desde el front
         $id_periodo_actual = Periodo::getPeriodoActual();
 
         $curso = Alumno::getAlumnoCurso($id_periodo_actual[0]->id, $idAlumno);
@@ -43,8 +39,7 @@ class InformeHogarController extends Controller
 
         $rbdEstablecimiento = $establecimiento[0]['rbd'];
         $data = array();
-        if ($rbdEstablecimiento === '1855-4') { //Francia
-
+        if ($rbdEstablecimiento === '1855') { //Francia
             array_push($data, array(
                 'alumno' => $alumno[0],
                 'establecimiento' => $establecimiento[0],
@@ -109,7 +104,8 @@ class InformeHogarController extends Controller
             $data['notas']
         );
 
-        $cuadronivelLogro = '../storage/app/public/images/nivelLogro_' . $data['establecimiento']['rbd'] . '.png';
+        // $cuadronivelLogro = '../storage/app/public/images/nivelLogro_' . $data['establecimiento']['rbd'] . '.png';
+        $cuadronivelLogro =  base_path() . '/storage/app/public/images/nivelLogro_' . $data['establecimiento']['rbd'] . '.png';
         // $footer = '../public/storage/images/diseño_' . $data['establecimiento']['rbd'] . '.png';
         return '
         <html>

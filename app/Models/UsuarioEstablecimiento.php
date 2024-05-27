@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Traits\HasRoles;
+
 class UsuarioEstablecimiento extends Model
 {
     use HasFactory, HasRoles;
@@ -28,27 +29,31 @@ class UsuarioEstablecimiento extends Model
      *
      * @return array
      */
-    public static function getEstablecimientosActivosPorUsuario($idUsuario) {
+    public static function getEstablecimientosActivosPorUsuario($idUsuario)
+    {
         return UsuarioEstablecimiento::select(
-                'usuario_establecimientos.id'
-                , 'establecimientos.nombre as nombreEstablecimiento'
-                , 'establecimientos.id as idEstablecimiento'
-                , 'establecimientos.insignia'
-                , 'establecimientos.idPeriodoActivo'
-                , 'periodos.nombre as nombrePeriodo'
-                )
-            ->leftJoin("establecimientos",
+            'usuario_establecimientos.id',
+            'establecimientos.nombre as nombreEstablecimiento',
+            'establecimientos.id as idEstablecimiento',
+            'establecimientos.insignia',
+            'establecimientos.idPeriodoActivo',
+            'periodos.nombre as nombrePeriodo'
+        )
+            ->leftJoin(
+                "establecimientos",
                 "usuario_establecimientos.idEstablecimiento",
                 "=",
                 "establecimientos.id"
             )
-            ->leftJoin("periodos",
+            ->leftJoin(
+                "periodos",
                 "establecimientos.idPeriodoActivo",
                 "=",
                 "periodos.id"
             )
             ->where('usuario_establecimientos.idUsuario', $idUsuario)
-            ->get();
+            ->get()
+            ->toArray();
     }
 
     /**
@@ -56,7 +61,8 @@ class UsuarioEstablecimiento extends Model
      *
      * @return array
      */
-    public static function getId($idUsuario, $idEstablecimiento) {
+    public static function getId($idUsuario, $idEstablecimiento)
+    {
         $usuario_establecimiento = UsuarioEstablecimiento::select('id')
             ->where('usuario_establecimientos.idUsuario', $idUsuario)
             ->where('usuario_establecimientos.idEstablecimiento', $idEstablecimiento)

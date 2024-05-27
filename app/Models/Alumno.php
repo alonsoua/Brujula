@@ -38,6 +38,7 @@ class Alumno extends Model
     {
         $alumnos = Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado',
             'prioritarios.nombre as nombrePrioritario',
             'diagnosticos_pie.nombre as nombreDiagnostico',
@@ -83,6 +84,7 @@ class Alumno extends Model
 
         return Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado',
             'prioritarios.nombre as nombrePrioritario',
             'diagnosticos_pie.nombre as nombreDiagnostico',
@@ -105,6 +107,7 @@ class Alumno extends Model
 
         return Alumno::select(
             'alumnos.*',
+            'alumnos_cursos.idCurso',
             'alumnos_cursos.estado'
 
         )
@@ -121,15 +124,16 @@ class Alumno extends Model
             'establecimientos.*'
         )
             ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id")
+            ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->where('alumnos.id', $idAlumno)
-            ->where('alumnos.estado', 'Activo')
+            ->where('alumnos_cursos.estado', 'Activo')
             ->get();
     }
 
     public static function getAlumnoCurso($idPeriodo, $idAlumno)
     {
         return Alumno::select(
-            'cursos.id as idCurso',
+            'alumnos_cursos.idCurso',
             'cursos.*',
             'grados.id as idTablaGrados',
             'grados.*'

@@ -75,22 +75,37 @@ class NotasController extends Controller
 
     public function getAllNotasCurso($idPeriodo, $idCurso)
     {
-        return Notas::getAllNotasCurso(
-            $idPeriodo,
-            $idCurso,
-        );
+        $notasObjetivos = Notas::select('notas.*')
+            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
+            ->where('notas.idPeriodo', $idPeriodo)
+            ->where('notas.idCurso', $idCurso)
+            ->where('notas.tipoObjetivo', 'Ministerio')
+            ->orderBy('objetivos.abreviatura')
+            ->get();
+
+        $notasObjetivosPersonalizados = Notas::select('notas.*')
+            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
+            ->where('notas.idPeriodo', $idPeriodo)
+            ->where('notas.idCurso', $idCurso)
+            ->where('notas.tipoObjetivo', 'Interno')
+            ->orderBy('objetivos_personalizados.abreviatura')
+            ->get();
+
+        $notas = array();
+        foreach ($notasObjetivos as $key => $nota) {
+            array_push($notas, $nota);
+        }
+
+        foreach ($notasObjetivosPersonalizados as $key => $nota) {
+            array_push($notas, $nota);
+        }
+
+        return $notas;
     }
 
     public function getAll($idPeriodo, $idCurso)
     {
-        // Conexión Brújula > Libro digital
-        // join rutAlumno
-        // join nombrePeriodo
-        // join id_grado del curso, nombre curso y letra
-        // join nombreAsignatura
-        // join nombreObjetivo o abreviatura.
-        // obtener rutDocente a cargo de esa asignatura.
-        // return response()->json(['status' => 'ACA']);
+        // * Conexión Brújula > Libro digital
         try {
             $response = Notas::select(
                 'notas.*',
@@ -249,7 +264,7 @@ class NotasController extends Controller
         try {
             $user = $request->user();
             $idEstablecimientoActivo = $user->idEstablecimientoActivo;
-            $idPeriodo = 4;
+            $idPeriodo = null;
             $response = array();
             // foreach ($cursos as $key => $curso) {
             $asignaturas = $this->asignaturaController->getActivosGrado($idGrado);
@@ -399,7 +414,9 @@ class NotasController extends Controller
     public function updateNota(Request $request)
     {
         $tipoObjetivo = $request['idEstablecimiento'] ? 'Interno' : 'Ministerio';
-        return $nota = DB::select(
+        // return $request;
+        // die();
+        $nota = DB::select(
             'SELECT
                 n.id,
                 n.nota,

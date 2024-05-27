@@ -33,30 +33,28 @@ class MeController extends Controller
 
         // Define url de avatar
         if ($user->avatar) {
-            $user->avatar = $this->url->to('/').''.Storage::url(
-                'avatars_usuarios/'.$user['avatar']
+            $user->avatar = $this->url->to('/') . '' . Storage::url(
+                'avatars_usuarios/' . $user['avatar']
             );
         }
 
-        $establecimientos = UsuarioEstablecimiento::
-            getEstablecimientosActivosPorUsuario($user->id);
+        $establecimientos = UsuarioEstablecimiento::getEstablecimientosActivosPorUsuario($user->id);
 
         foreach ($establecimientos as $key => $establecimiento) {
-            if ($establecimiento->insignia) {
-                $establecimiento->insignia = $this->url->to('/').''.Storage::
-                url(
-                    'insignias_establecimientos/'.$establecimiento['insignia']
+            if ($establecimiento['insignia']) {
+                $establecimiento['insignia'] = $this->url->to('/') . '' . Storage::url(
+                    'insignias_establecimientos/' . $establecimiento['insignia']
                 );
             }
         }
 
-        if ($user['rolActivo'] === 'Super Administrador'
+        if (
+            $user['rolActivo'] === 'Super Administrador'
             || $user['rolActivo'] === 'Administrador Daem'
         ) {
 
             $usersPermissions = $user->getAllPermissions();
             $rol = model_has_roles::getRolByModel_id($user['id'], 'User');
-
         } else {
             $role = Role::findByName($user['rolActivo']);
             $usersPermissions = $role->getAllPermissions();
@@ -85,7 +83,7 @@ class MeController extends Controller
         ));
 
         foreach ($usersPermissions as $key2 => $userPermission) {
-            $val = explode( '_', $userPermission['name']);
+            $val = explode('_', $userPermission['name']);
             $array = array(
                 'action' => $val[0],
                 'subject' => $val[1]
@@ -95,8 +93,12 @@ class MeController extends Controller
                 $array
             );
         }
+        $id_establecimiento_activo = $user->idEstablecimientoActivo;
+        $id_periodo_activo = array_filter($establecimientos, function ($establecimiento) use ($id_establecimiento_activo) {
+            return $establecimiento['idEstablecimiento'] == $id_establecimiento_activo;
+        });
 
-        $id_periodo_activo = $user->idPeriodoActivo === null ? 4 : $user->idPeriodoActivo;
+        // $id_periodo_activo = $user->idPeriodoActivo === null ? 4 : $user->idPeriodoActivo;
         return response()->json([
             'id'                      => $user->id,
             'email'                   => $user->email,
@@ -105,8 +107,8 @@ class MeController extends Controller
             'nombres'                 => $user->nombres,
             'primerApellido'          => $user->primerApellido,
             'segundoApellido'         => $user->segundoApellido,
-            'idEstablecimientoActivo' => $user->idEstablecimientoActivo,
-            'idPeriodoActivo'         => $id_periodo_activo,
+            'idEstablecimientoActivo' => $id_establecimiento_activo,
+            'idPeriodoActivo'         => $id_periodo_activo[0]['idPeriodoActivo'],
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,
