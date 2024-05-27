@@ -223,4 +223,11 @@ class User extends Authenticatable implements JWTSubject
         // return $users;
     }
 
+    public static function getUsuarioEstablecimiento($id_usuario, $id_establecimiento)
+    {
+        return UsuarioEstablecimiento::where('idUsuario', $id_usuario)
+                ->where('idEstablecimiento', $id_establecimiento)
+                ->value('id');
+    }
+
 }
