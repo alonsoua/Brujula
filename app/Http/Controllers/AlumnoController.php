@@ -108,7 +108,7 @@ class AlumnoController extends Controller
 
         Request()->validate([
             'tipoDocumento' => 'required|max:4',
-            'rut' => 'required|max:15|unique:alumnos',
+            'rut' => 'required|max:15',
             'nombres' => 'required|max:250',
             'primerApellido' => 'required|max:250',
             'segundoApellido' => 'required|max:250',
@@ -119,6 +119,17 @@ class AlumnoController extends Controller
             'estado' => 'required',
         ]);
         try {
+            // todo
+            $exists = Alumno::leftJoin("alumnos_cursos", "alumnos_cursos.idAlumno", "=", "alumnos.id")
+                            ->where('alumnos_cursos.idCurso', $request->input('idCurso'))
+                            ->where('alumnos.rut', $request->input('rut'))
+                            ->exists();
+            if ($exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El alumno ya existe en este curso!.'
+                ]);
+            }
             DB::transaction(function () use ($request) {
 
                 $fechaInscripcion = date('Y-m-d H:i:s');
@@ -164,12 +175,12 @@ class AlumnoController extends Controller
                 ]);
             });
             return response()->json([
-                'status' => 'Success',
+                'status' => 'success',
                 'message' => 'Alumno creado con éxito.'
             ]);
         } catch (\Throwable $th) {
             return response()->json([
-                'status' => 'Error',
+                'status' => 'error',
                 'message' => 'Error:' . $th
             ]);
         }
