@@ -102,7 +102,7 @@ class Alumno extends Model
     }
 
 
-    public static function getAlumno($idAlumno)
+    public static function getAlumno($idAlumno, $id_periodo)
     {
 
         return Alumno::select(
@@ -112,6 +112,8 @@ class Alumno extends Model
 
         )
             ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
+            ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
+            ->where('cursos.idPeriodo', $id_periodo)
             ->where('alumnos_cursos.idAlumno', $idAlumno)
             ->where('alumnos_cursos.estado', 'Activo')
             ->get();
@@ -142,7 +144,7 @@ class Alumno extends Model
             ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
             ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
             ->where('alumnos_cursos.idAlumno', $idAlumno)
-            // ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('cursos.idPeriodo', $idPeriodo)
             ->where('alumnos_cursos.estado', 'Activo')
             ->get();
     }

@@ -27,14 +27,11 @@ class InformeHogarController extends Controller
     public function createPDF($idAlumno, $tipo, $tipoInforme)
     {
 
-        $alumno = Alumno::getAlumno($idAlumno);
         $establecimiento = Alumno::getAlumnoEstablecimiento($idAlumno);
-
         $id_periodo_actual = Periodo::getPeriodoActual();
-
+        $alumno = Alumno::getAlumno($idAlumno, $id_periodo_actual[0]->id);
         $curso = Alumno::getAlumnoCurso($id_periodo_actual[0]->id, $idAlumno);
         $asignaturas = Asignatura::getAllGrado($curso[0]['idTablaGrados']);
-
         $notas = Notas::getNotasAlumno($id_periodo_actual[0]->id, $curso[0]['idCurso'], $idAlumno);
 
         $rbdEstablecimiento = $establecimiento[0]['rbd'];
@@ -54,7 +51,6 @@ class InformeHogarController extends Controller
                 $html = $this->downloadPDFEscuelaFranciaRetirado($data[0]);
             }
         }
-
         $alumno = $data[0]['alumno']['numLista'] . '-' . $data[0]['alumno']['nombres'] . ' ' . $data[0]['alumno']['primerApellido'] . ' ' . $data[0]['alumno']['segundoApellido'] . ' - ' . $data[0]['curso']['nombre'];
         return $this->downloadPDF($html, $tipo, $alumno);
     }
