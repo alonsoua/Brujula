@@ -41,4 +41,21 @@ class NotasConversionController extends Controller
         }
         return $notaConversion;
     }
+
+    public function getPromedioNota($puntajes)
+    {
+        // Filtrar puntajes mayores a 0
+        $valores = array_filter(array_map(fn($p) => $p->puntaje, $puntajes), fn($v) => $v > 0);
+
+        // Verificar si hay valores válidos
+        if (empty($valores)) {
+            return 'undefined';
+        }
+
+        // Calcular el promedio
+        $promedio = array_sum($valores) / count($valores);
+
+        // Formatear el promedio y devolverlo con un decimal
+        return number_format($promedio / 10, 1);
+    }
 }

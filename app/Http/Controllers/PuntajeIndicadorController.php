@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ajuste;
 use App\Models\PuntajeIndicador;
 use App\Models\PuntajeIndicadorTransformacion;
 use App\Models\Establecimiento;
@@ -127,7 +128,7 @@ class PuntajeIndicadorController extends Controller
             } else {
                 $promedio = 'undefined';
             }
-
+            
             array_push($alumnosPuntajes, array(
                 'idAlumno' => $alumno['id'],
                 'puntajes' => $puntajes_alumno,
@@ -323,7 +324,13 @@ class PuntajeIndicadorController extends Controller
             $puntajeObtenido = $puntajeObtenido + $puntaje->puntaje;
         }
         $cantidadIndicadores = count($puntajes);
-        $promedio = $this->notasConversionController->getPromedio($cantidadIndicadores, $puntajeObtenido, $idEstablecimiento);
+
+        $ajustes = Ajuste::getAjustes($idEstablecimiento);
+        if ($ajustes->tipo_nota === 'concepto') {
+            $promedio = $this->notasConversionController->getPromedio($cantidadIndicadores, $puntajeObtenido, $idEstablecimiento);
+        } else if ($ajustes->tipo_nota === 'numero') {
+            $promedio['nota'] = $this->notasConversionController->getPromedioNota($puntajes);
+        }
         return $promedio;
     }
 

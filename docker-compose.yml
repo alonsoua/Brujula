@@ -1,0 +1,26 @@
+services:
+  api_brujula:
+    build:
+      context: ../../../Tools/docker/BD
+      dockerfile: Dockerfile
+    image: api_brujula
+    container_name: api_brujula
+    ports:
+      - "8000:80"
+    volumes:
+      - ../../_MD/Core/api:/var/www/html
+    networks:
+      - app-network
+    environment:
+      APACHE_DOCUMENT_ROOT: /var/www/html/public
+      # Asegúrate de configurar todas las variables de entorno necesarias para la conexión a la base de datos
+      DATABASE_HOST: db  # Usa el nombre del servicio db definido en el otro docker-compose
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: my_database
+    working_dir: /var/www/html
+
+networks:
+  app-network:
+    external: true
+    name: bd_app-network

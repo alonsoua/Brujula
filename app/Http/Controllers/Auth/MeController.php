@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ajuste;
 use App\Models\UsuarioEstablecimiento;
 use App\Models\model_has_roles;
 use Illuminate\Http\Request;
@@ -98,6 +99,8 @@ class MeController extends Controller
             return $establecimiento['idEstablecimiento'] == $id_establecimiento_activo;
         });
 
+
+        $ajustes = Ajuste::getAjustes($id_establecimiento_activo);
         // $id_periodo_activo = $user->idPeriodoActivo === null ? 4 : $user->idPeriodoActivo;
         return response()->json([
             'id'                      => $user->id,
@@ -109,6 +112,7 @@ class MeController extends Controller
             'segundoApellido'         => $user->segundoApellido,
             'idEstablecimientoActivo' => $id_establecimiento_activo,
             'idPeriodoActivo'         => $id_periodo_activo[0]['idPeriodoActivo'],
+            'ajustes'                 => $ajustes,
             'rolActivo'               => $user->rolActivo,
             'estado'                  => $user->estado,
             'establecimientos'        => $establecimientos,
