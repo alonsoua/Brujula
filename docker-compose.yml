@@ -1,26 +1,42 @@
+version: '3.8'
+
 services:
-  api_brujula:
-    build:
-      context: ../../../Tools/docker/BD
-      dockerfile: Dockerfile
-    image: api_brujula
-    container_name: api_brujula
-    ports:
-      - "8000:80"
-    volumes:
-      - ../../_MD/Core/api:/var/www/html
-    networks:
-      - app-network
+  db:
+    image: mysql:8.0
+    container_name: mysql-container
+    restart: always
     environment:
-      APACHE_DOCUMENT_ROOT: /var/www/html/public
-      # Asegúrate de configurar todas las variables de entorno necesarias para la conexión a la base de datos
-      DATABASE_HOST: db  # Usa el nombre del servicio db definido en el otro docker-compose
-      DATABASE_USER: root
-      DATABASE_PASSWORD: root
-      DATABASE_NAME: my_database
-    working_dir: /var/www/html
+      MYSQL_ROOT_PASSWORD: root          # Contraseña del usuario root
+      MYSQL_USER: user                   # Usuario adicional
+      MYSQL_DATABASE: my_database        # Base de datos inicial
+      MYSQL_PASSWORD: root               # Contraseña del usuario adicional
+    ports:
+      - "3306:3306"                      # Exponer el puerto de MySQL
+    volumes:
+      - db_data:/var/lib/mysql           # Persistir datos en un volumen
+      - ./mysql-config:/etc/mysql/conf.d # Configuración personalizada de MySQL
+    networks:
+      - db_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin-container
+    restart: always
+    environment:
+      PMA_HOST: db                       # Vincular phpMyAdmin al servicio 'db'
+      PMA_USER: root                     # Usuario por defecto
+      PMA_PASSWORD: root                 # Contraseña por defecto
+      UPLOAD_LIMIT: 128M                 # Configuración adicional
+    ports:
+      - "8091:80"                        # Exponer phpMyAdmin en el puerto 8091
+    volumes:
+      - ./php-config:/usr/local/etc/php/conf.d # Configuración personalizada de PHP
+    networks:
+      - db_network
+
+volumes:
+  db_data:                               # Volumen para almacenar datos de MySQL
 
 networks:
-  app-network:
-    external: true
-    name: bd_app-network
+  db_network:
+    driver: bridge                       # Crear una red para los contenedores
