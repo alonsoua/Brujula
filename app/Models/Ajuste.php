@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ajuste extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     /**
      * The table associated with the model.
      *

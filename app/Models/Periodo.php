@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Periodo extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "periodos";
     /**
      * The attributes that are mass assignable.

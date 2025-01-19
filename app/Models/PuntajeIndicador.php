@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PuntajeIndicador extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "puntajes_indicadores";
     /**
      * The attributes that are mass assignable.

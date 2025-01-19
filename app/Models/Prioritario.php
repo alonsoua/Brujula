@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Prioritario extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "prioritarios";
     /**
      * The attributes that are mass assignable.

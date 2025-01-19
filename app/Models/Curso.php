@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Curso extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "cursos";
     /**
      * The attributes that are mass assignable.

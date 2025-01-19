@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class dash_ld_conexion extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "dash_ld_conexions";
     /**
      * The attributes that are mass assignable.

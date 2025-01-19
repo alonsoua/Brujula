@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Establecimiento extends Model
 {
     use HasFactory;
-
+    protected $connection = 'cliente';
     protected $table = "establecimientos";
     /**
      * The attributes that are mass assignable.
