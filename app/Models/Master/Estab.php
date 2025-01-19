@@ -5,12 +5,12 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Establecimiento extends Model
+class Estab extends Model
 {
     /**
      * Tabla de bd y bd
      */
-    protected $table = 'establecimientos';
+    protected $table = 'estabs';
     protected $connection = 'master';
 
     public $timestamps = false;

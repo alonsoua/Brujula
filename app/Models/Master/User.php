@@ -14,7 +14,7 @@ class User extends Authenticatable
     /**
      * Tabla de bd y bd
      */
-    protected $table = 'users';
+    protected $table = 'master_user';
     protected $connection = 'master';
 
     /**
@@ -85,19 +85,19 @@ class User extends Authenticatable
             ->join('roles', 'roles.id_rol', '=', 'users.id_rol')
             ->get()->toArray();
         // return $dataUser;
-        if ($dataUser != null) {
-            $dataUser[0]['permisos'] = Permisos::select('permisos.action', 'permisos.subject')
-                ->where('id_rol', $dataUser[0]['id_rol'])
-                ->get()->toArray();
+        // if ($dataUser != null) {
+        //     $dataUser[0]['permisos'] = Permisos::select('permisos.action', 'permisos.subject')
+        //         ->where('id_rol', $dataUser[0]['id_rol'])
+        //         ->get()->toArray();
 
-            array_push(
-                $dataUser[0]['permisos'],
-                array(
-                    "action" => "read",
-                    "subject" => "home"
-                )
-            );
-        }
+        //     array_push(
+        //         $dataUser[0]['permisos'],
+        //         array(
+        //             "action" => "read",
+        //             "subject" => "home"
+        //         )
+        //     );
+        // }
         return $dataUser;
     }
 

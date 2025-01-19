@@ -97,7 +97,7 @@ Route::prefix('bru')->group(function () {
     });
 
     // ESTABLECIMIENTOS
-    Route::prefix('establecimiento')->namespace('App\Http\Controllers')->group(function () {
+    Route::prefix('estab')->namespace('App\Http\Controllers')->group(function () {
         Route::post('/login', 'Auth\AuthController@login');
 
         Route::middleware(['auth:establecimiento', 'tenant'])->group(function () {

@@ -13,6 +13,8 @@ use OpenApi\Annotations as OA;
 use App\Helpers\ApiResp;
 use App\Models\Cliente\Permisos;
 use App\Models\Master\Cliente_usuario_rol;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 
@@ -46,56 +48,86 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        dd(111);
-        // * VALIDA REQUEST
-        $data = $request->validate([
-            'correo' => ['required', 'email', 'exists:clientes_usuarios,correo'],
-            'password' => ['required', 'min:6'],
-        ]);
+        $credentials = $request->only('correo', 'password');
 
-        // * BUSCA USUARIO
-        $user = Cliente_usuario::join('clientes_usuarios_rol as cur', 'cur.id_cliente_usuario', '=', 'clientes_usuarios.id_cliente_usuario')
-            ->where('clientes_usuarios.correo', $data['correo'])
-            ->where('cur.estado', 'activo')
-            ->first();
+        // Paso 1: Verificar credenciales en la tabla estab_usuarios
+        $user = \App\Models\Master\Estab_usuario::where('correo', $credentials['correo'])->first();
 
-        // * VALIDACIONES USER
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            Log::error('Cliente-Auth login => Las credenciales ingresadas no coinciden con nuestros registros.');
-            return ApiResp::error('Las credenciales ingresadas no coinciden con nuestros registros.', 400);
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
-        // * USER DATA
-        // $usuario = $user;
-        // $usuario['clientes_usuario'] = $user->ClientesUsuario;
+        // Registrar última conexión y aumentar el conteo de conexiones
+        $user->update([
+            'ultima_conexion' => now(), // Registra la fecha y hora actual
+            'conexiones' => $user->conexiones + 1, // Incrementa el conteo de conexiones
+        ]);
 
+        // Paso 2: Obtener relación del usuario con roles y establecimiento desde estab_usuarios_roles
+        $usuarioRoles = DB::connection('master')
+        ->table('estab_usuarios_roles')
+        ->where('id_estab_usuario', $user->id)
+            ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.id_rol')
+            ->join('estab', 'estab.id', '=', 'estab_usuarios_roles.id_estab')
+            ->select(
+                'roles.id as id_rol',
+                'roles.name as nombre_rol',
+                'roles.guard_name',
+                'estab.id as id_estab',
+                'estab.bd_name',
+                'estab.bd_user',
+                'estab.bd_pass',
+                'estab.bd_host',
+                'estab.bd_port',
+                'estab.nombre as nombre_estab'
+            )
+            ->get();
 
-        // $usuario['permisos_usuario'] = Permisos::select(
-        //     'id_permiso',
-        //     'action',
-        //     'subject',
-        // )
-        //     ->where('id_rol', $user['id_rol']->id_rol)
-        //     ->where('estado', 1)
-        //     ->get();
+        if ($usuarioRoles->isEmpty()) {
+            return response()->json(['error' => 'El usuario no tiene roles o establecimientos asociados'], 404);
+        }
 
-        $user->tokens()->delete();
-        $token = $user->createToken('api_token')->plainTextToken;
-        $cookie = cookie(
-            'api_token',
-            $token,
-            env('COOKIE_LIFETIME', 60 * 24 * 7),
-            env('COOKIE_PATH', '/'),
-            env('COOKIE_DOMAIN', null),
-            env('COOKIE_SECURE', false),
-            env('COOKIE_HTTP_ONLY', false),
-            false,
-            env('COOKIE_SAME_SITE', 'Lax')
-        );
+        // Seleccionar el primer establecimiento para la conexión
+        $establecimiento = $usuarioRoles->first();
 
+        // Paso 3: Configurar la conexión dinámica con los datos del establecimiento
+        Config::set('database.connections.establecimiento', [
+            'driver' => 'mysql',
+            'host' => $establecimiento->bd_host ?? env('DB_HOST', '127.0.0.1'),
+            'port' => $establecimiento->bd_port ?? env('DB_PORT', '3306'),
+            'database' => $establecimiento->bd_name,
+            'username' => $establecimiento->bd_user,
+            'password' => $establecimiento->bd_pass,
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ]);
+
+        DB::purge('establecimiento');
+        DB::reconnect('establecimiento');
+
+        // Generar un token de acceso
+        $token = $user->createToken('estab-token')->plainTextToken;
+
+        // Respuesta
         return response()->json([
             'user' => $user,
-        ], 200)->cookie($cookie);
+            'roles' => $usuarioRoles->map(function ($rol) {
+                return [
+                    'id' => $rol->id_rol,
+                    'name' => $rol->nombre_rol,
+                    'guard_name' => $rol->guard_name,
+                ];
+            }),
+            'establecimiento' => [
+                'id' => $establecimiento->id_estab,
+                'nombre' => $establecimiento->nombre_estab,
+            ],
+            'token' => $token,
+        ]);
     }
 
 

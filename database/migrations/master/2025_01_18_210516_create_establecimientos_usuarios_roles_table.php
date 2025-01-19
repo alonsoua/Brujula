@@ -15,14 +15,14 @@ class CreateEstablecimientosUsuariosRolesTable extends Migration
     {
         Schema::connection('master')->create('estab_usuarios_roles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('id_establecimiento');
-            $table->foreign('id_establecimiento')
+            $table->unsignedBigInteger('id_estab');
+            $table->foreign('id_estab')
                 ->references('id')
                 ->on('estab')
                 ->onUpdate('restrict')
                 ->onDelete('restrict');
-            $table->unsignedBigInteger('id_establecimiento_usuario');
-            $table->foreign('id_establecimiento_usuario')
+            $table->unsignedBigInteger('id_estab_usuario');
+            $table->foreign('id_estab_usuario')
                 ->references('id')
                 ->on('estab_usuarios')
                 ->onUpdate('restrict')

@@ -5,19 +5,19 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Establecimiento_usuario_rol extends Model
+class Estab_usuario_rol extends Model
 {
     use HasFactory;
     /**
      * Tabla de bd y bd
      */
-    protected $table = 'establecimientos_usuarios_rol';
+    protected $table = 'estab_usuarios_roles';
     protected $connection = 'master';
 
     /**
      * The primary key associated with the table.
      */
-    protected $primaryKey = 'id_establecimiento_usuario_rol';
+    protected $primaryKey = 'id';
 
     /**
      * The "type" of the auto-incrementing ID.
@@ -35,8 +35,8 @@ class Establecimiento_usuario_rol extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_establecimiento',
-        'id_establecimiento_usuario',
+        'id_estab',
+        'id_estab_usuario',
         'id_rol',
         'estado',
     ];
