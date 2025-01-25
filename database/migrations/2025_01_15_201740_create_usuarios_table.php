@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateEstablecimientosUsuariosTable extends Migration
+class CreateUsuariosTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,13 @@ class CreateEstablecimientosUsuariosTable extends Migration
      */
     public function up()
     {
-        Schema::connection('master')->create('estab_usuarios', function (Blueprint $table) {
+        Schema::connection('master')->create('usuarios', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('correo')->unique();
             $table->text('password');
             $table->string('nombre')->nullable();
             $table->datetime('ultima_conexion')->nullable();
-            $table->integer('conexiones')->nullable();
+            $table->unsignedInteger('conexiones')->default(0)->nullable(false);
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ class CreateEstablecimientosUsuariosTable extends Migration
      */
     public function down()
     {
-        Schema::connection('master')->dropIfExists('estab_usuarios');
+        Schema::connection('master')->dropIfExists('usuarios');
     }
 }

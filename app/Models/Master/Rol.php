@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -74,8 +74,8 @@ class Rol extends Model
     /**
      * Relación con otros modelos, si aplica (opcional).
      */
-    // public function users()
-    // {
-    //     return $this->hasMany(User::class, 'role_id', 'id');
-    // }
+    public function users()
+    {
+        return $this->hasMany(User::class, 'role_id', 'id');
+    }
 }

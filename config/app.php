@@ -176,11 +176,6 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         /*
-         * JWT Authentication
-         */
-        Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
-
-        /*
         * Package Service Providers...
         */
         Maatwebsite\Excel\ExcelServiceProvider::class,

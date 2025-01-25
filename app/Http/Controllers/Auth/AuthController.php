@@ -111,56 +111,54 @@ class AuthController extends Controller
 
         // Generar un token de acceso
         $token = $user->createToken('estab-token')->plainTextToken;
-
+        
         // Respuesta
         return response()->json([
             'user' => $user,
             'roles' => $usuarioRoles->map(function ($rol) {
                 return [
-                    'id' => $rol->id_rol,
+                    'id_estab' => $rol->id_estab,
+                    'nombre_estab' => $rol->nombre_estab,
+                    'id_rol' => $rol->id_rol,
                     'name' => $rol->nombre_rol,
                     'guard_name' => $rol->guard_name,
                 ];
             }),
-            'establecimiento' => [
-                'id' => $establecimiento->id_estab,
-                'nombre' => $establecimiento->nombre_estab,
-            ],
             'token' => $token,
         ]);
     }
 
 
-    // /**
-    //  * @OA\Post(
-    //  *     path="/cliente/me",
-    //  *     tags={"cliente-auth"},
-    //  *     summary="Data usuario",
-    //  *     description="Obtiene datos de usuario.",
-    //  *     @OA\RequestBody(
-    //  *         required=true,
-    //  *         description="Data necesaria",
-    //  *         @OA\JsonContent(
-    //  *             required={"token"},
-    //  *             @OA\Property(property="token", type="bearer"),
-    //  *         )
-    //  *     ),
-    //  *     @OA\Response(
-    //  *         response=201,
-    //  *         description="Retorna datos"
-    //  *     ),
-    //  *     @OA\Response(
-    //  *         response=400,
-    //  *         description="Invalid Token"
-    //  *     )
-    //  * )
-    //  */
+    /**
+     * @OA\Post(
+     *     path="/cliente/me",
+     *     tags={"cliente-auth"},
+     *     summary="Data usuario",
+     *     description="Obtiene datos de usuario.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Data necesaria",
+     *         @OA\JsonContent(
+     *             required={"token"},
+     *             @OA\Property(property="token", type="bearer"),
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Retorna datos"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid Token"
+     *     )
+     * )
+     */
     // public function authme()
     // {
+    //     $usuario = Auth::user();
     //     try {
-    //         $usuario = Auth::user();
-    //         $usuario['rol_activo'] = Auth::user()->ClienteUsuarioRol;
-    //         $usuario['clientes_usuario'] = Auth::user()->ClientesUsuario;
+    //         $usuario['rol_activo'] = $usuario->ClienteUsuarioRol;
+    //         $usuario['clientes_usuario'] = $usuario->ClientesUsuario;
     //         $usuario['permisos_usuario'] = Permisos::select(
     //             'action',
     //             'subject'

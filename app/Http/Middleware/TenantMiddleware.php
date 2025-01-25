@@ -23,12 +23,9 @@ class TenantMiddleware
         // Verificar si el usuario está autenticado
         if (Auth::check()) {
             $user = Auth::user();
-
-            // Verificar si el usuario tiene un establecimiento asociado
-            $establecimiento = $user->establecimientoBD;
-
-            if ($establecimiento) {
-                $this->configureTenantConnection($establecimiento);
+            $estabBD = $user->estabBD;
+            if ($estabBD) {
+                $this->configureTenantConnection($estabBD);
             } else {
                 return response()->json(['error' => 'No se encontró un establecimiento asociado'], 403);
             }
@@ -43,15 +40,15 @@ class TenantMiddleware
      * @param  object  $establecimiento
      * @return void
      */
-    private function configureTenantConnection($establecimiento): void
+    private function configureTenantConnection($estab): void
     {
         Config::set('database.connections.establecimiento', [
             'driver' => 'mysql',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => $establecimiento->bd_name,
-            'username' => $establecimiento->bd_user,
-            'password' => $establecimiento->bd_pass,
+            'host' => $estab['bd_host'] ?? '127.0.0.1',
+            'port' => $estab['bd_port'] ?? '3306',
+            'database' => $estab['bd_name'],
+            'username' => $estab['bd_user'],
+            'password' => $estab['bd_pass'],
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',

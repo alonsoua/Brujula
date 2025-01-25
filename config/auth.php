@@ -42,10 +42,10 @@ return [
         ],
         'establecimiento' => [
             'driver' => 'sanctum',
-            'provider' => 'establecimiento_usuario', // Asegúrate de definir este provider
+            'provider' => 'estab_usuarios', // Asegúrate de definir este provider
         ],
         'api' => [
-            'driver' => 'jwt',
+            'driver' => 'sanctum',
             'provider' => 'users',
             // 'hash' => false,
         ],
@@ -79,7 +79,7 @@ return [
         ],
         'estab_usuarios' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Master\Establecimiento_usuario::class,
+            'model' => App\Models\Master\Estab_usuario::class,
         ],
     ],
 

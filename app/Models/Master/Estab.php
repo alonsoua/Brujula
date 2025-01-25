@@ -7,13 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Estab extends Model
 {
-    /**
-     * Tabla de bd y bd
-     */
-    protected $table = 'estabs';
+    use HasFactory;
+
+    protected $table = 'estab';
     protected $connection = 'master';
 
     public $timestamps = false;
 
-    use HasFactory;
+    protected $fillable = [
+        'bd_name',
+        'bd_pass',
+        'bd_user',
+        'bd_host',
+        'bd_port',
+        'nombre',
+        'rbd',
+        'estado',
+    ];
+
+    protected $casts = [
+        'estado' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 }

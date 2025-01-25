@@ -2,10 +2,13 @@
 
 namespace App\Models\Master;
 
+use App\Models\Master\Rol as MasterRol;
+use App\Models\Rol;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class Estab_usuario extends Authenticatable
@@ -62,41 +65,52 @@ class Estab_usuario extends Authenticatable
     {
         return $this->belongsTo(Estab::class, 'id_estab');
     }
+    
     /**
      * Relación con Rol.
      */
-    // public function roles()
-    // {
-    //     return $this->belongsTo(Roles::class, 'id_estab_rol');
-    // }
-
-    public function getEstabBDAttribute()
+    public function roles()
     {
-        return $this->getEstabBD() ?? null;
+        return $this->belongsTo(MasterRol::class, 'id_estab_rol');
     }
 
+    /**
+     * DATA DEL USUARIO LOGEADO.
+     */
     public function getEstabBD()
     {
-        $id_estab_usuario = $this['id_estab_usuario'];
+        // Buscar todos los establecimientos activos asociados al usuario
+        $estabsActivos = Estab_usuario_rol::with(['establecimiento'])
+        ->where('id_estab_usuario', $this->id)
+            ->where('estado', 1)
+            ->get();
 
-        return Estab_usuario::from('estabs_usuarios as cu')
-            ->select(
-                'cl.id_estab',
-                'cl.bd_name',
-                'cl.bd_pass',
-                'cl.bd_user',
-            )
-            ->join('estabs_usuarios_rol as cur', 'cu.id_estab_usuario_rol_activo', '=', 'cur.id_estab_usuario_rol')
-            ->join('estabs as cl', 'cur.id_estab', '=', 'cl.id_estab')
-            ->where('cu.id_estab_usuario', $id_estab_usuario)
-            ->where('cur.estado', 'activo')
-            ->where('cl.estado', 'activo')
-            ->first();
-    }
+        // Si no existe ningún establecimiento activo, emitir un error
+        if ($estabsActivos->isEmpty()) {
+            throw new \Exception('No se encontró ningún establecimiento activo asociado al usuario.');
+        }
 
-    public function getEstabsUsuarioAttribute()
-    {
-        return $this->getEstabsUsuario() ?? null;
+        // Si existe más de un establecimiento activo, emitir un error
+        if ($estabsActivos->count() > 1) {
+            throw new \Exception('Se encontraron múltiples establecimientos activos asociados al usuario.');
+        }
+
+        // Tomar el único establecimiento activo
+        $estabActivo = $estabsActivos->first();
+
+        // Verificar que la relación con el establecimiento existe
+        if (!$estabActivo->establecimiento) {
+            throw new \Exception('El establecimiento activo no tiene datos asociados.');
+        }
+
+        // Retornar los datos de conexión del establecimiento
+        return [
+            'bd_name' => $estabActivo->establecimiento->bd_name,
+            'bd_user' => $estabActivo->establecimiento->bd_user,
+            'bd_pass' => $estabActivo->establecimiento->bd_pass,
+            'bd_host' => $estabActivo->establecimiento->bd_host,
+            'bd_port' => $estabActivo->establecimiento->bd_port,
+        ];
     }
 
     public function getEstabsUsuario()
@@ -160,28 +174,66 @@ class Estab_usuario extends Authenticatable
         return $result = array_values($result);
     }
 
+    public function getEstabUsuarioRol()
+    {
+        // Verificar si existe un rol activo para este usuario
+        $rolActivo = Estab_usuario_rol::with(['rol', 'establecimiento']) // Carga las relaciones necesarias
+        ->where('id_estab_usuario', $this->id) // Cambié $this->id_estab_usuario por $this->id
+            ->where('estado', 1) // Solo considera roles activos
+            ->first();
+
+        // Depuración de datos
+        if (!$rolActivo) {
+            dd('No se encontró un rol activo para este usuario.');
+        }
+
+        // Depuración de relaciones
+        if (!$rolActivo->rol || !$rolActivo->establecimiento) {
+            dd('Faltan relaciones: ', $rolActivo->toArray());
+        }
+
+        // Obtener los permisos asociados al rol activo
+        $permisos = DB::table('role_has_permissions')
+        ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+        ->where('role_has_permissions.role_id', $rolActivo->rol->id)
+            ->select('permissions.id', 'permissions.name', 'permissions.guard_name')
+            ->get()
+            ->map(function ($permiso) {
+                return [
+                    'id' => $permiso->id,
+                    'name' => $permiso->name,
+                    'guard_name' => $permiso->guard_name,
+                ];
+            })
+            ->toArray();
+
+        // Retornar datos del rol, permisos y establecimiento
+        return [
+            'rol' => [
+                'id' => $rolActivo->rol->id,
+                'nombre' => $rolActivo->rol->name,
+                'guard_name' => $rolActivo->rol->guard_name,
+            ],
+            'permisos' => $permisos,
+            'establecimiento' => [
+                'id' => $rolActivo->establecimiento->id,
+                'nombre' => $rolActivo->establecimiento->nombre,
+            ],
+        ];
+    }
+
+    public function getEstabBDAttribute()
+    {
+        return $this->getEstabBD() ?? null;
+    }
+
+    public function getEstabsUsuarioAttribute()
+    {
+        return $this->getEstabsUsuario() ?? null;
+    }
+
     public function getEstabUsuarioRolAttribute()
     {
         return $this->getEstabUsuarioRol() ?? null;
-    }
-
-    public function getEstabUsuarioRol()
-    {
-        $id_estab_usuario = $this['id_estab_usuario'];
-
-        return  Estab_usuario::from('estabs_usuarios as cu')
-            ->select(
-                'cr.id_estab_rol as id_rol',
-                'cr.nombre as nombre_rol',
-                'cr.abreviatura',
-
-                'cl.nombre_estab',
-            )
-            ->join('estabs_usuarios_rol as cur', 'cu.id_estab_usuario_rol_activo', '=', 'cur.id_estab_usuario_rol')
-            ->join('estabs_roles as cr', 'cur.id_rol', '=', 'cr.id_estab_rol')
-            ->join('estabs as cl', 'cl.id_estab', '=', 'cur.id_estab')
-            ->where('cu.id_estab_usuario', $id_estab_usuario)
-            ->where('cur.estado', 'activo')
-            ->first();
     }
 }

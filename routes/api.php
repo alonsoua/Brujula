@@ -19,6 +19,7 @@ use App\Http\Controllers\CursoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\AlumnoController;
+use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\AvanceAprendizajeController;
 use App\Http\Controllers\PuntajeIndicadorController;
 use App\Http\Controllers\NotasConversionController;
@@ -102,6 +103,9 @@ Route::prefix('bru')->group(function () {
 
         Route::middleware(['auth:establecimiento', 'tenant'])->group(function () {
 
+            Route::get('/me', 'Auth\MeController@me');
+            Route::post('/logout', 'Auth\AuthController@logout');
+            
             // * Imports
             Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
             Route::post('/alumnos/importCSV', [AlumnoController::class, 'importAlumnosCSV']);
