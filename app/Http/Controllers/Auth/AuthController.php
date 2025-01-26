@@ -51,7 +51,7 @@ class AuthController extends Controller
         $credentials = $request->only('correo', 'password');
 
         // Paso 1: Verificar credenciales en la tabla estab_usuarios
-        $user = \App\Models\Master\Estab_usuario::where('correo', $credentials['correo'])->first();
+        $user = \App\Models\Master\Usuario::where('correo', $credentials['correo'])->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             return response()->json(['error' => 'Credenciales inválidas'], 401);
@@ -66,20 +66,20 @@ class AuthController extends Controller
         // Paso 2: Obtener relación del usuario con roles y establecimiento desde estab_usuarios_roles
         $usuarioRoles = DB::connection('master')
         ->table('estab_usuarios_roles')
-        ->where('id_estab_usuario', $user->id)
-            ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.id_rol')
-            ->join('estab', 'estab.id', '=', 'estab_usuarios_roles.id_estab')
+            ->where('idUsuario', $user->id)
+            ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.idRol')
+            ->join('establecimientos', 'establecimientos.id', '=', 'estab_usuarios_roles.idEstablecimiento')
             ->select(
-                'roles.id as id_rol',
+            'roles.id as idRol',
                 'roles.name as nombre_rol',
                 'roles.guard_name',
-                'estab.id as id_estab',
-                'estab.bd_name',
-                'estab.bd_user',
-                'estab.bd_pass',
-                'estab.bd_host',
-                'estab.bd_port',
-                'estab.nombre as nombre_estab'
+            'establecimientos.id as idEstablecimiento',
+            'establecimientos.bd_name',
+            'establecimientos.bd_user',
+            'establecimientos.bd_pass',
+            'establecimientos.bd_host',
+            'establecimientos.bd_port',
+            'establecimientos.nombre as nombre_establecimiento'
             )
             ->get();
 
@@ -117,9 +117,9 @@ class AuthController extends Controller
             'user' => $user,
             'roles' => $usuarioRoles->map(function ($rol) {
                 return [
-                    'id_estab' => $rol->id_estab,
-                    'nombre_estab' => $rol->nombre_estab,
-                    'id_rol' => $rol->id_rol,
+                    'id_estab' => $rol->idEstablecimiento,
+                    'nombre_estab' => $rol->nombre_establecimiento,
+                    'id_rol' => $rol->idRol,
                     'name' => $rol->nombre_rol,
                     'guard_name' => $rol->guard_name,
                 ];
