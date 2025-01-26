@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Periodo extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'master';
     protected $table = "periodos";
     /**
      * The attributes that are mass assignable.
@@ -23,13 +23,13 @@ class Periodo extends Model
         'updated_at',
     ];
 
-    public static function getPeriodoActual() {
-        $ano_actual = date("Y");
+    public static function getPeriodoActual()
+    {
+        $annio_actual = date("Y");
         $sql = 'SELECT *
                 FROM periodos
-                WHERE nombre = '. $ano_actual;
+                WHERE nombre = ' . $annio_actual;
 
         return DB::select($sql, []);
-
     }
 }

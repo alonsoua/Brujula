@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\UrlGenerator;
 
-class EstablecimientoController extends Controller
+class ClienteEstablecimientoController extends Controller
 {
 
     protected $url;

@@ -19,7 +19,7 @@ class CreatePuntajesIndicadoresTransformacionTable extends Migration
             $table->integer('rangoDesde');
             $table->integer('rangoHasta');
             $table->string('nivelLogro');
-            $table->string('idPeriodo');
+            $table->string('idPeriodo')->nullable();
             $table->string('estado')->nullable();
             $table->timestamps();
         });

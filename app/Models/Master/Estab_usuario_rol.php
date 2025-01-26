@@ -15,24 +15,24 @@ class Estab_usuario_rol extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'id_estab_usuario',
-        'id_rol',
-        'id_estab',
+        'idUsuario',
+        'idRol',
+        'idEstablecimiento',
         'estado',
     ];
 
     public function usuario()
     {
-        return $this->belongsTo(Estab_usuario::class, 'id_estab_usuario');
+        return $this->belongsTo(Usuario::class, 'idUsuario', 'id');
     }
 
     public function rol()
     {
-        return $this->belongsTo(MasterRol::class, 'id_rol', 'id');
+        return $this->belongsTo(MasterRol::class, 'idRol', 'id');
     }
 
     public function establecimiento()
     {
-        return $this->belongsTo(Estab::class, 'id_estab', 'id');
+        return $this->belongsTo(Establecimiento::class, 'idEstablecimiento', 'id');
     }
 }

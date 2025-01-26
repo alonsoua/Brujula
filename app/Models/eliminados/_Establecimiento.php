@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Establecimiento extends Model
+class ClienteEstablecimiento extends Model
 {
     use HasFactory;
     protected $connection = 'cliente';
@@ -29,9 +29,10 @@ class Establecimiento extends Model
         'updated_at',
     ];
 
-    public static function getAll($idEstablecimiento) {
+    public static function getAll($idEstablecimiento)
+    {
         $establecimientos = Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
-            ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id");
+            ->leftJoin("periodos", "establecimientos.idPeriodoActivo", "=", "periodos.id");
 
         if (!is_null($idEstablecimiento)) {
             $establecimientos = $establecimientos->where('establecimientos.id', $idEstablecimiento);
@@ -42,9 +43,10 @@ class Establecimiento extends Model
         return $establecimientos;
     }
 
-    public static function getAllActivos($idEstablecimiento) {
+    public static function getAllActivos($idEstablecimiento)
+    {
         $establecimientos = Establecimiento::select('establecimientos.*', 'periodos.nombre as nombrePeriodo')
-            ->leftJoin("periodos","establecimientos.idPeriodoActivo","=","periodos.id")
+            ->leftJoin("periodos", "establecimientos.idPeriodoActivo", "=", "periodos.id")
             ->where('estado', 'Activo');
 
         if (!is_null($idEstablecimiento)) {
@@ -56,16 +58,16 @@ class Establecimiento extends Model
         return $establecimientos;
     }
 
-    public static function getActivos() {
+    public static function getActivos()
+    {
 
         return Establecimiento::where('estado', 'Activo')
-                        ->orderBy('nombre')
-                        ->get();
-
+            ->orderBy('nombre')
+            ->get();
     }
 
-    public static function getIDPeriodoActivo($idEstablecimiento) {
+    public static function getIDPeriodoActivo($idEstablecimiento)
+    {
         return Establecimiento::where('id', $idEstablecimiento)->value('idPeriodoActivo');
     }
-
 }

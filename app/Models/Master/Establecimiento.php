@@ -5,24 +5,32 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Estab extends Model
+class Establecimiento extends Model
 {
     use HasFactory;
-
-    protected $table = 'estab';
+    protected $table = 'establecimientos';
     protected $connection = 'master';
 
     public $timestamps = false;
 
     protected $fillable = [
         'bd_name',
-        'bd_pass',
         'bd_user',
+        'bd_pass',
         'bd_host',
         'bd_port',
-        'nombre',
         'rbd',
+        'nombre',
+        'insignia',
+        'correo',
+        'telefono',
+        'direccion',
+        'dependencia',
+        'idPeriodoActivo',
+        'fechaInicioPeriodoActivo',
         'estado',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

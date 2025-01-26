@@ -15,7 +15,7 @@ class CreatePuntajesIndicadoresTable extends Migration
     {
         Schema::connection('establecimiento')->create('puntajes_indicadores', function (Blueprint $table) {
             $table->id();
-            $table->integer('idPeriodo');
+            $table->integer('idPeriodo')->nullable();
             $table->unsignedBigInteger('idCurso');
             $table->foreign('idCurso')
                 ->references('id')

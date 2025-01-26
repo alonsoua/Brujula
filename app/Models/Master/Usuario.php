@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
-class Estab_usuario extends Authenticatable
+class Usuario extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * Tabla de bd y bd
      */
-    protected $table = 'estab_usuarios';
+    protected $table = 'usuarios';
     protected $connection = 'master';
 
     /**
@@ -44,9 +44,18 @@ class Estab_usuario extends Authenticatable
     protected $fillable = [
         'correo',
         'password',
-        'nombre',
-        'conexiones',
+        'avatar',
+        'rut',
+        'nombres',
+        'primerApellido',
+        'segundoApellido',
         'ultima_conexion',
+        'conexiones',
+        'estado',
+        'idUsuarioCreated',
+        'idUsuarioUpdated',
+        'created_at',
+        'updated_at',
     ];
 
     /**
@@ -61,27 +70,27 @@ class Estab_usuario extends Authenticatable
     /**
      * Relación con Estab.
      */
-    public function estab()
+    public function establecimiento()
     {
-        return $this->belongsTo(Estab::class, 'id_estab');
+        return $this->belongsTo(Establecimiento::class, 'idEstablecimiento');
     }
-    
+
     /**
      * Relación con Rol.
      */
     public function roles()
     {
-        return $this->belongsTo(MasterRol::class, 'id_estab_rol');
+        return $this->belongsTo(MasterRol::class, 'idEstabUsuarioRol', 'id');
     }
 
     /**
      * DATA DEL USUARIO LOGEADO.
      */
-    public function getEstabBD()
+    public function getEstablecimientoBD()
     {
         // Buscar todos los establecimientos activos asociados al usuario
         $estabsActivos = Estab_usuario_rol::with(['establecimiento'])
-        ->where('id_estab_usuario', $this->id)
+            ->where('idUsuario', $this->id)
             ->where('estado', 1)
             ->get();
 
@@ -115,34 +124,21 @@ class Estab_usuario extends Authenticatable
 
     public function getEstabsUsuario()
     {
-        $id_estab_usuario = $this['id_estab_usuario'];
+        $idUsuario = $this['idUsuario'];
 
         $estabsRoles = Estab_usuario_rol::from('estabs_usuarios_rol as cur')
             ->select(
-                // CLIENTE
-                'cl.id_estab',
-                'cl.nombre_estab',
-                // 'cl.nombre_contacto',
-                // 'cl.celular',
-                // 'cl.correo',
-                // 'cl.logotipo',
-                // 'cl.pais',
-                // 'cl.codigo_pais',
-                // 'cl.moneda',
-                // 'cl.timezone',
-                // 'cl.verificacion_email',
-                // 'cl.tipo_estab',
-                // 'cl.created_at',
-                // 'cl.updated_at',
+                // ESTABLECIMIENTO
+                'cl.id as idEstablecimiento',
+                'cl.nombre as nombre_establecimiento',
 
                 // ROLES
-                'cr.id_estab_rol',
+                'cr.id as idRol',
                 'cr.nombre as nombre_rol',
-                'cr.abreviatura',
             )
-            ->join('estabs as cl', 'cur.id_estab', '=', 'cl.id_estab')
-            ->join('estabs_roles as cr', 'cur.id_rol', '=', 'cr.id_estab_rol')
-            ->where('cur.id_estab_usuario', $id_estab_usuario)
+            ->join('establecimientos as cl', 'cur.idEstablecimiento', '=', 'cl.id')
+            ->join('roles as cr', 'cur.idRol', '=', 'cr.id')
+            ->where('cur.idUsuario', $idUsuario)
 
             ->where('cur.estado', 'activo')
             ->where('cl.estado', 'activo')
@@ -152,22 +148,21 @@ class Estab_usuario extends Authenticatable
         $result = [];
 
         foreach ($estabsRoles as $item) {
-            if (!isset($result[$item->id_estab])) {
+            if (!isset($result[$item->idEstablecimiento])) {
                 $result[$item->id_estab] = [
-                    'id_estab' => $item->id_estab,
+                    'id_estab' => $item->idEstablecimiento,
 
                     'bd_name' => $item->bd_name,
                     'bd_pass' => $item->bd_pass,
                     'bd_user' => $item->bd_user,
 
-                    'nombre_estab' => $item->nombre_estab,
+                    'nombre_establecimiento' => $item->nombre_establecimiento,
                     'roles' => []
                 ];
             }
             $result[$item->id_estab]['roles'][] = [
-                'id_rol' => $item->id_estab_rol,
+                'idRol' => $item->idRol,
                 'nombre' => $item->nombre_rol,
-                'abreviatura' => $item->abreviatura
             ];
         }
 
@@ -178,7 +173,7 @@ class Estab_usuario extends Authenticatable
     {
         // Verificar si existe un rol activo para este usuario
         $rolActivo = Estab_usuario_rol::with(['rol', 'establecimiento']) // Carga las relaciones necesarias
-        ->where('id_estab_usuario', $this->id) // Cambié $this->id_estab_usuario por $this->id
+            ->where('idUsuario', $this->id) // Cambié $this->idUsuario por $this->id
             ->where('estado', 1) // Solo considera roles activos
             ->first();
 
@@ -194,8 +189,8 @@ class Estab_usuario extends Authenticatable
 
         // Obtener los permisos asociados al rol activo
         $permisos = DB::table('role_has_permissions')
-        ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
-        ->where('role_has_permissions.role_id', $rolActivo->rol->id)
+            ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('role_has_permissions.role_id', $rolActivo->rol->id)
             ->select('permissions.id', 'permissions.name', 'permissions.guard_name')
             ->get()
             ->map(function ($permiso) {

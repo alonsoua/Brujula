@@ -13,7 +13,6 @@ use App\Http\Controllers\DiagnosticoPieController;
 use App\Http\Controllers\PrioritarioController;
 
 use App\Http\Controllers\DashController;
-use App\Http\Controllers\EstablecimientoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\CursoController;
 use App\Http\Controllers\UserController;
@@ -26,8 +25,7 @@ use App\Http\Controllers\NotasConversionController;
 use App\Http\Controllers\NotasController;
 use App\Http\Controllers\InformeHogarController;
 use App\Http\Controllers\InformesController;
-
-
+use App\Http\Controllers\Master\EstablecimientoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,13 +58,20 @@ Route::prefix('bru')->group(function () {
 
     // MASTER
     Route::prefix('master')->namespace('App\Http\Controllers\Master')->group(function () {
-        Route::post('/login', 'AuthController@login');
+        // Route::post('/login', 'AuthController@login');
+        Route::post('/establecimiento', [EstablecimientoController::class, 'store']);
 
         Route::middleware(['auth:master', 'tenant'])->group(function () {
             // Route::post(
             //     '/me',
             //     'AuthController@authme'
             // );
+            // Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
+            // Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
+            // Route::post('/establecimiento', [EstablecimientoController::class, 'store']);
+            // Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
+            // Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::class, 'updatePeriodoActivo']);
+
             // Route::post('/logout', 'AuthController@logout');
 
             // // * USUARIOS
@@ -123,9 +128,6 @@ Route::prefix('bru')->group(function () {
             Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
             // * Establecimientos
-            Route::get('/establecimientos', [EstablecimientoController::class, 'index']);
-            Route::get('/establecimientos/activos', [EstablecimientoController::class, 'getActivos']);
-            Route::post('/establecimientos', [EstablecimientoController::class, 'store']);
             Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
             Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::class, 'updatePeriodoActivo']);
 
