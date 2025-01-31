@@ -20,15 +20,19 @@ class MeController extends Controller
 
     public function __construct(UrlGenerator $url)
     {
-        $this->middleware(['auth:api']);
+        $this->middleware(['auth:establecimiento']);
         $this->url = $url;
     }
 
 
     public function me(Request $request)
     {
+        dd('Entró a me()');
+        return 111;
         $user = $request->user();
 
+
+        dd($user);
         // Validar si el usuario está activo
         if ($user->estado == false) {
             auth()->logout();

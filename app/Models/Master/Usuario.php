@@ -219,7 +219,7 @@ class Usuario extends Authenticatable
 
     public function getEstabBDAttribute()
     {
-        return $this->getEstabBD() ?? null;
+        return $this->getEstablecimientoBD() ?? null;
     }
 
     public function getEstabsUsuarioAttribute()

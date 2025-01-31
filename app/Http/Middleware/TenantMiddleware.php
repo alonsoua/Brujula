@@ -22,6 +22,7 @@ class TenantMiddleware
     {
         // Verificar si el usuario está autenticado
         if (Auth::check()) {
+
             $user = Auth::user();
             $estabBD = $user->estabBD;
             if ($estabBD) {

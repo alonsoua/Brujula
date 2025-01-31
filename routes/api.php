@@ -108,8 +108,8 @@ Route::prefix('bru')->group(function () {
 
         Route::middleware(['auth:establecimiento', 'tenant'])->group(function () {
 
-            Route::get('/me', 'Auth\MeController@me');
-            Route::post('/logout', 'Auth\AuthController@logout');
+            Route::get('auth/me', 'Auth\MeController@me');
+            Route::post('auth/logout', 'Auth\AuthController@logout');
             
             // * Imports
             Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
