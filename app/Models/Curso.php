@@ -76,23 +76,9 @@ class Curso extends Model
         });
     }
 
-    public static function getAllEstado($idEstablecimiento, $estado, $idPeriodo)
+    public static function getAllEstado($estado, $idPeriodo)
     {
-        $cursos = Curso::select(
-            'cursos.*',
-            'users.nombres as nombreProfesorJefe',
-            'grados.nombre as nombreGrado',
-            'grados.id as idGrado',
-            'periodos.nombre as nombrePeriodo',
-            'establecimientos.nombre as nombreEstablecimiento'
-        )
-            ->leftJoin("users", "cursos.idProfesorJefe", "=", "users.id")
-            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
-            ->leftJoin("periodos", "cursos.idPeriodo", "=", "periodos.id")
-            ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id");
-        if (!is_null($idEstablecimiento)) {
-            $cursos = $cursos->where('establecimientos.id', $idEstablecimiento);
-        }
+        $cursos = Curso::select('cursos.*');
         if (!is_null($estado)) {
             $cursos = $cursos->where('cursos.estado', $estado);
         }
@@ -100,6 +86,7 @@ class Curso extends Model
             $cursos = $cursos->where('cursos.idPeriodo', $idPeriodo);
         }
         $cursos = $cursos->orderBy('cursos.idGrado')
+            ->orderBy('letra')
             ->get();
         return $cursos;
     }

@@ -123,16 +123,32 @@ Route::prefix('bru')->group(function () {
             Route::get('/grados/porIdNivel/{idNivel}', [GradoController::class, 'getPorIdNivel']); //(idTipoEnseñanza)
             // Route::get('/grados', [GradoController::class, 'index']);
 
+            // * Diagnostico pie
+            Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
+
+            // * Prioritario
+            Route::get('/prioritarios', [PrioritarioController::class, 'index']);
+
             // * Endpoints establecimiento (tenant)
             // * Cursos
             Route::get('/cursos', [CursoController::class, 'index']);
-            // Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
+            Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
             // Route::get('/cursos/activos/establecimiento/{idestablecimiento}', [CursoController::class, 'getActivosEstablecimiento']);
             // Route::get('/cursos/usuario/{idPeriodoHistorico}', [CursoController::class, 'getCursosUsuario']);
             Route::post('/cursos', [CursoController::class, 'store']);
             Route::put('/cursos/{id}', [CursoController::class, 'update']);
             // Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
-            
+
+            // * Alumnos
+            Route::get('/alumnos', [AlumnoController::class, 'index']);
+            // Route::get('/alumnos/periodo', [AlumnoController::class, 'getAlumnosPeriodo']);
+            // Route::get('/alumnos/curso/{idCurso}', [AlumnoController::class, 'getAlumnosCurso']);
+            Route::post('/alumnos', [AlumnoController::class, 'store']);
+            Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
+            Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
+            // * Imports
+            // Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
+            Route::post('/alumnos/importCSV', [AlumnoController::class, 'importAlumnosCSV']);
 
             // // * Usuarios
             // Route::get('/usuarios', [UserController::class, 'index']);
@@ -149,27 +165,6 @@ Route::prefix('bru')->group(function () {
             // // * Establecimientos
             // Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
             // Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::class, 'updatePeriodoActivo']);
-
-            
-
-            // // * Alumnos
-            Route::get('/alumnos', [AlumnoController::class, 'index']);
-            // Route::get('/alumnos/periodo', [AlumnoController::class, 'getAlumnosPeriodo']);
-            // Route::post('/alumnos', [AlumnoController::class, 'store']);
-            // Route::get('/alumnos/curso/{idCurso}', [AlumnoController::class, 'getAlumnosCurso']);
-            // Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
-            // Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
-            // * Imports
-            // Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
-            Route::post('/alumnos/importCSV', [AlumnoController::class, 'importAlumnosCSV']);
-
-            // // * Diagnostico pie
-            // Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
-
-            // // * Prioritario
-            // Route::get('/prioritarios', [PrioritarioController::class, 'index']);
-
-            
 
             // // * Asignaturas
             // Route::get(

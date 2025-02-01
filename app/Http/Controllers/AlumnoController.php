@@ -47,6 +47,7 @@ class AlumnoController extends Controller
             ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
             ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('alumnos_cursos.estado', '!=', 'Eliminado')
             ->orderBy('cursos.idGrado')
             ->orderBy('cursos.letra')
             ->orderBy('alumnos.numLista')
@@ -550,15 +551,37 @@ class AlumnoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    // public function destroy(Request $request, $id)
-    // {
-    //     try {
-    //         $alumno_curso = Alumnos_Cursos::where('idAlumno', $id);
-    //         $alumno_curso->estado = 'Eliminado';
-    //         $alumno_curso->save();
-    //         // $alumno->delete();
-    //     } catch (\Throwable $th) {
-    //         return response($th, 500);
-    //     }
-    // }
+    public function destroy(Request $request, $id)
+    {
+        try {
+            // Buscar la relación del alumno en alumnos_cursos
+            $alumnoCurso = DB::connection('establecimiento')
+            ->table('alumnos_cursos')
+            ->where('idAlumno', $id)
+                ->first();
+
+            if (!$alumnoCurso) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No se encontró la relación del alumno con el curso',
+                ], 404);
+            }
+
+            // Actualizar el estado en la tabla alumnos_cursos
+            DB::connection('establecimiento')
+            ->table('alumnos_cursos')
+            ->where('idAlumno', $id)
+                ->update(['estado' => 'Eliminado']); // 👈 Cambia el estado a "Eliminado"
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'El alumno ha sido marcado como eliminado',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error al actualizar el estado del alumno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
