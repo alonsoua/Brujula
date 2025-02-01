@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
@@ -43,23 +44,49 @@ class TenantMiddleware
      */
     private function configureTenantConnection($estab): void
     {
-        Config::set('database.connections.establecimiento', [
-            'driver' => 'mysql',
-            'host' => $estab['bd_host'] ?? '127.0.0.1',
-            'port' => $estab['bd_port'] ?? '3306',
-            'database' => $estab['bd_name'],
-            'username' => $estab['bd_user'],
-            'password' => $estab['bd_pass'],
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-        ]);
+        try {
+            // Verifica que la información del establecimiento se esté obteniendo correctamente
+            logger()->info('Configurando conexión para el establecimiento:', [
+                'host' => $estab['bd_host'],
+                'port' => $estab['bd_port'],
+                'database' => $estab['bd_name'],
+                'username' => $estab['bd_user'],
+                'password_encrypted' => $estab['bd_pass'], // Contraseña encriptada
+            ]);
 
-        DB::purge('establecimiento'); // Limpia la conexión actual
-        DB::reconnect('establecimiento'); // Reconecta con la nueva configuración
-        DB::setDefaultConnection('establecimiento'); // Establece 'establecimiento' como la conexión por defecto
+            // Desencripta la contraseña
+            $password = decrypt($estab['bd_pass']);
+
+            // Imprime la contraseña desencriptada en los logs
+            logger()->info('Contraseña desencriptada:', ['password' => $password]);
+
+            Config::set('database.connections.establecimiento', [
+                'driver' => 'mysql',
+                'host' => $estab['bd_host'] ?? '127.0.0.1',
+                'port' => $estab['bd_port'] ?? '3306',
+                'database' => $estab['bd_name'],
+                'username' => $estab['bd_user'],
+                'password' => $password, // 👈 Asegurar que la contraseña es válida
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix' => '',
+                'strict' => true,
+                'engine' => null,
+            ]);
+
+            Artisan::call('config:clear');
+
+            DB::purge('establecimiento');
+            DB::reconnect('establecimiento');
+            DB::setDefaultConnection('establecimiento');
+
+            logger()->info('Conexión establecida:', [
+                'database' => config('database.connections.establecimiento.database'),
+                'username' => config('database.connections.establecimiento.username'),
+                'password' => config('database.connections.establecimiento.password'),
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('Error al desencriptar la contraseña: ' . $e->getMessage());
+        }
     }
 }

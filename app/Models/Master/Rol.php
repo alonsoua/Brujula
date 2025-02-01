@@ -4,6 +4,7 @@ namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Rol extends Model
 {
@@ -78,4 +79,25 @@ class Rol extends Model
     {
         return $this->hasMany(User::class, 'role_id', 'id');
     }
+
+    public static function rolHasPermisos($idRol)
+    {
+        $permisos = DB::connection('master')->table('role_has_permissions')
+            ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+            ->where('role_has_permissions.role_id', $idRol)
+            ->select('permissions.name')
+            ->get()
+            ->map(function ($permiso) {
+                $val = explode('_', $permiso->name);
+                return [
+                    'action' => $val[0] ?? null,
+                    'subject' => $val[1] ?? null,
+                ];
+            })
+            ->toArray();
+
+        array_unshift($permisos, ['action' => 'read', 'subject' => 'home']);
+        return $permisos;
+    }
+
 }

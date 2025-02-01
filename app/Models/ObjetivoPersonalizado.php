@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class ObjetivoPersonalizado extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'establecimiento';
     protected $table = "objetivos_personalizados";
     /**
      * The attributes that are mass assignable.

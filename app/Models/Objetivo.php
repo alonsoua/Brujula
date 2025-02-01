@@ -10,7 +10,7 @@ use App\Models\IndicadoresPersonalizados;
 class Objetivo extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'establecimiento';
     protected $table = "objetivos";
     /**
      * The attributes that are mass assignable.

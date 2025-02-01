@@ -35,4 +35,12 @@ class Estab_usuario_rol extends Model
     {
         return $this->belongsTo(Establecimiento::class, 'idEstablecimiento', 'id');
     }
+
+    public static function getRolActivo($idUsuario)
+    {
+        return Estab_usuario_rol::with('establecimiento')
+        ->where('idUsuario', $idUsuario)
+            ->where('estado', 1)
+            ->first();
+    }
 }

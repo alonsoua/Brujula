@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Eje extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'establecimiento';
     protected $table = "ejes";
     /**
      * The attributes that are mass assignable.

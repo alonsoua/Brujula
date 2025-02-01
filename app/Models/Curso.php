@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Master\Establecimiento;
+use App\Models\Master\Grado;
+use App\Models\Master\Periodo;
+use App\Models\Master\Usuario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Curso extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'establecimiento';
     protected $table = "cursos";
     /**
      * The attributes that are mass assignable.
@@ -38,31 +41,32 @@ class Curso extends Model
             ->first();
     }
 
-    public static function getAll($idEstablecimiento, $idPeriodo)
+    public static function getAll($idPeriodo)
     {
-        $cursos = Curso::select(
-            'cursos.*',
-            'users.nombres as nombreProfesorJefe',
-            'grados.nombre as nombreGrado',
-            'grados.id as idGrado',
-            'periodos.nombre as nombrePeriodo',
-            'establecimientos.nombre as nombreEstablecimiento'
-        )
-            ->leftJoin("users", "cursos.idProfesorJefe", "=", "users.id")
-            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
-            ->leftJoin("periodos", "cursos.idPeriodo", "=", "periodos.id")
-            ->leftJoin("establecimientos", "cursos.idEstablecimiento", "=", "establecimientos.id")
-            ->where('cursos.estado', 'Activo')
-            ->where('cursos.idPeriodo', $idPeriodo);
-        if (!is_null($idEstablecimiento)) {
-            $cursos = $cursos->where('establecimientos.id', $idEstablecimiento);
-        }
-        // if (!is_null($idPeriodo)) {
-        //     $cursos = $cursos->where('cursos.idPeriodo', $idPeriodo);
-        // }
-        $cursos = $cursos->orderBy('cursos.idGrado')
+        // Obtener cursos desde la conexión 'establecimiento' (ya configurada en el modelo)
+        $cursos = Curso::where('estado', 'Activo')
+        ->where('idPeriodo', $idPeriodo)
+            ->orderBy('idGrado')
             ->get();
-        return $cursos;
+
+        // Obtener IDs necesarios para las relaciones
+        $idUsuarios = $cursos->pluck('idProfesorJefe')->unique()->filter();
+        $idGrados = $cursos->pluck('idGrado')->unique()->filter();
+
+        // Obtener datos relacionados desde la conexión 'master'
+        $usuarios = Usuario::whereIn('id', $idUsuarios)->pluck('nombres', 'id');
+        $grados = Grado::whereIn('id', $idGrados)->pluck('nombre', 'id');
+
+        // Mapear los datos al resultado final
+        return $cursos->map(function ($curso) use ($usuarios, $grados) {
+            return [
+                'id' => $curso->id,
+                'nombreProfesorJefe' => $usuarios[$curso->idProfesorJefe] ?? null,
+                'nombreGrado' => $grados[$curso->idGrado] ?? null,
+                'idGrado' => $curso->idGrado,
+                'estado' => $curso->estado,
+            ];
+        });
     }
 
     public static function getAllEstado($idEstablecimiento, $estado, $idPeriodo)

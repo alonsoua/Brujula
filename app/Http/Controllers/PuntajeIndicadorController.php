@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ajuste;
+use App\Models\Master\Ajuste;
 use App\Models\PuntajeIndicador;
 use App\Models\PuntajeIndicadorTransformacion;
 use App\Models\Establecimiento;

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ajuste;
+use App\Models\Master\Ajuste;
 use App\Models\Master\Estab_usuario_rol;
+use App\Models\Master\Periodo;
+use App\Models\Master\Rol;
 use App\Models\UsuarioEstablecimiento;
 use App\Models\model_has_roles;
 use Illuminate\Http\Request;
@@ -27,26 +29,16 @@ class MeController extends Controller
 
     public function me(Request $request)
     {
-        dd('Entró a me()');
-        return 111;
+        
         $user = $request->user();
 
+        // Obtener rol activo (Master)
+        $rolActivo = Estab_usuario_rol::getRolActivo($user->id);
 
-        dd($user);
         // Validar si el usuario está activo
-        if ($user->estado == false) {
-            auth()->logout();
-            return response('Usuario inactivo', 500);
-        }
-
-        // Obtener insignia del establecimiento activo
-        $rolActivo = Estab_usuario_rol::with('establecimiento')
-            ->where('id_estab_usuario', $user->id)
-            ->where('estado', 1)
-            ->first();
-
         if (!$rolActivo || !$rolActivo->establecimiento) {
-            return response()->json(['error' => 'No se encontró un rol o establecimiento activo.'], 404);
+            auth()->logout();
+            return response()->json(['error' => 'El usuario se encuentra inactivo.'], 400);
         }
 
         $establecimiento = $rolActivo->establecimiento;
@@ -58,46 +50,37 @@ class MeController extends Controller
             );
         }
 
-        // Obtener los permisos del rol activo
-        $permisos = DB::table('role_has_permissions')
-            ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
-            ->where('role_has_permissions.role_id', $rolActivo->id_rol)
-            ->select('permissions.name')
-            ->get()
-            ->map(function ($permiso) {
-                $val = explode('_', $permiso->name);
-                return [
-                    'action' => $val[0] ?? null,
-                    'subject' => $val[1] ?? null,
-                ];
-            })
-            ->toArray();
+        // Obtener los permisos del rol activo (Master)
+        $permisos = Rol::rolHasPermisos($rolActivo->idRol);
 
-        // Obtener ajustes del cliente (tabla `ajustes` en la base de datos de establecimiento)
+        // Obtener ajustes del establecimiento (Master)
         $ajustes = Ajuste::getAjustes($establecimiento->id);
 
+        if (!$ajustes) {
+            return response()->json(['error' => 'El establecimiento no cuenta con los ajustes configurados para el periodo actual.'], 400);
+        }
+
+        $periodo = Periodo::find($ajustes->idPeriodo);
+        
         return response()->json([
             'id' => $user->id,
             'email' => $user->correo,
             'rut' => $user->rut ?? null,
-            'nombres' => $user->nombre ?? null,
-            'primerApellido' => $user->primer_apellido ?? null,
-            'segundoApellido' => $user->segundo_apellido ?? null,
+            'nombres' => $user->nombres ?? null,
+            'primerApellido' => $user->primerApellido ?? null,
+            'segundoApellido' => $user->segundoApellido ?? null,
             'idEstablecimientoActivo' => $establecimiento->id,
-            'idPeriodoActivo' => null, // Ajustar si necesitas implementarlo más adelante
-            'ajustes' => $ajustes,
+            'periodo' => $periodo,
+            'establecimiento' => [
+                'id' => $establecimiento->id,
+                'nombre' => $establecimiento->nombre,
+                'insignia' => $establecimiento->insignia,
+                'ajustes' => $ajustes,
+            ],
             'rolActivo' => [
                 'id' => $rolActivo->id_rol,
                 'nombre' => $rolActivo->rol->name ?? null,
                 'guard_name' => $rolActivo->rol->guard_name ?? null,
-            ],
-            'estado' => $user->estado,
-            'establecimientos' => [
-                [
-                    'id' => $establecimiento->id,
-                    'nombre' => $establecimiento->nombre,
-                    'insignia' => $establecimiento->insignia,
-                ],
             ],
             'ability' => $permisos,
         ]);

@@ -248,9 +248,9 @@ class EstablecimientoController extends Controller
                     'correo' => "{$idEstablecimiento}.{$role['rol']}@dev.cl",
                     'password' => Hash::make("{$idEstablecimiento}.123456"),
                     'rut' => '11.111.111-1',
-                    'nombres' => "{$rbd}_dev",
+                    'nombres' => "Dev",
                     'primerApellido' => ucfirst($role['rol']),
-                    'segundoApellido' => 'Dev',
+                    'segundoApellido' => "{$idEstablecimiento}",
                     'estado' => true,
                 ]);
 

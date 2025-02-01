@@ -90,6 +90,21 @@ class AuthController extends Controller
         // Seleccionar el primer establecimiento para la conexión
         $establecimiento = $usuarioRoles->first();
 
+        // Verifica que la información del establecimiento se esté obteniendo correctamente
+        logger()->info('Configurando LOGIN conexión para el establecimiento:', [
+            'host' => $establecimiento->bd_host,
+            'port' => $establecimiento->bd_port,
+            'database' => $establecimiento->bd_name,
+            'username' => $establecimiento->bd_user,
+            'password_encrypted' => $establecimiento->bd_pass, // Contraseña encriptada
+        ]);
+
+        // Desencripta la contraseña
+        $password = decrypt($establecimiento->bd_pass);
+
+        // Imprime la contraseña desencriptada en los logs
+        logger()->info('Contraseña desencriptada:', ['password' => $password]);
+
         // Paso 3: Configurar la conexión dinámica con los datos del establecimiento
         Config::set('database.connections.establecimiento', [
             'driver' => 'mysql',
@@ -97,7 +112,7 @@ class AuthController extends Controller
             'port' => $establecimiento->bd_port ?? env('DB_PORT', '3306'),
             'database' => $establecimiento->bd_name,
             'username' => $establecimiento->bd_user,
-            'password' => $establecimiento->bd_pass,
+            'password' => $password,
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
@@ -109,6 +124,8 @@ class AuthController extends Controller
         DB::purge('establecimiento');
         DB::reconnect('establecimiento');
 
+        DB::setDefaultConnection('establecimiento');
+        
         // Generar un token de acceso
         $token = $user->createToken('estab-token')->plainTextToken;
         

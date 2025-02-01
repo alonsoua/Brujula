@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class IndicadoresPersonalizados extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'establecimiento';
     protected $table = "indicadores_personalizados";
     /**
      * The attributes that are mass assignable.

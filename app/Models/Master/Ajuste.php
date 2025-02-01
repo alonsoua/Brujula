@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
+use App\Models\Master\Establecimiento;
+use App\Models\Master\Periodo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ajuste extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'master';
     /**
      * The table associated with the model.
      *
@@ -22,9 +24,11 @@ class Ajuste extends Model
      * @var array
      */
     protected $fillable = [
+        'tipo_nota',
+        'ld_activo',
         'idEstablecimiento',
         'idPeriodo',
-        'tipo_nota',
+        'fecha_inicio_periodo',
     ];
 
     /**
@@ -37,7 +41,6 @@ class Ajuste extends Model
     /**
      * Relationships (optional)
      */
-
     public static function getAjustes($idEstablecimiento)
     {
         return Ajuste::select('ajustes.*')

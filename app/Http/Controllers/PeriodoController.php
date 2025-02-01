@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Periodo;
-
+use App\Models\Master\Periodo as MasterPeriodo;
 use Illuminate\Http\Request;
 
 class PeriodoController extends Controller
@@ -15,29 +14,8 @@ class PeriodoController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $periodos = Periodo::select('*')->orderBy('nombre', 'DESC')->get();
-        $response = array();
-        if ($user->idEstablecimientoActivo === 2) {
-            foreach ($periodos as $key => $periodo) {
-                if ($periodo->id > 3) {
-                    array_push($response, $periodo);
-                }
-            }
-        } else {
-            $response = $periodos;
-        }
-        return $response;
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        $user = $request->user()->getUserData();
+        return MasterPeriodo::getPeriodosEstablecimiento($user['establecimiento']['id']);
     }
 
     /**
@@ -58,17 +36,6 @@ class PeriodoController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
     {
         //
     }

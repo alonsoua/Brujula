@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Curso;
-use App\Models\Periodo;
-use App\Models\Establecimiento;
 use App\Models\Alumno;
+use App\Models\Master\Establecimiento as MasterEstablecimiento;
 use App\Models\UsuarioAsignatura;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -20,14 +19,8 @@ class CursoController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $idPeriodo = $user->idPeriodoActivo;
-        if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-        }
-
-        return Curso::getAll($user->idEstablecimientoActivo, $idPeriodo);
+        $user = $request->user()->getUserData();
+        return Curso::getAll($user['periodo']['id']);
     }
 
     /**
@@ -42,7 +35,7 @@ class CursoController extends Controller
         $id_periodo = $idPeriodoHistorico;
         if ($id_periodo === 'null') {
             $id_periodo = $user->idPeriodoActivo === null
-                ? Establecimiento::getIDPeriodoActivo($user->idEstablecimientoActivo)
+                ? MasterEstablecimiento::getIDPeriodoActivo($user->idEstablecimientoActivo)
                 : $user->idPeriodoActivo;
         }
         // $nombre_periodo = Periodo::where('id', $id_periodo)->value('nombre');
@@ -116,7 +109,7 @@ class CursoController extends Controller
         $user = $request->user();
         $idPeriodo = $user->idPeriodoActivo;
         if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $establecimiento = MasterEstablecimiento::getAll($user->idEstablecimientoActivo);
             $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
         }
         return Curso::getAllEstado($user->idEstablecimientoActivo, 'Activo', $idPeriodo);
@@ -132,7 +125,7 @@ class CursoController extends Controller
         $user = $request->user();
         $idPeriodo = $user->idPeriodoActivo;
         if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+            $establecimiento = MasterEstablecimiento::getAll($user->idEstablecimientoActivo);
             $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
         }
 
@@ -184,7 +177,7 @@ class CursoController extends Controller
 
             DB::transaction(function () use ($request) {
 
-                $establecimiento = Establecimiento::getAll($request->idEstablecimiento);
+                $establecimiento = MasterEstablecimiento::getAll($request->idEstablecimiento);
                 $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
                 $cantidad = intval($request->input('cantidad'));
 

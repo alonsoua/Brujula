@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Grado extends Model
 {
     use HasFactory;
-    protected $connection = 'cliente';
+    protected $connection = 'master';
     protected $table = "grados";
     /**
      * The attributes that are mass assignable.

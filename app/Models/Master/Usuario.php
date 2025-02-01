@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\Master\Ajuste;
 use App\Models\Master\Rol as MasterRol;
 use App\Models\Rol;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,7 @@ class Usuario extends Authenticatable
     protected $table = 'usuarios';
     protected $connection = 'master';
 
+    
     /**
      * The primary key associated with the table.
      */
@@ -215,6 +217,61 @@ class Usuario extends Authenticatable
                 'nombre' => $rolActivo->establecimiento->nombre,
             ],
         ];
+    }
+
+    public static function getUserData()
+    {
+        // Obtener usuario autenticado
+        $user = Auth::user();
+
+        if (!$user) {
+            return null;
+        }
+
+        // Obtener rol activo
+        $rolActivo = Estab_usuario_rol::getRolActivo($user->id);
+        if (!$rolActivo) {
+            return null;
+        }
+
+        $establecimiento = $rolActivo->establecimiento;
+        if (!$establecimiento) {
+            return null;
+        }
+
+        $ajustes = Ajuste::getAjustes($establecimiento->id);
+        if (!$ajustes) {
+            return null;
+        }
+
+        $periodo = $ajustes->idPeriodo ? Periodo::find($ajustes->idPeriodo) : null;
+
+        return [
+            'id' => $user->id,
+            'email' => $user->correo,
+            'rut' => $user->rut ?? null,
+            'nombres' => $user->nombres ?? null,
+            'primerApellido' => $user->primerApellido ?? null,
+            'segundoApellido' => $user->segundoApellido ?? null,
+            'idEstablecimientoActivo' => $establecimiento->id,
+            'periodo' => $periodo,
+            'establecimiento' => [
+                'id' => $establecimiento->id,
+                'nombre' => $establecimiento->nombre,
+                'insignia' => $establecimiento->insignia,
+                'ajustes' => $ajustes,
+            ],
+            'rolActivo' => [
+                'id' => $rolActivo->id_rol,
+                'nombre' => $rolActivo->rol->name ?? null,
+                'guard_name' => $rolActivo->rol->guard_name ?? null,
+            ],
+        ];
+    }
+
+    public function getUserDataAttribute()
+    {
+        return $this->getUserData() ?? null;
     }
 
     public function getEstabBDAttribute()
