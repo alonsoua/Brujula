@@ -48,40 +48,40 @@ class EstablecimientoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getActivos(Request $request)
-    {
-        $user = $request->user();
-        $establecimientos = Establecimiento::getAllActivos($user->idEstablecimientoActivo);
-        foreach ($establecimientos as $key => $establecimiento) {
-            // agregamos código y nombre
-            if ($establecimiento['insignia']) {
-                $establecimiento['insignia'] = $this->url->to('/') . '' . Storage::url(
-                    'insignias_establecimientos/' . $establecimiento['insignia']
-                );
-            }
-        }
+    // public function getActivos(Request $request)
+    // {
+    //     $user = $request->user();
+    //     $establecimientos = Establecimiento::getAllActivos($user->idEstablecimientoActivo);
+    //     foreach ($establecimientos as $key => $establecimiento) {
+    //         // agregamos código y nombre
+    //         if ($establecimiento['insignia']) {
+    //             $establecimiento['insignia'] = $this->url->to('/') . '' . Storage::url(
+    //                 'insignias_establecimientos/' . $establecimiento['insignia']
+    //             );
+    //         }
+    //     }
 
-        return $establecimientos;
-    }
+    //     return $establecimientos;
+    // }
 
 
-    public function getrbd($rbd)
-    {
-        try {
-            $establecimiento = Establecimiento::select(
-                'establecimientos.id',
-                'establecimientos.rbd',
-                'establecimientos.idPeriodoActivo',
-            )
-                ->where('establecimientos.rbd', '=', $rbd)
-                ->first();
-            if ($establecimiento != null) {
-                return $establecimiento;
-            }
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
-        }
-    }
+    // public function getrbd($rbd)
+    // {
+    //     try {
+    //         $establecimiento = Establecimiento::select(
+    //             'establecimientos.id',
+    //             'establecimientos.rbd',
+    //             'establecimientos.idPeriodoActivo',
+    //         )
+    //             ->where('establecimientos.rbd', '=', $rbd)
+    //             ->first();
+    //         if ($establecimiento != null) {
+    //             return $establecimiento;
+    //         }
+    //     } catch (\Exception $e) {
+    //         return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+    //     }
+    // }
 
     private function validateRequest(Request $request)
     {
@@ -344,27 +344,27 @@ class EstablecimientoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function updatePeriodoActivo(Request $request, $id)
-    {
-        Request()->validate([
-            'idPeriodoActivo' => 'required',
-        ]);
+    // public function updatePeriodoActivo(Request $request, $id)
+    // {
+    //     Request()->validate([
+    //         'idPeriodoActivo' => 'required',
+    //     ]);
 
-        try {
-            $establecimiento = Establecimiento::findOrFail($id);
+    //     try {
+    //         $establecimiento = Establecimiento::findOrFail($id);
 
-            $idPeriodoActivo          = $request->input('idPeriodoActivo');
-            $fechaInicioPeriodoActivo = $request->input('fechaInicioPeriodoActivo');
+    //         $idPeriodoActivo          = $request->input('idPeriodoActivo');
+    //         $fechaInicioPeriodoActivo = $request->input('fechaInicioPeriodoActivo');
 
-            $establecimiento->idPeriodoActivo          = $idPeriodoActivo;
-            $establecimiento->fechaInicioPeriodoActivo = $fechaInicioPeriodoActivo;
-            $establecimiento->save();
+    //         $establecimiento->idPeriodoActivo          = $idPeriodoActivo;
+    //         $establecimiento->fechaInicioPeriodoActivo = $fechaInicioPeriodoActivo;
+    //         $establecimiento->save();
 
-            return response(null, 200);
-        } catch (\Throwable $th) {
-            return response($th, 500);
-        }
-    }
+    //         return response(null, 200);
+    //     } catch (\Throwable $th) {
+    //         return response($th, 500);
+    //     }
+    // }
 
     /**
      * Remove the specified resource from storage.

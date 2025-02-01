@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class TipoEnsenanza extends Model
 {
     use HasFactory;
-    protected $connection = 'establecimiento';
-    protected $table = "tipo_enseñanza";
+    protected $connection = 'master';
+    protected $table = "tipo_enseñanzas";
     /**
      * The attributes that are mass assignable.
      *
@@ -19,15 +19,17 @@ class TipoEnsenanza extends Model
         'idNivel',
         'nombre',
         'codigo',
+        'estado',
     ];
 
-    public static function getAll() {
+    public static function getAll()
+    {
         return TipoEnsenanza::select(
-                'id',
-                'idNivel',
-                'nombre',
-                'codigo',
-            )
+            'id',
+            'idNivel',
+            'nombre',
+            'codigo',
+        )
             ->where('estado', 'Activo')
             ->get();
     }

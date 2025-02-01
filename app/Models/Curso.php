@@ -20,6 +20,7 @@ class Curso extends Model
      * @var array
      */
     protected $fillable = [
+        'nombre',
         'letra',
         'idGrado',
         'idProfesorJefe',
@@ -32,6 +33,7 @@ class Curso extends Model
     {
         return Curso::select(
             'grados.nombre',
+            'cursos.nombre',
             'cursos.letra',
             'cursos.idProfesorJefe'
         )
@@ -41,28 +43,33 @@ class Curso extends Model
             ->first();
     }
 
+
+    // * 
     public static function getAll($idPeriodo)
     {
         // Obtener cursos desde la conexión 'establecimiento' (ya configurada en el modelo)
         $cursos = Curso::where('estado', 'Activo')
         ->where('idPeriodo', $idPeriodo)
             ->orderBy('idGrado')
-            ->get();
+            ->orderBy('letra') // Asegurando ordenación
+        ->get();
 
         // Obtener IDs necesarios para las relaciones
         $idUsuarios = $cursos->pluck('idProfesorJefe')->unique()->filter();
-        $idGrados = $cursos->pluck('idGrado')->unique()->filter();
 
-        // Obtener datos relacionados desde la conexión 'master'
-        $usuarios = Usuario::whereIn('id', $idUsuarios)->pluck('nombres', 'id');
-        $grados = Grado::whereIn('id', $idGrados)->pluck('nombre', 'id');
+        // Obtener datos relacionados desde la conexión 'master' en una sola consulta
+        $usuarios = Usuario::whereIn('id', $idUsuarios)
+        ->get(['id', 'nombres', 'primerApellido', 'segundoApellido'])
+        ->keyBy('id'); // Almacena los datos indexados por ID
 
-        // Mapear los datos al resultado final
-        return $cursos->map(function ($curso) use ($usuarios, $grados) {
+        // Mapear datos a los cursos sin necesidad de nuevas consultas
+        return $cursos->map(function ($curso) use ($usuarios) {
+            $profesor = $usuarios->get($curso->idProfesorJefe);
             return [
                 'id' => $curso->id,
-                'nombreProfesorJefe' => $usuarios[$curso->idProfesorJefe] ?? null,
-                'nombreGrado' => $grados[$curso->idGrado] ?? null,
+                'nombre' => $curso->nombre,
+                'letra' => $curso->letra,
+                'nombreProfesorJefe' => $profesor ? "{$profesor->nombres} {$profesor->primerApellido} {$profesor->segundoApellido}" : null,
                 'idGrado' => $curso->idGrado,
                 'estado' => $curso->estado,
             ];

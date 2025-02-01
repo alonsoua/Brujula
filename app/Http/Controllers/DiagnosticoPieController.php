@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DiagnosticoPie;
+use App\Models\Master\DiagnosticoPie;
 use Illuminate\Http\Request;
 
 class DiagnosticoPieController extends Controller

@@ -68,15 +68,11 @@ class Alumno extends Model
         return $alumnos;
     }
 
-    public static function getAlumnosCursoEstablecimiento($idCurso, $idEstablecimiento)
+    public static function getSiguienteNumLista($idCurso)
     {
-
         return Alumno::leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
-            ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
             ->where('alumnos_cursos.idCurso', $idCurso)
-            ->where('cursos.idEstablecimiento', $idEstablecimiento)
-            ->orderBy('numLista')
-            ->get();
+            ->max('alumnos.numLista') + 1;
     }
 
     public static function getAlumnosCurso($idCurso)

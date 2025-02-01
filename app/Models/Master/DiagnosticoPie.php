@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Master;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Prioritario extends Model
+class DiagnosticoPie extends Model
 {
     use HasFactory;
-    protected $connection = 'establecimiento';
-    protected $table = "prioritarios";
+    protected $connection = 'master';
+    protected $table = "diagnosticos_pie";
     /**
      * The attributes that are mass assignable.
      *
@@ -17,5 +17,7 @@ class Prioritario extends Model
      */
     protected $fillable = [
         'nombre',
+        'tipoNee',
+        'abreviatura',
     ];
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Prioritario;
+use App\Models\Master\Prioritario;
 use Illuminate\Http\Request;
 
 class PrioritarioController extends Controller
