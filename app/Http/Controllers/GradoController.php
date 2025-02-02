@@ -14,7 +14,11 @@ class GradoController extends Controller
      */
     public function index()
     {
-        return Grado::orderBy('idGrado', 'asc')->get();
+        $nivelesPermitidos = [10, 110];
+        return Grado::whereIn('idNivel', $nivelesPermitidos)
+            ->orderBy('idNivel', 'asc')
+            ->orderBy('idGrado', 'asc')
+            ->get();
     }
 
     /**

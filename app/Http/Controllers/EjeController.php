@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Eje;
-use App\Models\Objetivo;
+use App\Models\Master\Objetivo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

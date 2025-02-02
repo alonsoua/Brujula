@@ -28,8 +28,14 @@ class IndicadoresPersonalizados extends Model
 
     protected $fillable = [
         'nombre',
+        'tipo',
         'idObjetivo',
+        'tipo_objetivo',
+        'idCurso',
+        'idPeriodo',
         'estado',
+        'idUsuario_created',
+        'idUsuario_updated',
         'created_at',
         'updated_at',
     ];

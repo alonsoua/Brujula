@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Alumno;
 use App\Models\Periodo;
-use App\Models\Asignatura;
+use App\Models\Master\Asignatura;
 use App\Models\Notas;
 use App\Traits\InformeHogarPDFTrait;
 

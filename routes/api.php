@@ -120,8 +120,8 @@ Route::prefix('bru')->group(function () {
             // * Tipos Enseñanza
             Route::get('/tipoEnsenanza', [TipoEnsenanzaController::class, 'index']);
             // * Grados
+            Route::get('/grados', [GradoController::class, 'index']);
             Route::get('/grados/porIdNivel/{idNivel}', [GradoController::class, 'getPorIdNivel']); //(idTipoEnseñanza)
-            // Route::get('/grados', [GradoController::class, 'index']);
 
             // * Diagnostico pie
             Route::get('/diagnosticos', [DiagnosticoPieController::class, 'index']);
@@ -129,7 +129,19 @@ Route::prefix('bru')->group(function () {
             // * Prioritario
             Route::get('/prioritarios', [PrioritarioController::class, 'index']);
 
+            // * Asignaturas
+            // Route::get(
+            //     '/asignaturas',
+            //     [AsignaturaController::class, 'index']
+            // );
+            // Route::get('/asignaturas/activos', [AsignaturaController::class, 'getActivos']);
+            // Route::get('/asignaturas/getDocentesAsignaturas/{idPeriodo}', [AsignaturaController::class, 'getDocentesAsignaturas']);
+            Route::get('/asignaturas/activos/{idgrado}', [AsignaturaController::class, 'getAsignaturasGrado']);
+            // Route::get('/asignaturas/usuario/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasUsuario']);
+            // Route::get('/asignaturas/curso/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasCurso']);
+            
             // * Endpoints establecimiento (tenant)
+
             // * Cursos
             Route::get('/cursos', [CursoController::class, 'index']);
             Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
@@ -150,6 +162,32 @@ Route::prefix('bru')->group(function () {
             // Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
             Route::post('/alumnos/importCSV', [AlumnoController::class, 'importAlumnosCSV']);
 
+            // * Ejes
+            Route::get('/ejes/asignatura/distinct/{idAsignatura}', [EjeController::class, 'getEjesAsignatura']);
+            // Route::get('/ejes/asignatura/{idAsignatura}', [EjeController::class, 'getEjesPorAsignatura']);
+            // Route::post('/ejes', [EjeController::class, 'store']);
+
+            // * Objetivos
+            Route::get('/objetivos', [ObjetivoController::class, 'getObjetivos']);
+            // Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}', [ObjetivoController::class, 'getObjetivosActivosAsignatura']);
+            // Route::get('/objetivos/betwen/{idCursoInicio}/{idCursoFin}', [ObjetivoController::class, 'getObjetivosBetwen']);
+            // Route::post('/objetivos/trabajados', [ObjetivoController::class, 'objetivosTrabajados']);
+            Route::put('/objetivos/estado/{id}', [ObjetivoController::class, 'updateEstadoMinisterio']);
+            Route::put('/objetivos/priorizacion/ministerio/{id}', [ObjetivoController::class, 'updatePriorizacioMinisterio']);
+
+            // * Objetivos PERSONALIZADOS (Internos)
+            Route::post('/objetivos/personalizados', [ObjetivoController::class, 'storePersonalizado']);
+            // Route::put('/objetivos/personalizados/{id}', [ObjetivoController::class, 'updatePersonalizado']);
+            Route::put('/objetivos/personalizados/priorizacion/{id}', [ObjetivoController::class, 'updatePriorizacionPersonalizado']);
+            Route::put('/objetivos/personalizados/estado/{id}', [ObjetivoController::class, 'updateEstadoPersonalizado']);
+
+            // // * Indicadores
+            Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}', [IndicadorController::class, 'getIndicadoresObjetivo']);
+            // Route::get('/indicadores/personalizados/{idObjetivo}', [IndicadorController::class, 'getIndicadoresPersonalizados']);
+
+            
+            
+
             // // * Usuarios
             // Route::get('/usuarios', [UserController::class, 'index']);
             // Route::get('/usuarios/docentes', [
@@ -165,40 +203,6 @@ Route::prefix('bru')->group(function () {
             // // * Establecimientos
             // Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);
             // Route::put('/establecimientos/periodoActivo/{id}', [EstablecimientoController::class, 'updatePeriodoActivo']);
-
-            // // * Asignaturas
-            // Route::get(
-            //     '/asignaturas',
-            //     [AsignaturaController::class, 'index']
-            // );
-            // Route::get('/asignaturas/activos', [AsignaturaController::class, 'getActivos']);
-            // Route::get('/asignaturas/getDocentesAsignaturas/{idPeriodo}', [AsignaturaController::class, 'getDocentesAsignaturas']);
-            // Route::get('/asignaturas/activos/grado/{idgrado}', [AsignaturaController::class, 'getActivosGrado']);
-            // Route::get('/asignaturas/usuario/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasUsuario']);
-            // Route::get('/asignaturas/curso/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasCurso']);
-
-            // // * Ejes
-            // Route::get('/ejes/asignatura/{idAsignatura}', [EjeController::class, 'getEjesPorAsignatura']);
-            // Route::get('/ejes/asignatura/distinct/{idAsignatura}', [EjeController::class, 'getEjesAsignatura']);
-            // Route::post('/ejes', [EjeController::class, 'store']);
-
-            // // * Objetivos
-            // Route::get('/objetivos', [ObjetivoController::class, 'getObjetivos']);
-            // Route::get('/objetivos/asignatura/{idAsignatura}/{idPeriodo}', [ObjetivoController::class, 'getObjetivosActivosAsignatura']);
-            // Route::get('/objetivos/betwen/{idCursoInicio}/{idCursoFin}', [ObjetivoController::class, 'getObjetivosBetwen']);
-            // Route::put('/objetivos/estado/{id}', [ObjetivoController::class, 'updateEstadoMinisterio']);
-            // Route::put('/objetivos/priorizacion/interna/{id}', [ObjetivoController::class, 'updatePriorizacionInterna']);
-            // Route::post('/objetivos/trabajados', [ObjetivoController::class, 'objetivosTrabajados']);
-
-            // // * Objetivos PERSONALIZADOS
-            // Route::post('/objetivos/personalizados', [ObjetivoController::class, 'storePersonalizado']);
-            // Route::put('/objetivos/personalizados/{id}', [ObjetivoController::class, 'updatePersonalizado']);
-            // Route::put('/objetivos/personalizados/priorizacion/{id}', [ObjetivoController::class, 'updatePriorizacionPersonalizado']);
-            // Route::put('/objetivos/personalizados/estado/{id}', [ObjetivoController::class, 'updateEstadoPersonalizado']);
-
-            // // * Indicadores
-            // Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}', [IndicadorController::class, 'getIndicadoresObjetivo']);
-            // Route::get('/indicadores/personalizados/{idObjetivo}', [IndicadorController::class, 'getIndicadoresPersonalizados']);
 
             // // * Notas
             // Route::get('/notas/getNotasAsignatura/{idPeriodo}/{idCurso}/{idAsignatura}', [NotasController::class, 'getNotasAsignatura']);

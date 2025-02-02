@@ -20,4 +20,9 @@ class Grado extends Model
         'nombre',
         'idNivel',
     ];
+
+    public function tipoEnsenanza()
+    {
+        return $this->belongsTo(TipoEnsenanza::class, 'idNivel', 'idNivel');
+    }
 }
