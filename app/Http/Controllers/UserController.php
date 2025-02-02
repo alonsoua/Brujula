@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Establecimiento;
+use App\Models\Master\Estab_usuario_rol;
+use App\Models\Master\Usuario;
 use App\Models\UsuarioEstablecimiento;
 use App\Models\model_has_roles;
 use App\Models\UsuarioAsignatura;
@@ -29,36 +31,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        // Si $user tiene $user->idEstablecimientoActivo, muestra la información
-        // del establecimiento activo
-        // Si idEstablecimientoActivo es null, es Super Admin o Admin Daem
-        $user = $request->user();
-        $response = array();
-        // return response($request, 200);
-        if (is_null($user->idEstablecimientoActivo)) {
-            $admins = User::getAllAdmins();
-            foreach ($admins as $adminKey => $admin) {
-                if ($admin->avatar) {
-                    $admin->avatar = $this->url->to('/').''.Storage::url(
-                        'avatars_usuarios/'.$admin->avatar
-                    );
-                }
-                array_push($response, $admin);
-            }
-        }
-        $usuarios = User::getAll($user->idEstablecimientoActivo);
-
-        foreach ($usuarios as $usuarioKey => $usuario) {
-            if ($usuario->avatar) {
-                $usuario->avatar = $this->url->to('/').''.Storage::url(
-                    'avatars_usuarios/'.$usuario->avatar
-                );
-            }
-            array_push($response, $usuario);
-        }
-
-
-        return $response;
+        $user = $request->user()->getUserData();
+        return Usuario::getUsuariosPorEstablecimiento($user['establecimiento']['id']);
     }
 
     /**
@@ -66,34 +40,34 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getDocentesActivos(Request $request)
-    {
-        $user = $request->user();
-        return User::getDocentesActivos(Null);
-        return response($user, 200);
-        return User::getDocentesActivos($user->idEstablecimiento);
-    }
+    // public function getDocentesActivos(Request $request)
+    // {
+    //     $user = $request->user();
+    //     return User::getDocentesActivos(Null);
+    //     return response($user, 200);
+    //     return User::getDocentesActivos($user->idEstablecimiento);
+    // }
 
     /**
      * Obtiene listado de Asignaturas por docente
      *
      * @return \Illuminate\Http\Response
      */
-    public function getDocenteAsignaturas(Request $request, $id, $idEstablecimiento)
-    {
-        $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-            $id,
-            $idEstablecimiento
-        );
-        $user = $request->user();
-        $idPeriodo = $user->idPeriodoActivo;
-        if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-        }
-        $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo);
-        return response($asignaturas, 200);
-    }
+    // public function getDocenteAsignaturas(Request $request, $id, $idEstablecimiento)
+    // {
+    //     $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+    //         $id,
+    //         $idEstablecimiento
+    //     );
+    //     $user = $request->user();
+    //     $idPeriodo = $user->idPeriodoActivo;
+    //     if ($idPeriodo === null) {
+    //         $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
+    //         $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+    //     }
+    //     $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo);
+    //     return response($asignaturas, 200);
+    // }
 
     /**
      * Store a newly created resource in storage.
@@ -193,16 +167,31 @@ class UserController extends Controller
         }
     }
 
+    public function updateEstado(Request $request, $id)
+    {
+        try {
+            $Estab_usuario_rol = Estab_usuario_rol::findOrFail($id);
+
+            $estado = $request->input('estado');
+            $Estab_usuario_rol->estado = $estado;
+            $Estab_usuario_rol->save();
+
+            return response(null, 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
+
     /**
      * Display the specified resource.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
-    {
-        return User::findOrFail($id);
-    }
+    // public function show($id)
+    // {
+    //     return User::findOrFail($id);
+    // }
 
     /**
      * Update the specified resource in storage.
@@ -312,55 +301,55 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateVistas(Request $request, $id)
-    {
-        Request()->validate([
-            'idEstablecimientoActivo' => 'required',
-            'rolActivo' => 'required',
-            // 'idPeriodoActivo' => 'required',
-        ]);
-        try {
-            $usuario = User::findOrFail($id);
+    // public function updateVistas(Request $request, $id)
+    // {
+    //     Request()->validate([
+    //         'idEstablecimientoActivo' => 'required',
+    //         'rolActivo' => 'required',
+    //         // 'idPeriodoActivo' => 'required',
+    //     ]);
+    //     try {
+    //         $usuario = User::findOrFail($id);
 
-            $idEstablecimientoActivo = $request->input('idEstablecimientoActivo');
-            $rolActivo               = $request->input('rolActivo');
-            $idPeriodoActivo         = $request->input('idPeriodoActivo');
+    //         $idEstablecimientoActivo = $request->input('idEstablecimientoActivo');
+    //         $rolActivo               = $request->input('rolActivo');
+    //         $idPeriodoActivo         = $request->input('idPeriodoActivo');
 
-            // * Si cambia el establecimiento
-            if ($usuario['idEstablecimientoActivo'] != $idEstablecimientoActivo) {
+    //         // * Si cambia el establecimiento
+    //         if ($usuario['idEstablecimientoActivo'] != $idEstablecimientoActivo) {
 
-                $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-                    $id,
-                    $idEstablecimientoActivo
-                );
-                $existeRol = model_has_roles::getExisteRolInEstablecimiento(
-                    $idUsuarioEstablecimiento,
-                    $usuario['rolActivo']
-                );
-                if ($existeRol == false) {
-                    $roles = model_has_roles::getRolByModel_id(
-                        $idUsuarioEstablecimiento,
-                        'UsuarioEstablecimiento'
-                    );
-                    $rolActivo = $roles[0]['nombre'];
-                }
+    //             $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
+    //                 $id,
+    //                 $idEstablecimientoActivo
+    //             );
+    //             $existeRol = model_has_roles::getExisteRolInEstablecimiento(
+    //                 $idUsuarioEstablecimiento,
+    //                 $usuario['rolActivo']
+    //             );
+    //             if ($existeRol == false) {
+    //                 $roles = model_has_roles::getRolByModel_id(
+    //                     $idUsuarioEstablecimiento,
+    //                     'UsuarioEstablecimiento'
+    //                 );
+    //                 $rolActivo = $roles[0]['nombre'];
+    //             }
 
-                // consultar establecimiento para obtener periodo Activo
-                $establecimiento = Establecimiento::findOrFail($idEstablecimientoActivo);
-                $idPeriodoActivo = $establecimiento['idPeriodoActivo'];
-            }
+    //             // consultar establecimiento para obtener periodo Activo
+    //             $establecimiento = Establecimiento::findOrFail($idEstablecimientoActivo);
+    //             $idPeriodoActivo = $establecimiento['idPeriodoActivo'];
+    //         }
 
-            $usuario->idEstablecimientoActivo = $idEstablecimientoActivo;
-            $usuario->rolActivo               = $rolActivo;
-            $usuario->idPeriodoActivo         = $idPeriodoActivo;
-            $usuario->save();
+    //         $usuario->idEstablecimientoActivo = $idEstablecimientoActivo;
+    //         $usuario->rolActivo               = $rolActivo;
+    //         $usuario->idPeriodoActivo         = $idPeriodoActivo;
+    //         $usuario->save();
 
-            return response(null, 200);
+    //         return response(null, 200);
 
-        } catch (\Throwable $th) {
-            return response($th, 500);
-        }
-    }
+    //     } catch (\Throwable $th) {
+    //         return response($th, 500);
+    //     }
+    // }
 
     /**
      * Remove the specified resource from storage.

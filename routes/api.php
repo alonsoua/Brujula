@@ -139,7 +139,20 @@ Route::prefix('bru')->group(function () {
             Route::get('/asignaturas/activos/{idgrado}', [AsignaturaController::class, 'getAsignaturasGrado']);
             // Route::get('/asignaturas/usuario/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasUsuario']);
             // Route::get('/asignaturas/curso/{idCurso}/{idPeriodoHistorico}', [AsignaturaController::class, 'getAsignaturasCurso']);
-            
+
+            // * Usuarios
+            Route::get('/usuarios', [UserController::class, 'index']);
+            // Route::get('/usuarios/docentes', [
+            //     UserController::class,
+            //     'getDocentesActivos'
+            // ]);
+            // Route::get('/usuarios/docente/asignaturas/{id}/{idEstablecimiento}', [UserController::class, 'getDocenteAsignaturas']);
+            // Route::post('/usuarios', [UserController::class, 'store']);
+            // Route::put('/usuarios/{id}', [UserController::class, 'update']);
+            Route::put('/usuarios/estado/{id}', [UserController::class, 'updateEstado']);
+            // Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
+            // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
+
             // * Endpoints establecimiento (tenant)
 
             // * Cursos
@@ -184,21 +197,6 @@ Route::prefix('bru')->group(function () {
             // // * Indicadores
             Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}', [IndicadorController::class, 'getIndicadoresObjetivo']);
             // Route::get('/indicadores/personalizados/{idObjetivo}', [IndicadorController::class, 'getIndicadoresPersonalizados']);
-
-            
-            
-
-            // // * Usuarios
-            // Route::get('/usuarios', [UserController::class, 'index']);
-            // Route::get('/usuarios/docentes', [
-            //     UserController::class,
-            //     'getDocentesActivos'
-            // ]);
-            // Route::get('/usuarios/docente/asignaturas/{id}/{idEstablecimiento}', [UserController::class, 'getDocenteAsignaturas']);
-            // Route::post('/usuarios', [UserController::class, 'store']);
-            // Route::put('/usuarios/{id}', [UserController::class, 'update']);
-            // Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
-            // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
             // // * Establecimientos
             // Route::put('/establecimientos/{id}', [EstablecimientoController::class, 'update']);

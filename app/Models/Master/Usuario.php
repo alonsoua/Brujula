@@ -85,6 +85,12 @@ class Usuario extends Authenticatable
         return $this->belongsTo(MasterRol::class, 'idEstabUsuarioRol', 'id');
     }
 
+    public function estabUsuariosRoles()
+    {
+        return $this->hasMany(Estab_usuario_rol::class, 'idUsuario', 'id');
+    }
+
+
     /**
      * DATA DEL USUARIO LOGEADO.
      */
@@ -268,6 +274,24 @@ class Usuario extends Authenticatable
             ],
         ];
     }
+
+    /**
+     * Obtener todos los usuarios de un establecimiento con su respectivo rol.
+     *
+     * @param int $idEstablecimiento
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getUsuariosPorEstablecimiento($idEstablecimiento)
+    {
+        return self::select('usuarios.*', 'estab_usuarios_roles.id as idEstabUsuarioRol', 'estab_usuarios_roles.estado', 'estab_usuarios_roles.idRol', 'roles.name as nombreRol')
+        ->join('estab_usuarios_roles', 'usuarios.id', '=', 'estab_usuarios_roles.idUsuario')
+        ->join('roles', 'estab_usuarios_roles.idRol', '=', 'roles.id')
+        ->where('estab_usuarios_roles.idEstablecimiento', $idEstablecimiento)
+            ->where('estab_usuarios_roles.estado', '!=', 2)
+            ->get();
+    }
+
+    
 
     public function getUserDataAttribute()
     {
