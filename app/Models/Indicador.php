@@ -22,6 +22,15 @@ class Indicador extends Model
         'estado',
     ];
 
+    public function objetivo()
+    {
+        return $this->belongsTo(Objetivo::class, 'idObjetivo', 'id');
+    }
+
+    public function puntajesIndicadores()
+    {
+        return $this->hasMany(PuntajeIndicador::class, 'idIndicador');
+    }
 
     public static function getIndicadoresObjetivo($idObjetivo) {
         $sql = 'SELECT

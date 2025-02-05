@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use App\Models\IndicadoresPersonalizados;
+
 
 class Objetivo extends Model
 {
@@ -30,6 +30,11 @@ class Objetivo extends Model
     public function eje()
     {
         return $this->belongsTo(Eje::class, 'idEje', 'id'); // Un objetivo pertenece a un eje
+    }
+
+    public function indicadores()
+    {
+        return $this->hasMany(Indicador::class, 'idObjetivo');
     }
 
     // public function unidad()
@@ -86,66 +91,70 @@ class Objetivo extends Model
     //     return DB::select($sql, []);
     // }
 
-    // public static function countObjetivosTrabajados($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipoIndicador)
+
+    // * 
+    // public static function getObjetivosTrabajados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
     // {
-
-    //     if ($tipoIndicador === 'Normal') {
-    //         $indicadores = Indicador::selectRaw('
-    //                     indicadores.id,
-    //                     indicadores.nombre
-    //         ')
-    //             ->addSelect([
-    //                 'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-    //                     ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores.id')
-    //                     ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-    //                     ->where('puntajes_indicadores.idCurso', $idCurso)
-    //                     ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-    //                     ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
-    //             ])
-    //             ->where('indicadores.idObjetivo', $idObjetivo)
-    //             ->get();
-    //     } else if ($tipoIndicador === 'Interno') {
-    //         $indicadores = IndicadoresPersonalizados::selectRaw('
-    //                     indicadores_personalizados.id,
-    //                     indicadores_personalizados.nombre
-    //         ')
-    //             ->addSelect([
-    //                 'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-    //                     ->whereColumn('puntajes_indicadores.idIndicador', 'indicadores_personalizados.id')
-    //                     ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-    //                     ->where('puntajes_indicadores.idCurso', $idCurso)
-    //                     ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-    //                     ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
-    //             ])
-    //             ->where('indicadores_personalizados.idObjetivo', $idObjetivo)
-    //             ->get();
-    //     }
-
-    //     return $indicadores;
-    // }
-
-
-    // public static function countObjetivosTrabajadosPersonalizado($idObjetivo, $idAsignatura, $idPeriodo, $idCurso, $tipo)
-    // {
-    //     return IndicadorPersonalizado::selectRaw('
-    //                 indicador_personalizados.id,
-    //                 indicador_personalizados.nombre
+    //     return PuntajeIndicador::selectRaw('
+    //         idIndicador, COUNT(id) as puntajes_indicadores
     //     ')
-    //         ->addSelect([
-    //             'puntajes_indicadores' => PuntajeIndicador::select(DB::raw('count(id) '))
-    //                 ->whereColumn('puntajes_indicadores.idIndicador', 'indicador_personalizados.id')
-    //                 ->where('puntajes_indicadores.idAsignatura', $idAsignatura)
-    //                 ->where('puntajes_indicadores.idCurso', $idCurso)
-    //                 ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-    //                 ->where('puntajes_indicadores.tipoIndicador', 'Personalizado')
-    //         ])
-    //         ->where('indicador_personalizados.idObjetivo', $idObjetivo)
-    //         ->where('indicador_personalizados.idCurso', $idCurso)
-    //         ->where('indicador_personalizados.idPeriodo', $idPeriodo)
-    //         ->where('indicador_personalizados.tipo_objetivo', $tipo)
-    //         ->where('indicador_personalizados.estado', 'Aprobado')
+    //     ->whereIn('idIndicador', function ($query) use ($idsObjetivos) {
+    //         $query->select('id')->from('indicadores')
+    //         ->whereIn('idObjetivo', $idsObjetivos);
+    //     })
+    //         ->where('idAsignatura', $idAsignatura)
+    //         ->where('idCurso', $idCurso)
+    //         ->where('idPeriodo', $idPeriodo)
+    //         ->where('puntaje', '!=', 0)
+    //         ->where('tipoIndicador', 'Normal')
+    //         ->groupBy('idIndicador')
     //         ->get();
     // }
+
+    // public static function getObjetivosTrabajadosPersonalizados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
+    // {
+    //     return PuntajeIndicador::selectRaw('
+    //         idIndicador, COUNT(id) as puntajes_indicadores
+    //     ')
+    //     ->whereIn('idIndicador', function ($query) use ($idsObjetivos) {
+    //         $query->select('id')->from('indicadores_personalizados')
+    //         ->whereIn('idObjetivo', $idsObjetivos);
+    //     })
+    //         ->where('idAsignatura', $idAsignatura)
+    //         ->where('idCurso', $idCurso)
+    //         ->where('idPeriodo', $idPeriodo)
+    //         ->where('puntaje', '!=', 0)
+    //         ->where('tipoIndicador', 'Personalizado')
+    //         ->groupBy('idIndicador')
+    //         ->get();
+    // }
+
+
+    public static function getObjetivosTrabajados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
+    {
+        return Objetivo::whereIn('id', $idsObjetivos)
+            ->whereHas('indicadores.puntajesIndicadores', function ($query) use ($idAsignatura, $idPeriodo, $idCurso) {
+                $query->where('idAsignatura', $idAsignatura)
+                    ->where('idCurso', $idCurso)
+                    ->where('idPeriodo', $idPeriodo)
+                    ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
+                    ->where('tipoIndicador', 'Normal');
+            })
+            ->get(['id']);
+    }
+
+    public static function getObjetivosTrabajadosPersonalizados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
+    {
+        return ObjetivoPersonalizado::whereIn('id', $idsObjetivos)
+            ->whereHas('indicadoresPersonalizados.puntajesIndicadores', function ($query) use ($idAsignatura, $idPeriodo, $idCurso) {
+                $query->where('idAsignatura', $idAsignatura)
+                    ->where('idCurso', $idCurso)
+                    ->where('idPeriodo', $idPeriodo)
+                    ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
+                    ->where('tipoIndicador', 'Personalizado');
+            })
+            ->get(['id']);
+    }
 
     // public static function getObjetivosBetwen($idCursoInicio, $idCursoFin)
     // {

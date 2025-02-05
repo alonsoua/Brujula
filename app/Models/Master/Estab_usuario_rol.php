@@ -15,9 +15,12 @@ class Estab_usuario_rol extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'idEstablecimiento',
         'idUsuario',
         'idRol',
-        'idEstablecimiento',
+        'conexiones',
+        'ultima_conexion',
+        'isLogin',
         'estado',
     ];
 
@@ -39,8 +42,8 @@ class Estab_usuario_rol extends Model
     public static function getRolActivo($idUsuario)
     {
         return Estab_usuario_rol::with('establecimiento')
-        ->where('idUsuario', $idUsuario)
-            ->where('estado', 1)
+            ->where('idUsuario', $idUsuario)
+            ->where('isLogin', 1)
             ->first();
     }
 }

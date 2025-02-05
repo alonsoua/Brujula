@@ -21,4 +21,14 @@ class Alumnos_Cursos extends Model
         'idCurso',
         'estado',
     ];
+
+    public function alumno()
+    {
+        return $this->belongsTo(Alumno::class, 'idAlumno', 'id');
+    }
+
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class, 'idCurso', 'id');
+    }
 }

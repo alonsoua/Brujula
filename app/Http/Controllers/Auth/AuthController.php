@@ -13,6 +13,8 @@ use OpenApi\Annotations as OA;
 use App\Helpers\ApiResp;
 use App\Models\Cliente\Permisos;
 use App\Models\Master\Cliente_usuario_rol;
+use App\Models\Master\Estab_usuario_rol;
+use App\Models\Master\Usuario;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -50,29 +52,76 @@ class AuthController extends Controller
     {
         $credentials = $request->only('correo', 'password');
 
-        // Paso 1: Verificar credenciales en la tabla estab_usuarios
-        $user = \App\Models\Master\Usuario::where('correo', $credentials['correo'])->first();
-
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        // 🔹 Paso 1: Verificar credenciales en la tabla estab_usuarios
+        $user = Usuario::where('correo', $credentials['correo'])->first();
+        if (!$user && !Hash::check($credentials['password'], $user->password)) {
             return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
-        // Registrar última conexión y aumentar el conteo de conexiones
-        $user->update([
-            'ultima_conexion' => now(), // Registra la fecha y hora actual
-            'conexiones' => $user->conexiones + 1, // Incrementa el conteo de conexiones
-        ]);
+        $this->updateUltimaConexionUser($user);
 
-        // Paso 2: Obtener relación del usuario con roles y establecimiento desde estab_usuarios_roles
-        $usuarioRoles = DB::connection('master')
-        ->table('estab_usuarios_roles')
-            ->where('idUsuario', $user->id)
-            ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.idRol')
-            ->join('establecimientos', 'establecimientos.id', '=', 'estab_usuarios_roles.idEstablecimiento')
-            ->select(
+        // 🔹 Paso 2: Obtener roles y establecimientos del usuario
+        $usuarioRoles = $this->obtenerRolesYEstablecimientos($user->id);
+        if ($usuarioRoles->isEmpty()) {
+            return response()->json(['error' => 'El usuario no tiene roles o establecimientos asociados'], 404);
+        }
+
+        // 🔹 Paso 3: Seleccionar el primer establecimiento
+        $establecimiento = $usuarioRoles->first();
+        $this->updateUltimaConexionRol($usuarioRoles->first());
+
+        // 🔹 Paso 4: Configurar la conexión dinámica
+        $this->configurarConexionEstablecimiento($establecimiento);
+
+        // 🔹 Paso 5: Generar token de acceso
+        $token = $user->createToken('estab-token')->plainTextToken;
+
+        // 🔹 Respuesta con usuario, roles y token
+        return response()->json([
+            'user' => $user,
+            'roles' => $usuarioRoles->map(fn($rol) => $this->formatearRol($rol)),
+            'token' => $token,
+        ]);
+    }
+
+    /**
+     * Verifica las credenciales del usuario y retorna el usuario si son correctas.
+     */
+    private function updateUltimaConexionUser($user)
+    {
+        $user->update([
+            'ultima_conexion' => now(),
+            'conexiones' => $user->conexiones + 1,
+        ]);
+    }
+
+    /**
+     * Actualiza la última conexión y el número de conexiones del rol del usuario.
+     */
+    private function updateUltimaConexionRol($usuarioRol)
+    {
+
+        // Buscar el registro específico del usuario en la tabla estab_usuarios_roles
+        $registroRol = Estab_usuario_rol::where('id', $usuarioRol->id)->first();
+
+        if ($registroRol) {
+            $registroRol->update([
+                'ultima_conexion' => now(),
+                'conexiones' => $registroRol->conexiones + 1,
+            ]);
+        }
+    }
+
+    /**
+     * Obtiene los roles y establecimientos del usuario.
+     */
+    private function obtenerRolesYEstablecimientos($idUsuario)
+    {
+        return Estab_usuario_rol::select(
+            'estab_usuarios_roles.id',
             'roles.id as idRol',
-                'roles.name as nombre_rol',
-                'roles.guard_name',
+            'roles.name as nombre_rol',
+            'roles.guard_name',
             'establecimientos.id as idEstablecimiento',
             'establecimientos.bd_name',
             'establecimientos.bd_user',
@@ -80,32 +129,27 @@ class AuthController extends Controller
             'establecimientos.bd_host',
             'establecimientos.bd_port',
             'establecimientos.nombre as nombre_establecimiento'
-            )
+        )
+            ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.idRol')
+            ->join('establecimientos', 'establecimientos.id', '=', 'estab_usuarios_roles.idEstablecimiento')
+            ->where('idUsuario', $idUsuario)
             ->get();
+    }
 
-        if ($usuarioRoles->isEmpty()) {
-            return response()->json(['error' => 'El usuario no tiene roles o establecimientos asociados'], 404);
-        }
-
-        // Seleccionar el primer establecimiento para la conexión
-        $establecimiento = $usuarioRoles->first();
-
-        // Verifica que la información del establecimiento se esté obteniendo correctamente
-        logger()->info('Configurando LOGIN conexión para el establecimiento:', [
-            'host' => $establecimiento->bd_host,
-            'port' => $establecimiento->bd_port,
-            'database' => $establecimiento->bd_name,
-            'username' => $establecimiento->bd_user,
-            'password_encrypted' => $establecimiento->bd_pass, // Contraseña encriptada
-        ]);
-
-        // Desencripta la contraseña
+    /**
+     * Configura la conexión dinámica con la base de datos del establecimiento.
+     */
+    private function configurarConexionEstablecimiento($establecimiento)
+    {
         $password = decrypt($establecimiento->bd_pass);
 
-        // Imprime la contraseña desencriptada en los logs
-        logger()->info('Contraseña desencriptada:', ['password' => $password]);
+        // logger()->info('Configurando LOGIN conexión para el establecimiento:', [
+        //     'host' => $establecimiento->bd_host,
+        //     'port' => $establecimiento->bd_port,
+        //     'database' => $establecimiento->bd_name,
+        //     'username' => $establecimiento->bd_user,
+        // ]);
 
-        // Paso 3: Configurar la conexión dinámica con los datos del establecimiento
         Config::set('database.connections.establecimiento', [
             'driver' => 'mysql',
             'host' => $establecimiento->bd_host ?? env('DB_HOST', '127.0.0.1'),
@@ -123,101 +167,62 @@ class AuthController extends Controller
 
         DB::purge('establecimiento');
         DB::reconnect('establecimiento');
-
         DB::setDefaultConnection('establecimiento');
-        
-        // Generar un token de acceso
-        $token = $user->createToken('estab-token')->plainTextToken;
-        
-        // Respuesta
-        return response()->json([
-            'user' => $user,
-            'roles' => $usuarioRoles->map(function ($rol) {
-                return [
-                    'id_estab' => $rol->idEstablecimiento,
-                    'nombre_estab' => $rol->nombre_establecimiento,
-                    'id_rol' => $rol->idRol,
-                    'name' => $rol->nombre_rol,
-                    'guard_name' => $rol->guard_name,
-                ];
-            }),
-            'token' => $token,
-        ]);
     }
 
-
     /**
-     * @OA\Post(
-     *     path="/cliente/me",
-     *     tags={"cliente-auth"},
-     *     summary="Data usuario",
-     *     description="Obtiene datos de usuario.",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Data necesaria",
-     *         @OA\JsonContent(
-     *             required={"token"},
-     *             @OA\Property(property="token", type="bearer"),
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Retorna datos"
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid Token"
-     *     )
-     * )
+     * Formatea los datos del rol para la respuesta.
      */
-    // public function authme()
-    // {
-    //     $usuario = Auth::user();
-    //     try {
-    //         $usuario['rol_activo'] = $usuario->ClienteUsuarioRol;
-    //         $usuario['clientes_usuario'] = $usuario->ClientesUsuario;
-    //         $usuario['permisos_usuario'] = Permisos::select(
-    //             'action',
-    //             'subject'
-    //         )
-    //             ->where('id_rol', $usuario['rol_activo']->id_rol)
-    //             ->where('estado', 1)
-    //             ->get();
-
-
-    //         return response()->json($usuario);
-    //     } catch (Exception $e) {
-    //         return response()->json(['error' => $e], 500);
-    //     }
-    // }
+    private function formatearRol($rol)
+    {
+        return [
+            'id_estab' => $rol->idEstablecimiento,
+            'nombre_estab' => $rol->nombre_establecimiento,
+            'id_rol' => $rol->idRol,
+            'name' => $rol->nombre_rol,
+            'guard_name' => $rol->guard_name,
+        ];
+    }
 
     /**
      * @OA\Post(
      *     path="/cliente/logout",
      *     tags={"cliente-auth"},
      *     summary="Cierra sesión",
-     *     description="Cierra sesión.",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         description="Data necesaria",
-     *         @OA\JsonContent(
-     *             required={"token"},
-     *             @OA\Property(property="token", type="bearer"),
-     *         )
+     *     description="Cierra sesión y revoca el token.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sesión cerrada exitosamente"
      *     ),
      *     @OA\Response(
-     *         response=201,
-     *         description="Retorna datos"
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid Token"
+     *         response=401,
+     *         description="Token inválido o sesión no encontrada"
      *     )
      * )
      */
     public function logout(Request $request)
     {
-        $request->user()->token()->revoke();
-        return response()->json(['message' => 'Haz cerrado sesión.']);
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no autenticado'], 401);
+            }
+
+            // Si usas Sanctum
+            if (method_exists($user, 'currentAccessToken')) {
+                $user->currentAccessToken()->delete();
+            }
+
+            // Si usas Passport
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            }
+
+            return response()->json(['message' => 'Sesión cerrada exitosamente'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al cerrar sesión', 'details' => $e->getMessage()], 500);
+        }
     }
 }

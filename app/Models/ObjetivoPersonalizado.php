@@ -31,6 +31,11 @@ class ObjetivoPersonalizado extends Model
         return $this->belongsTo(Eje::class, 'idEje', 'id'); // Un objetivo pertenece a un eje
     }
 
+    public function indicadoresPersonalizados()
+    {
+        return $this->hasMany(IndicadorPersonalizado::class, 'idObjetivo');
+    }
+
     // public static function getObjetivosActivosAsignatura($idAsignatura, $idEstablecimiento) {
 
     //     $sql = 'SELECT

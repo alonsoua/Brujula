@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\Asignatura;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,6 +22,16 @@ class UsuarioAsignatura extends Model
         'idCurso',
         'idAsignatura',
     ];
+
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class, 'idCurso', 'id');
+    }
+
+    public function asignatura()
+    {
+        return $this->belongsTo(Asignatura::class, 'idAsignatura', 'id');
+    }
 
     public static function getAll($idEstablecimiento, $estado) {
         $cursos = Curso::select(

@@ -2,6 +2,7 @@
 
 namespace App\Models\Master;
 
+use App\Models\Curso;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,12 @@ class Asignatura extends Model
     public function grado()
     {
         return $this->belongsTo(Grado::class, 'idGrado', 'id');
+    }
+
+    public function cursos()
+    {
+        return $this->belongsToMany(Curso::class, 'usuario_asignaturas', 'idAsignatura', 'idCurso')
+        ->wherePivot('estado', 'Activo');
     }
 
     public static function getAll()

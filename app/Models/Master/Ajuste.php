@@ -41,12 +41,11 @@ class Ajuste extends Model
     /**
      * Relationships (optional)
      */
-    public static function getAjustes($idEstablecimiento)
+    public static function getAjustes($idEstablecimiento, $idPeriodo)
     {
         return Ajuste::select('ajustes.*')
-            ->leftJoin('establecimientos', 'ajustes.idEstablecimiento', '=', 'establecimientos.id')
             ->where('ajustes.idEstablecimiento', $idEstablecimiento)
-            ->whereColumn('ajustes.idPeriodo', 'establecimientos.idPeriodoActivo')
+            ->where('ajustes.idPeriodo', $idPeriodo)
             ->first();
     }
 

@@ -82,25 +82,36 @@ class AlumnoController extends Controller
     //     return Alumno::getAll($user->idEstablecimientoActivo, $idPeriodo);
     // }
 
-    // public function getAlumnosCurso($idCurso)
-    // {
-    //     return Alumno::select(
-    //         'alumnos.*',
-    //         'alumnos_cursos.idCurso',
-    //         'alumnos_cursos.estado',
-    //         'prioritarios.nombre as nombrePrioritario',
-    //         'diagnosticos_pie.nombre as nombreDiagnostico',
-    //         'diagnosticos_pie.abreviatura as abreviaturaDiagnostico',
-    //         'diagnosticos_pie.tipoNee as tipoNee'
-    //     )
-    //         ->leftJoin("prioritarios", "alumnos.idPrioritario", "=", "prioritarios.id")
-    //         ->leftJoin("diagnosticos_pie", "alumnos.idDiagnostico", "=", "diagnosticos_pie.id")
-    //         ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
-    //         ->where('alumnos_cursos.idCurso', $idCurso)
-    //         ->where('alumnos_cursos.estado', 'Activo')
-    //         ->orderBy('alumnos.numLista')
-    //         ->get();
-    // }
+    public function getAlumnosCurso($idCurso)
+    {
+        $alumnos = Alumno::with([
+            'curso', // Obtiene la relación de cursos
+            'prioritario', // Obtiene el nombre del prioritario desde la BD master
+            'diagnostico' // Obtiene el diagnóstico desde la BD master
+        ])
+            ->whereHas('curso', function ($query) use ($idCurso) {
+                $query->where('idCurso', $idCurso);
+            })
+            ->orderBy('numLista')
+            ->get()
+            ->map(function ($alumno) {
+                return [
+                    'id' => $alumno->id,
+                    'nombres' => $alumno->nombres,
+                    'primerApellido' => $alumno->primerApellido,
+                    'segundoApellido' => $alumno->segundoApellido,
+                    'numLista' => $alumno->numLista,
+                    'idCurso' => $alumno->curso->first()->id ?? null,
+                    'estado' => $alumno->curso->first()->pivot->estado ?? null,
+                    'nombrePrioritario' => $alumno->prioritario->nombre ?? null,
+                    'nombreDiagnostico' => $alumno->diagnostico->nombre ?? null,
+                    'abreviaturaDiagnostico' => $alumno->diagnostico->abreviatura ?? null,
+                    'tipoNee' => $alumno->diagnostico->tipoNee ?? null,
+                ];
+            });
+
+        return $alumnos;
+    }
     /**
      * Store a newly created resource in storage.
      *

@@ -245,11 +245,11 @@ class Usuario extends Authenticatable
             return null;
         }
 
-        $ajustes = Ajuste::getAjustes($establecimiento->id);
+        $ajustes = Ajuste::getAjustes($establecimiento->id, $establecimiento->idPeriodoActivo);
         if (!$ajustes) {
             return null;
         }
-
+        
         $periodo = $ajustes->idPeriodo ? Periodo::find($ajustes->idPeriodo) : null;
 
         return [
@@ -261,16 +261,16 @@ class Usuario extends Authenticatable
             'segundoApellido' => $user->segundoApellido ?? null,
             'idEstablecimientoActivo' => $establecimiento->id,
             'periodo' => $periodo,
+            'ajustes' => $ajustes,
             'establecimiento' => [
                 'id' => $establecimiento->id,
                 'nombre' => $establecimiento->nombre,
                 'insignia' => $establecimiento->insignia,
-                'ajustes' => $ajustes,
             ],
             'rolActivo' => [
-                'id' => $rolActivo->id_rol,
+                'id' => $rolActivo->idRol,
+                'idEstabUsuarioRol' => $rolActivo->id,
                 'nombre' => $rolActivo->rol->name ?? null,
-                'guard_name' => $rolActivo->rol->guard_name ?? null,
             ],
         ];
     }

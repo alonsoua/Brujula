@@ -18,67 +18,51 @@ class ObjetivoController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // public function getObjetivosActivosAsignatura(Request $request, $idAsignatura, $idPeriodo)
-    // {
-    //     $user = $request->user();
-    //     $sql_oobjetivos =
-    //         'SELECT
-    //             ob.id
-    //             , ob.nombre as nombreObjetivo
-    //             , ej.nombre as nombreEje
-    //             , ob.abreviatura
-    //             , ob.priorizacion
-    //             , ob.priorizacionInterna
-    //             , ob.estado
-    //             , ob.idEje
-    //         FROM ejes as ej
-    //         LEFT JOIN objetivos as ob
-    //             ON ob.idEje = ej.id
-    //         WHERE
-    //             ej.idAsignatura = ' . $idAsignatura . ' AND
-    //             ob.estado = "Activo"
-    //         Order By ob.abreviatura
-    //         ';
+    public function getObjetivosActivosAsignatura(Request $request, $idAsignatura)
+    {
+        $objetivos = Objetivo::with(['eje:id,nombre'])
+        ->select([
+            'objetivos.id',
+            'objetivos.nombre as nombreObjetivo',
+            'objetivos.tipo',
+            'objetivos.idEje',
+            'objetivos.abreviatura',
+            'objetivos.priorizacion',
+            'objetivos.priorizacionInterna',
+            'objetivos.estado',
+            DB::raw('0 as puntajes_indicadores'),
+            DB::raw('0 as puntajes_indicadores_personalizado')
+        ])
+            ->whereHas('eje', function ($query) use ($idAsignatura) {
+                $query->where('idAsignatura', $idAsignatura);
+            })
+            ->where('objetivos.estado', 'Activo');
 
-    //     $objetivos = DB::select($sql_oobjetivos, []);
+        $objetivosPersonalizados = ObjetivoPersonalizado::with(['eje:id,nombre'])
+        ->select([
+            'objetivos_personalizados.id',
+            'objetivos_personalizados.nombre as nombreObjetivo',
+            'objetivos_personalizados.tipo',
+            'objetivos_personalizados.idEje',
+            'objetivos_personalizados.abreviatura',
+            'objetivos_personalizados.priorizacion as priorizacionInterna',
+            'objetivos_personalizados.estado',
+            DB::raw('0 as puntajes_indicadores'),
+            DB::raw('0 as puntajes_indicadores_personalizado'),
+            DB::raw('NULL as priorizacion')
+        ])
+            ->whereHas('eje', function ($query) use ($idAsignatura) {
+                $query->where('idAsignatura', $idAsignatura);
+            })
+            ->where('objetivos_personalizados.estado', 'Activo');
 
-    //     $sql_oobjetivos_personalizados =
-    //         'SELECT
-    //             ob.id
-    //             , ob.nombre as nombreObjetivo
-    //             , ej.nombre as nombreEje
-    //             , ob.abreviatura
-    //             , ob.priorizacion as priorizacionInterna
-    //             , ob.idEstablecimiento
-    //             , ob.estado
-    //             , ob.idEje
-    //         FROM ejes as ej
-    //         LEFT JOIN objetivos_personalizados as ob
-    //             ON ob.idEje = ej.id
-    //         WHERE
-    //             ej.idAsignatura = ' . $idAsignatura . ' AND
-    //             ob.idEstablecimiento = ' . $user->idEstablecimientoActivo . ' AND
-    //             ob.estado = "Activo"
-    //         Order By ob.abreviatura
-    //         ';
+        // ✅ 3️⃣ Unir ambas consultas con `union()`
+        $resultado = $objetivos->union($objetivosPersonalizados)
+        ->orderBy('abreviatura')
+        ->get();
 
-    //     $objetivos_personalizados = DB::select($sql_oobjetivos_personalizados, []);
-
-    //     foreach ($objetivos as $key => $objetivo) {
-    //         $objetivo->puntajes_indicadores = 0;
-    //         $objetivo->puntajes_indicadores_personalizado = 0;
-    //         $objetivo->tipo = 'Ministerio';
-    //     }
-    //     foreach ($objetivos_personalizados as $key => $objetivo_personalizado) {
-    //         $objetivo_personalizado->puntajes_indicadores = 0;
-    //         $objetivo_personalizado->puntajes_indicadores_personalizado = 0;
-    //         $objetivo_personalizado->priorizacion = null;
-    //         $objetivo_personalizado->tipo = 'Interno';
-    //         array_push($objetivos, $objetivo_personalizado);
-    //     }
-
-    //     return $objetivos;
-    // }
+        return response()->json($resultado);
+    }
 
     // public function getObjetivosActivosAsignaturaEstablecimiento($idEstablecimientoActivo, $idAsignatura)
     // {
@@ -149,52 +133,67 @@ class ObjetivoController extends Controller
      */
     // public function objetivosTrabajados(Request $request)
     // {
-
     //     try {
-    //         $idPeriodo = $request->idPeriodo;
+    //         $user = $request->user()->getUserData();
+    //         $idPeriodo = $user['periodo']['id'];
     //         $idAsignatura = $request->idAsignatura;
-    //         $objetivos = $request->objetivos;
     //         $idCurso = $request->idCurso;
-    //         $objetivos_trabajados = array();
-    //         foreach ($objetivos as $key => $objetivo) {
-    //             $objetivo['puntajes_indicadores'] = 0;
-    //             $objetivo['puntajes_indicadores_personalizado'] = 0;
-    //             if ($objetivo['tipo'] === 'Ministerio') {
-    //                 $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, 'Normal');
+    //         $objetivos = $request->objetivos; // Convertir a colección para manipularlo mejor
 
-    //                 foreach ($trabajados_normal as $key => $trabajado) {
-    //                     $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
-    //                 }
-    //                 $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
-    //                 foreach ($trabajados_personalizado as $key => $trabajado) {
-    //                     $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
-    //                 }
-    //             } else if ($objetivo['tipo'] === 'Interno') {
-    //                 $trabajados_normal = Objetivo::countObjetivosTrabajados($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
-    //                 foreach ($trabajados_normal as $key => $trabajado) {
-    //                     $objetivo['puntajes_indicadores'] += (int)$trabajado['puntajes_indicadores'];
-    //                 }
-    //                 $trabajados_personalizado = Objetivo::countObjetivosTrabajadosPersonalizado($objetivo['id'], $idAsignatura, $idPeriodo, $idCurso, $objetivo['tipo']);
-    //                 foreach ($trabajados_personalizado as $key => $trabajado) {
-    //                     $objetivo['puntajes_indicadores_personalizado'] += (int)$trabajado['puntajes_indicadores'];
-    //                 }
+
+    //         // 1️⃣ Obtener todos los puntajes en una sola consulta para mejorar rendimiento
+    //         $trabajadosNormales = Objetivo::getObjetivosTrabajados($objetivos, $idAsignatura, $idPeriodo, $idCurso);
+    //         $trabajadosPersonalizados = Objetivo::getObjetivosTrabajadosPersonalizados($objetivos, $idAsignatura, $idPeriodo, $idCurso);
+
+    //         // Asegurar que $objetivos sea una colección
+    //         $objetivos = collect($objetivos);
+
+    //         // 2️⃣ Mapear y calcular los puntajes
+    //         $objetivosTrabajados = $objetivos->map(function ($objetivo) use ($trabajadosNormales, $trabajadosPersonalizados) {
+    //             $puntajesNormales = $trabajadosNormales->where('idObjetivo', $objetivo)->sum('puntajes_indicadores');
+    //             $puntajesPersonalizados = $trabajadosPersonalizados->where('idObjetivo', $objetivo)->sum('puntajes_indicadores');
+
+    //             // Si al menos un puntaje es mayor a 0, se considera trabajado
+    //             if ($puntajesNormales > 0 || $puntajesPersonalizados > 0) {
+    //                 return [
+    //                     'id' => $objetivo,
+    //                     'puntajes_indicadores' => $puntajesNormales,
+    //                     'puntajes_indicadores_personalizado' => $puntajesPersonalizados,
+    //                 ];
     //             }
-    //             if ($objetivo['puntajes_indicadores'] !== 0 || $objetivo['puntajes_indicadores_personalizado'] !== 0) {
-    //                 array_push($objetivos_trabajados, array(
-    //                     'id' => $objetivo['id'],
-    //                     'puntajes_indicadores' => $objetivo['puntajes_indicadores'],
-    //                     'puntajes_indicadores_personalizado' => $objetivo['puntajes_indicadores_personalizado'],
-    //                 ));
-    //             }
-    //         }
-    //         if ($objetivos_trabajados != null) {
-    //             return response()->json($objetivos_trabajados);
-    //         }
-    //         return response()->json(['status' => 'error', 'message' => 'Registro no existe'], 404);
+
+    //             return null;
+    //         })->filter()->values(); // Eliminar nulos y reindexar colección
+
+    //         return response()->json($objetivosTrabajados);
     //     } catch (\Exception $e) {
+    //         logger()->error('Oas trabajados: ' . $e->getMessage());
     //         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
     //     }
     // }
+
+    public function objetivosTrabajados(Request $request)
+    {
+        try {
+            $user = $request->user()->getUserData();
+            $idPeriodo = $user['periodo']['id'];
+            $idAsignatura = $request->idAsignatura;
+            $idCurso = $request->idCurso;
+            $objetivos = collect($request->objetivos);
+
+            // 🔹 Obtener objetivos trabajados separados por tipo
+            $trabajadosNormales = Objetivo::getObjetivosTrabajados($objetivos, $idAsignatura, $idPeriodo, $idCurso);
+            $trabajadosPersonalizados = Objetivo::getObjetivosTrabajadosPersonalizados($objetivos, $idAsignatura, $idPeriodo, $idCurso);
+
+            // 🔹 Unir ambos conjuntos en una colección
+            $objetivosTrabajados = $trabajadosNormales->merge($trabajadosPersonalizados)->unique('id');
+
+            return response()->json($objetivosTrabajados);
+        } catch (\Exception $e) {
+            logger()->error('Error en objetivos trabajados: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 
     /**
      * Obtiene objetivos por asignatura con

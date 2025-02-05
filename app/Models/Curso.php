@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Master\Asignatura;
 use App\Models\Master\Establecimiento;
 use App\Models\Master\Grado;
 use App\Models\Master\Periodo;
@@ -28,6 +29,13 @@ class Curso extends Model
         'idPeriodo',
         'estado',
     ];
+
+    public function asignaturas()
+    {
+        return $this->belongsToMany(Asignatura::class, 'usuario_asignaturas', 'idCurso', 'idAsignatura')
+        ->wherePivot('estado', 'Activo');
+    }
+    
 
     public static function getCurso($idCurso)
     {

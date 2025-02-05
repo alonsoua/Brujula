@@ -54,7 +54,7 @@ class MeController extends Controller
         $permisos = Rol::rolHasPermisos($rolActivo->idRol);
 
         // Obtener ajustes del establecimiento (Master)
-        $ajustes = Ajuste::getAjustes($establecimiento->id);
+        $ajustes = Ajuste::getAjustes($establecimiento->id, $establecimiento->idPeriodoActivo);
 
         if (!$ajustes) {
             return response()->json(['error' => 'El establecimiento no cuenta con los ajustes configurados para el periodo actual.'], 400);
@@ -71,11 +71,11 @@ class MeController extends Controller
             'segundoApellido' => $user->segundoApellido ?? null,
             'idEstablecimientoActivo' => $establecimiento->id,
             'periodo' => $periodo,
+            'ajustes' => $ajustes,
             'establecimiento' => [
                 'id' => $establecimiento->id,
                 'nombre' => $establecimiento->nombre,
                 'insignia' => $establecimiento->insignia,
-                'ajustes' => $ajustes,
             ],
             'rolActivo' => [
                 'id' => $rolActivo->id_rol,

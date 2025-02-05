@@ -411,68 +411,111 @@ class NotasController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+    // public function updateNota(Request $request)
+    // {
+    //     $tipoObjetivo = $request['tipoObjetivo'];
+    //     $nota = DB::select(
+    //         'SELECT
+    //             n.id,
+    //             n.nota,
+    //             n.tipoObjetivo
+    //         FROM notas as n
+    //         WHERE
+    //             n.idAlumno = ' . $request['idAlumno'] . ' AND
+    //             n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+    //             n.idCurso = ' . $request['idCurso'] . ' AND
+    //             n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+    //             n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+    //             n.tipoObjetivo = "' . $tipoObjetivo . '"
+    //         '
+    //     );
+
+    //     if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
+    //         $nota2 = DB::select(
+    //             'SELECT
+    //                 n.id,
+    //                 n.nota,
+    //                 n.tipoObjetivo
+    //             FROM notas as n
+    //             WHERE
+    //                 n.idAlumno = ' . $request['idAlumno'] . ' AND
+    //                 n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+    //                 n.idCurso = ' . $request['idCurso'] . ' AND
+    //                 n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+    //                 n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+    //                 n.tipoObjetivo IS NULL
+    //             '
+    //         );
+    //         if (count($nota2) === 0 && $request['nota'] !== 0) {
+    //             $response = $this->store($request);
+    //         } else if (count($nota2) === 1) {
+    //             $data = array(
+    //                 'idNota' => $nota[0]->id,
+    //                 'nota' => $request['nota'],
+    //                 'tipoObjetivo' => $tipoObjetivo,
+    //             );
+    //             $response = $this->update($data);
+    //         }
+    //     } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
+    //         $data = array(
+    //             'idNota' => $nota[0]->id,
+    //             'nota' => $request['nota'],
+    //             'tipoObjetivo' => $tipoObjetivo,
+    //         );
+    //         $response = $this->update($data);
+    //     } else if ($request['nota'] === 0) { // Eliminar
+    //         $response = $this->destroy($nota[0]->id);
+    //     } else if (count($nota) === 2) {
+    //         $response = $this->destroy($nota[0]->id);
+    //         return response()->json(['status' => 'error', 'message' => 'Notas más de 2', 'notas' => $nota]);
+    //     }
+
+    //     return $response;
+    // }
+
     public function updateNota(Request $request)
     {
-        $tipoObjetivo = $request['idEstablecimiento'] ? 'Interno' : 'Ministerio';
-        // return $request;
-        // die();
-        $nota = DB::select(
-            'SELECT
-                n.id,
-                n.nota,
-                n.tipoObjetivo
-            FROM notas as n
-            WHERE
-                n.idAlumno = ' . $request['idAlumno'] . ' AND
-                n.idAsignatura = ' . $request['idAsignatura'] . ' AND
-                n.idCurso = ' . $request['idCurso'] . ' AND
-                n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                n.idObjetivo = ' . $request['idObjetivo'] . ' AND
-                n.tipoObjetivo = "' . $tipoObjetivo . '"
-            '
-        );
+        $nota = Notas::where([
+            'idAlumno' => $request->input('idAlumno'),
+            'idAsignatura' => $request->input('idAsignatura'),
+            'idCurso' => $request->input('idCurso'),
+            'idPeriodo' => $request->input('idPeriodo'),
+            'idObjetivo' => $request->input('idObjetivo'),
+            'tipoObjetivo' => $request->input('tipoObjetivo')
+        ])->first();
 
-        if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
-            $nota2 = DB::select(
-                'SELECT
-                    n.id,
-                    n.nota,
-                    n.tipoObjetivo
-                FROM notas as n
-                WHERE
-                    n.idAlumno = ' . $request['idAlumno'] . ' AND
-                    n.idAsignatura = ' . $request['idAsignatura'] . ' AND
-                    n.idCurso = ' . $request['idCurso'] . ' AND
-                    n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                    n.idObjetivo = ' . $request['idObjetivo'] . ' AND
-                    n.tipoObjetivo IS NULL
-                '
-            );
-            if (count($nota2) === 0 && $request['nota'] !== 0) {
-                $response = $this->store($request);
-            } else if (count($nota2) === 1) {
-                $data = array(
-                    'idNota' => $nota[0]->id,
-                    'nota' => $request['nota'],
-                    'tipoObjetivo' => $tipoObjetivo,
-                );
-                $response = $this->update($data);
+        if (!$nota && $request->input('nota') !== 0) {
+            // Verificar si existe nota sin `tipoObjetivo`
+            $notaSinTipo = Notas::where([
+                'idAlumno' => $request->input('idAlumno'),
+                'idAsignatura' => $request->input('idAsignatura'),
+                'idCurso' => $request->input('idCurso'),
+                'idPeriodo' => $request->input('idPeriodo'),
+                'idObjetivo' => $request->input('idObjetivo')
+            ])->whereNull('tipoObjetivo')->first();
+
+            if (!$notaSinTipo) {
+                return $this->store($request); // Crear nueva nota
+            } else {
+                return $this->update([
+                    'idNota' => $notaSinTipo->id,
+                    'nota' => $request->input('nota'),
+                    'tipoObjetivo' => $request->input('tipoObjetivo'),
+                ]);
             }
-        } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
-            $data = array(
-                'idNota' => $nota[0]->id,
-                'nota' => $request['nota'],
-                'tipoObjetivo' => $tipoObjetivo,
-            );
-            $response = $this->update($data);
-        } else if ($request['nota'] === 0) { // Eliminar
-            $response = $this->destroy($nota[0]->id);
-        } else if (count($nota) === 2) {
-            $response = $this->destroy($nota[0]->id);
-            return response()->json(['status' => 'error', 'message' => 'Notas más de 2', 'notas' => $nota]);
+        } elseif ($nota && $request->input('nota') !== 0) {
+            // Si la nota existe y la nueva nota no es 0, actualizar
+            return $this->update([
+                'idNota' => $nota->id,
+                'nota' => $request->input('nota'),
+                'tipoObjetivo' => $request->input('tipoObjetivo'),
+            ]);
+        } elseif ($nota && $request->input('nota') === 0) {
+            // Si la nota existe y la nueva nota es 0, eliminar
+            return $this->destroy($nota->id);
         }
 
-        return $response;
+        return response()->json(['status' => 'error', 'message' => 'Operación no válida']);
     }
 
     /**

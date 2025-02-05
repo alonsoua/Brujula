@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Master\DiagnosticoPie;
+use App\Models\Master\Prioritario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,6 +35,23 @@ class Alumno extends Model
         'idPrioritario',
         'idEstablecimiento',
     ];
+
+    public function curso()
+    {
+        return $this->belongsToMany(Curso::class, 'alumnos_cursos', 'idAlumno', 'idCurso')
+        ->withPivot('estado')
+        ->wherePivot('estado', 'Activo'); // Filtra solo los activos
+    }
+
+    public function prioritario()
+    {
+        return $this->belongsTo(Prioritario::class, 'idPrioritario', 'id');
+    }
+
+    public function diagnostico()
+    {
+        return $this->belongsTo(DiagnosticoPie::class, 'idDiagnostico', 'id');
+    }
 
     public static function getAll($idEstablecimiento, $idPeriodo = null)
     {

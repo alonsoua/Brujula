@@ -29,50 +29,32 @@ class CursoController extends Controller
      * * $idUsuarioEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    // public function getCursosUsuario(Request $request, $idPeriodoHistorico)
-    // {
-    //     $user = $request->user();
-    //     // OBTIENE ID_PERIODO
-    //     $id_periodo = $idPeriodoHistorico;
-    //     if ($id_periodo === 'null') {
-    //         $id_periodo = $user->idPeriodoActivo === null
-    //             ? MasterEstablecimiento::getIDPeriodoActivo($user->idEstablecimientoActivo)
-    //             : $user->idPeriodoActivo;
-    //     }
-    //     // $nombre_periodo = Periodo::where('id', $id_periodo)->value('nombre');
-    //     $id_usuario_establecimiento = null;
-    //     if (($user->rolActivo === 'Docente'
-    //         || $user->rolActivo === 'Docente Pie'
-    //         || $user->rolActivo === 'Asistente')) {
-    //         $id_usuario_establecimiento = User::getUsuarioEstablecimiento($user->id, $user->idEstablecimientoActivo);
-    //     }
+    public function getCursosUsuario(Request $request, $idPeriodoHistorico)
+    {
+        $user = $request->user()->getUserData();
+        $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idPeriodo = $idPeriodoHistorico === 'null' || 'undefined' ? $user['periodo']['id'] : $idPeriodoHistorico;
 
-    //     $cursos = Curso::select(
-    //         'cursos.id',
-    //         'cursos.letra',
-    //         'cursos.idProfesorJefe',
-    //         'cursos.idGrado',
-    //         'grados.nombre as nombreGrado',
-    //         'grados.idNivel'
-    //     )
-    //         ->join("grados", "cursos.idGrado", "=", "grados.id");
+        $cursos = Curso::select(
+            'cursos.id',
+            'cursos.nombre',
+            'cursos.letra',
+            'cursos.idProfesorJefe',
+            'cursos.idGrado'
+        )
+            ->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
+                return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
+                ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
+            })
+            ->where('cursos.estado', 'Activo')
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->orderBy('cursos.idGrado')
+            ->orderBy('cursos.letra')
+            ->distinct()
+            ->get();
 
-    //     if (!is_null($id_usuario_establecimiento)) {
-    //         $cursos = $cursos->leftjoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id");
-    //     }
-
-    //     $cursos = $cursos->where('cursos.estado', 'Activo')
-    //                         ->where('cursos.idPeriodo', $id_periodo);
-    //     if (!is_null($id_usuario_establecimiento)) {
-    //         $cursos = $cursos->where('usuario_asignaturas.idUsuarioEstablecimiento', $id_usuario_establecimiento);
-    //     }
-    //     $cursos = $cursos->orderBy('cursos.idGrado')
-    //         ->orderBy('cursos.letra')
-    //         ->distinct()
-    //         ->get();
-
-    //     return $cursos;
-    // }
+        return $cursos;
+    }
 
     /**
      * Display a listing of the resource.

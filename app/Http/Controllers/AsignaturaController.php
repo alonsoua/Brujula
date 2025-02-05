@@ -40,53 +40,55 @@ class AsignaturaController extends Controller
      * * $idUsuarioEstablecimiento
      * @return \Illuminate\Http\Response
      */
-    // public function getAsignaturasUsuario(Request $request, $idCurso, $idPeriodoHistorico)
-    // {
-    //     $user = $request->user();
-    //     // OBTIENE ID_PERIODO
-    //     $id_periodo = $idPeriodoHistorico;
-    //     if ($id_periodo === 'null') {
-    //         $id_periodo = $user->idPeriodoActivo === null
-    //             ? Establecimiento::getIDPeriodoActivo($user->idEstablecimientoActivo)
-    //             : $user->idPeriodoActivo;
-    //     }
-    //     // $nombre_periodo = Periodo::where('id', $id_periodo)->value('nombre');
-    //     $id_usuario_establecimiento = null;
-    //     if (($user->rolActivo === 'Docente'
-    //     || $user->rolActivo === 'Docente Pie'
-    //     || $user->rolActivo === 'Asistente')) {
-    //         $id_usuario_establecimiento = User::getUsuarioEstablecimiento($user->id, $user->idEstablecimientoActivo);
-    //     }
+    public function getAsignaturasUsuario(Request $request, $idCurso, $idPeriodoHistorico)
+    {
 
-    //     $cursos = Curso::select(
-    //            'asignaturas.id',
-    //             'asignaturas.nombre',
-    //             'asignaturas.idGrado',
-    //             'cursos.id as idCurso'
-    //         );
-    //         if (!is_null($id_usuario_establecimiento)) {
-    //             $cursos = $cursos->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id");
-    //         }
+        $user = $request->user()->getUserData();
+        $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idPeriodo = $idPeriodoHistorico === 'null' || $idPeriodoHistorico === 'undefined'
+        ? $user['periodo']['id']
+            : $idPeriodoHistorico;
 
-    //         $cursos = $cursos->leftJoin('asignaturas', function ($join) use ($id_usuario_establecimiento) {
-    //             if (!is_null($id_usuario_establecimiento)) {
-    //                 $join->on('asignaturas.id', '=', 'usuario_asignaturas.idAsignatura');
-    //             }
-    //             $join->on('asignaturas.idGrado', '=', 'cursos.idGrado');
-    //         });
+        // 🔹 1️⃣ Obtener cursos desde establecimiento
+        $cursos = Curso::select('cursos.id', 'cursos.idGrado')
+        ->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
+            return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
+            ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
+        })
+            ->where('cursos.estado', 'Activo')
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('cursos.id', $idCurso)
+            ->distinct()
+            ->get();
 
-    //     if (!is_null($id_usuario_establecimiento)) {
-    //         $cursos = $cursos->where('usuario_asignaturas.idUsuarioEstablecimiento', $id_usuario_establecimiento);
-    //     }
-    //     $cursos = $cursos->where('cursos.estado', 'Activo')
-    //         ->where('asignaturas.estado', 'Activo')
-    //         ->where('cursos.idPeriodo', $id_periodo)
-    //         ->where('cursos.id', $idCurso)
-    //         ->orderBy('asignaturas.id')
-    //         ->distinct()
-    //         ->get();
-    //     return $cursos;
-    // }
+        // 🔹 2️⃣ Obtener los ID de grados
+        $idGrados = $cursos->pluck('idGrado')->unique()->filter();
+
+        // 🔹 3️⃣ Obtener asignaturas desde master agrupadas por idGrado
+        $asignaturas = Asignatura::whereIn('idGrado', $idGrados)
+            ->get()
+            ->groupBy('idGrado');
+
+        // 🔹 4️⃣ Mapear datos correctamente
+        $cursos->transform(function ($curso) use ($asignaturas) {
+            return [
+                'idCurso' => $curso->id,  // ✅ Corregido: `idCurso` no existe en `Curso`, se usa `id`
+                'idGrado' => $curso->idGrado,
+                'asignaturas' => $asignaturas[$curso->idGrado] ?? collect(), // ✅ Devuelve colección vacía si no hay asignaturas
+            ];
+        });
+
+        // 🔹 5️⃣ Formatear la respuesta final
+        return $cursos->flatMap(function ($curso) {
+            return $curso['asignaturas']->map(function ($asignatura) {
+                return [
+                    'id' => $asignatura->id,
+                    'nombre' => $asignatura->nombre,
+                    'idGrado' => $asignatura->idGrado,
+                ];
+            });
+        })->values();
+    }
 
     /**
      * Obtiene las asignaturas asignadas al usuario

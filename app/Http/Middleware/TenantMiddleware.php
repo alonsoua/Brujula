@@ -45,20 +45,8 @@ class TenantMiddleware
     private function configureTenantConnection($estab): void
     {
         try {
-            // Verifica que la información del establecimiento se esté obteniendo correctamente
-            logger()->info('Configurando conexión para el establecimiento:', [
-                'host' => $estab['bd_host'],
-                'port' => $estab['bd_port'],
-                'database' => $estab['bd_name'],
-                'username' => $estab['bd_user'],
-                'password_encrypted' => $estab['bd_pass'], // Contraseña encriptada
-            ]);
-
             // Desencripta la contraseña
             $password = decrypt($estab['bd_pass']);
-
-            // Imprime la contraseña desencriptada en los logs
-            logger()->info('Contraseña desencriptada:', ['password' => $password]);
 
             Config::set('database.connections.establecimiento', [
                 'driver' => 'mysql',
@@ -80,11 +68,6 @@ class TenantMiddleware
             DB::reconnect('establecimiento');
             DB::setDefaultConnection('establecimiento');
 
-            logger()->info('Conexión establecida:', [
-                'database' => config('database.connections.establecimiento.database'),
-                'username' => config('database.connections.establecimiento.username'),
-                'password' => config('database.connections.establecimiento.password'),
-            ]);
         } catch (\Exception $e) {
             logger()->error('Error al desencriptar la contraseña: ' . $e->getMessage());
         }
