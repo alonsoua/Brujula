@@ -140,7 +140,7 @@ class Objetivo extends Model
                     ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
                     ->where('tipoIndicador', 'Normal');
             })
-            ->get(['id']);
+            ->get(['id', DB::raw('"Ministerio" as tipoObjetivo')]); 
     }
 
     public static function getObjetivosTrabajadosPersonalizados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
@@ -153,7 +153,7 @@ class Objetivo extends Model
                     ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
                     ->where('tipoIndicador', 'Personalizado');
             })
-            ->get(['id']);
+            ->get(['id', DB::raw('"Interno" as tipoObjetivo')]);
     }
 
     // public static function getObjetivosBetwen($idCursoInicio, $idCursoFin)

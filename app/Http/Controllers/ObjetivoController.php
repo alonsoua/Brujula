@@ -186,7 +186,11 @@ class ObjetivoController extends Controller
             $trabajadosPersonalizados = Objetivo::getObjetivosTrabajadosPersonalizados($objetivos, $idAsignatura, $idPeriodo, $idCurso);
 
             // 🔹 Unir ambos conjuntos en una colección
-            $objetivosTrabajados = $trabajadosNormales->merge($trabajadosPersonalizados)->unique('id');
+            $objetivosTrabajados = $trabajadosNormales->merge($trabajadosPersonalizados)
+                ->unique(function ($item) {
+                    return $item['id'] . '-' . $item['tipoObjetivo']; // 🔹 Mantener ID + Tipo como clave única
+                })
+                ->values(); // 🔹 Reindexar la colección
 
             return response()->json($objetivosTrabajados);
         } catch (\Exception $e) {
