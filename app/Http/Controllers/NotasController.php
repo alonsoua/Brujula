@@ -75,32 +75,22 @@ class NotasController extends Controller
 
     public function getAllNotasCurso($idPeriodo, $idCurso)
     {
-        $notasObjetivos = Notas::select('notas.*')
-            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
+        $notasMinisterio = Notas::select('notas.*', 'objetivos.abreviatura')
+        ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
+        ->where('notas.idPeriodo', $idPeriodo)
             ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Ministerio')
-            ->orderBy('objetivos.abreviatura')
+        ->where('notas.tipoObjetivo', 'Ministerio');
+
+        $notasInternas = Notas::select('notas.*', 'objetivos_personalizados.abreviatura')
+        ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
+        ->where('notas.idPeriodo', $idPeriodo)
+        ->where('notas.idCurso', $idCurso)
+        ->where('notas.tipoObjetivo', 'Interno')
+        ->unionAll($notasMinisterio) // 🔹 Une ambas consultas en una sola llamada
+            ->orderBy('abreviatura')
             ->get();
 
-        $notasObjetivosPersonalizados = Notas::select('notas.*')
-            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Interno')
-            ->orderBy('objetivos_personalizados.abreviatura')
-            ->get();
-
-        $notas = array();
-        foreach ($notasObjetivos as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        foreach ($notasObjetivosPersonalizados as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        return $notas;
+        return $notasInternas;
     }
 
     public function getAll($idPeriodo, $idCurso)
@@ -513,7 +503,7 @@ class NotasController extends Controller
         } elseif ($nota && $request->input('nota') === 0) {
             // Si la nota existe y la nueva nota es 0, eliminar
             return $this->destroy($nota->id);
-        }
+        } 
 
         return response()->json(['status' => 'error', 'message' => 'Operación no válida']);
     }

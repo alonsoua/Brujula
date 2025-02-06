@@ -23,16 +23,17 @@ class Asignatura extends Model
         'estado',
     ];
 
-    public function grado()
-    {
-        return $this->belongsTo(Grado::class, 'idGrado', 'id');
-    }
-
     public function cursos()
     {
         return $this->belongsToMany(Curso::class, 'usuario_asignaturas', 'idAsignatura', 'idCurso')
         ->wherePivot('estado', 'Activo');
     }
+    
+    public function grado()
+    {
+        return $this->belongsTo(Grado::class, 'idGrado', 'id');
+    }
+
 
     public static function getAll()
     {
