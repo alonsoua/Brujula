@@ -71,20 +71,16 @@ class AlumnoController extends Controller
         return $alumnos;
     }
 
-    // public function getAlumnosPeriodo(Request $request)
-    // {
-    //     $user = $request->user();
-    //     $idPeriodo = $user->idPeriodoActivo;
-    //     if ($idPeriodo === null) {
-    //         $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-    //         $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-    //     }
-    //     return Alumno::getAll($user->idEstablecimientoActivo, $idPeriodo);
-    // }
+    public function getAlumnosPeriodo(Request $request)
+    {
+        $user = $request->user()->getUserData();
+        $idPeriodo = $user['periodo']['id'];
+        return Alumno::getAll($idPeriodo);
+    }
 
     public function getAlumnosCurso($idCurso)
     {
-        $alumnos = Alumno::with([
+        return Alumno::with([
             'curso', // Obtiene la relación de cursos
             'prioritario', // Obtiene el nombre del prioritario desde la BD master
             'diagnostico' // Obtiene el diagnóstico desde la BD master
@@ -110,7 +106,6 @@ class AlumnoController extends Controller
                 ];
             });
 
-        return $alumnos;
     }
     /**
      * Store a newly created resource in storage.

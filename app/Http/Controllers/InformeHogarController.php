@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Alumno;
-use App\Models\Periodo;
 use App\Models\Master\Asignatura;
+use App\Models\Master\Periodo;
 use App\Models\Notas;
 use App\Traits\InformeHogarPDFTrait;
 
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 class InformeHogarController extends Controller
@@ -24,26 +24,44 @@ class InformeHogarController extends Controller
      * @param  int  $id
      */
 
-    public function createPDF($idAlumno, $tipo, $tipoInforme)
+    public function __construct()
+    {
+        $this->middleware(['auth:establecimiento'])->except(['createPDF']);
+    }
+
+    public function createPDF(Request $request, $idAlumno, $tipo, $tipoInforme)
     {
 
+        $user = $request->user()->getUserData();
+        $establecimiento = $user['establecimiento'];
+        $idPeriodo = $user['periodo']['id'];
+
         $alumno = Alumno::getAlumno($idAlumno);
-        $establecimiento = Alumno::getAlumnoEstablecimiento($idAlumno);
+        $curso = Alumno::getAlumnoCurso($idPeriodo, $idAlumno);
+        $asignaturas = Asignatura::getAsignaturasGrado($curso['idGrado']);
 
-        $id_periodo_actual = Periodo::getPeriodoActual();
-
-        $curso = Alumno::getAlumnoCurso($id_periodo_actual[0]->id, $idAlumno);
-        $asignaturas = Asignatura::getAllGrado($curso[0]['idTablaGrados']);
-
-        $notas = Notas::getNotasAlumno($id_periodo_actual[0]->id, $curso[0]['idCurso'], $idAlumno);
-
-        $rbdEstablecimiento = $establecimiento[0]['rbd'];
+        $notas = Notas::getNotasAlumno($idPeriodo, $curso['id'], $idAlumno);
         $data = array();
-        if ($rbdEstablecimiento === '1855') { //Francia
+        if ($establecimiento['rbd'] === '1855') { // ? República de francia Francia
             array_push($data, array(
-                'alumno' => $alumno[0],
-                'establecimiento' => $establecimiento[0],
-                'curso' => $curso[0],
+                'alumno' => $alumno,
+                'establecimiento' => $establecimiento,
+                'curso' => $curso,
+                'asignaturas' => $asignaturas,
+                'notas' => $notas,
+            ));
+
+            if ($tipoInforme === 'AlumnoMatriculado') {
+                $html = $this->downloadPDFEscuelaFrancia($data[0]);
+            } else if ($tipoInforme === 'AlumnoRetirado') {
+                $html = $this->downloadPDFEscuelaFranciaRetirado($data[0]);
+            }
+        }
+        if ($establecimiento['rbd'] === '336699') { // ? testing
+            array_push($data, array(
+                'alumno' => $alumno,
+                'establecimiento' => $establecimiento,
+                'curso' => $curso,
                 'asignaturas' => $asignaturas,
                 'notas' => $notas,
             ));
@@ -60,24 +78,6 @@ class InformeHogarController extends Controller
     }
 
 
-    function downloadPDF($html, $tipo, $alumno)
-    {
-        ini_set('max_execution_time', 300);
-        ini_set("memoria_limite", "512M");
-        $pdf = PDF::loadHTML($html);
-
-        $pdf->setPaper('A4');
-
-        $nombrePdf = $alumno . ' - informe_hogar.pdf';
-
-        if ($tipo == 'download') {
-            return $pdf->download($nombrePdf);
-        } else if ($tipo == 'read') {
-            return $pdf->stream($nombrePdf);
-        }
-    }
-
-
     /**
      * PDF resource.
      * use InformeHogarPDFTrait;
@@ -86,9 +86,7 @@ class InformeHogarController extends Controller
      */
     function downloadPDFEscuelaFrancia($data)
     {
-
         $style = $this->style();
-
 
         $htmlEncabezado = $this->encabezado(
             $data['establecimiento']
@@ -212,7 +210,6 @@ class InformeHogarController extends Controller
 
         $style = $this->style();
 
-
         $htmlEncabezado = $this->encabezado(
             $data['establecimiento']
         );
@@ -226,9 +223,6 @@ class InformeHogarController extends Controller
             $data['asignaturas'],
             $data['notas']
         );
-        $imgCuadroNivelLogro = '';
-
-
 
         return '
         <html>
@@ -279,7 +273,8 @@ class InformeHogarController extends Controller
                     </div>
 
                     <div style="">
-                        ' . $htmlTablaNotas . '
+                        ' . $htmlTablaNotas .
+            '
                     </div>
                 </div>
                 <div class="div-footerRetirado">
@@ -318,7 +313,26 @@ class InformeHogarController extends Controller
 
 
                 </body>
-                </html>
-            ';
+            </html>
+        ';
+    }
+
+
+
+    function downloadPDF($html, $tipo, $alumno)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set("memoria_limite", "512M");
+        $pdf = Pdf::loadHTML($html);
+
+        $pdf->setPaper('A4');
+
+        $nombrePdf = $alumno . ' - informe_hogar.pdf';
+
+        if ($tipo == 'download') {
+            return $pdf->download($nombrePdf);
+        } else if ($tipo == 'read') {
+            return $pdf->stream($nombrePdf);
+        }
     }
 }

@@ -266,6 +266,7 @@ class Usuario extends Authenticatable
                 'id' => $establecimiento->id,
                 'nombre' => $establecimiento->nombre,
                 'insignia' => $establecimiento->insignia,
+                'rbd' => $establecimiento->rbd,
             ],
             'rolActivo' => [
                 'id' => $rolActivo->idRol,

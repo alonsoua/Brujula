@@ -35,7 +35,12 @@ class Curso extends Model
         return $this->belongsToMany(Asignatura::class, 'usuario_asignaturas', 'idCurso', 'idAsignatura')
         ->wherePivot('estado', 'Activo');
     }
-    
+    public function alumnos()
+    {
+        return $this->belongsToMany(Alumno::class, 'alumnos_cursos', 'idCurso', 'idAlumno')
+        ->withPivot('estado')
+        ->wherePivot('estado', 'Activo');
+    }
 
     public static function getCurso($idCurso)
     {

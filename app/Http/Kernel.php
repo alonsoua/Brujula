@@ -64,5 +64,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         "cors" => \App\Http\Middleware\Cors::class,
         'tenant' => \App\Http\Middleware\TenantMiddleware::class,
+        'tenant.rollback' => \App\Http\Middleware\MigrateTenantsRollback::class,
+
     ];
 }

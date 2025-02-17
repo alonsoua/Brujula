@@ -16,6 +16,7 @@ class Rol extends Model
      * @var string
      */
     protected $table = 'roles';
+    protected $connection = 'master';
 
     /**
      * Clave primaria de la tabla.
@@ -52,6 +53,7 @@ class Rol extends Model
      */
     protected $fillable = [
         'name',
+        'tipo',
         'guard_name',
     ];
 
