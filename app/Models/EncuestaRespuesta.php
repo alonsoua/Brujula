@@ -12,7 +12,12 @@ class EncuestaRespuesta extends Model
     protected $connection = 'establecimiento';
     protected $table = 'encuesta_respuestas';
     protected $primaryKey = 'id';
-    protected $fillable = ['encuesta_opcion_id', 'texto_respuesta', 'encuesta_pregunta_id', 'encuesta_participante_id'];
+    protected $fillable = [
+        'encuesta_opcion_id',
+        'texto_respuesta',
+        'encuesta_pregunta_id',
+        'encuesta_participante_id'
+    ];
 
     public function pregunta()
     {

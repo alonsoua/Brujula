@@ -8,6 +8,8 @@ use App\Models\EncuestaOpcion;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PreguntasImport;
+use App\Models\EncuestaParticipante;
+use App\Models\EncuestaRespuesta;
 use App\Models\Master\Rol;
 use Illuminate\Support\Facades\DB;
 
@@ -37,14 +39,51 @@ class EncuestaController extends Controller
             : collect();
     }
 
+    public function findPreguntas($encuesta_participante_id)
+    {
+        try {
+            // 🔹 Obtener la relación del participante con la encuesta
+            $encuestaParticipante = EncuestaParticipante::findOrFail($encuesta_participante_id);
+            $encuesta_id = $encuestaParticipante->encuesta_id;
+
+            // 🔹 Obtener todas las preguntas con sus opciones ordenadas por número ASC
+            $preguntas = EncuestaPregunta::where('encuesta_id', $encuesta_id)
+                ->with('opciones')
+                ->orderBy('numero', 'asc') // 🔹 Ordenamos las preguntas
+                ->get();
+
+            // 🔹 Obtener las respuestas del usuario para esta encuesta
+            $respuestas = EncuestaRespuesta::where('encuesta_participante_id', $encuesta_participante_id)
+                ->get()
+                ->keyBy('encuesta_pregunta_id'); // 🔹 Indexamos por pregunta para acceso rápido
+
+            // 🔹 Formatear las preguntas y asignar respuestas si existen
+            $preguntas->transform(function ($pregunta) use ($respuestas) {
+                $respuesta = $respuestas->get($pregunta->id);
+
+                return [
+                    'id' => $pregunta->id,
+                    'numero' => $pregunta->numero,
+                    'titulo' => $pregunta->titulo,
+                    'tipo_pregunta' => $pregunta->tipo_pregunta,
+                    'opciones' => $pregunta->opciones,
+                    'respuesta_seleccionada' => $respuesta ? $respuesta->encuesta_opcion_id : null // 🔹 Solo una opción permitida
+                ];
+            });
+
+            return response()->json($preguntas, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    
     public function create(Request $request)
     {
         try {
             return DB::transaction(function () use ($request) {
                 // Convertir roles a JSON si es necesario
-                $request->merge([
-                    'roles' => is_array($request->roles) ? json_encode($request->roles) : $request->roles
-                ]);
+                $request->merge(['roles' => is_array($request->roles) ? $request->roles : json_decode($request->roles, true)]);
 
                 // Crear encuesta
                 $encuesta = Encuesta::create($request->only([
@@ -78,10 +117,7 @@ class EncuestaController extends Controller
         try {
             return DB::transaction(function () use ($request, $encuesta_id) {
                 // Convertir roles a JSON si es necesario
-                $request->merge([
-                    'roles' => is_array($request->roles) ? json_encode($request->roles) : $request->roles
-                ]);
-
+                $request->merge(['roles' => is_array($request->roles) ? $request->roles : json_decode($request->roles, true)]);
                 // Buscar la encuesta
                 $encuesta = Encuesta::findOrFail($encuesta_id);
                 $encuesta->update($request->only([

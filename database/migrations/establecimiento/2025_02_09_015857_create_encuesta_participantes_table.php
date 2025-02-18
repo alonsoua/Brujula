@@ -15,16 +15,17 @@ class CreateEncuestaParticipantesTable extends Migration
     {
         Schema::connection('establecimiento')->create('encuesta_participantes', function (Blueprint $table) {
             $table->id();
-            $table->string('rut', 15);
-            $table->string('nombre', 90);
-            $table->string('primerApellido', 90);
-            $table->string('segundoApellido', 90);
+            $table->string('rut', 15)->nullable();
+            $table->string('nombre', 90)->nullable();
+            $table->string('primerApellido', 90)->nullable();
+            $table->string('segundoApellido', 90)->nullable();
+            $table->timestamp('fecha_inicio')->nullable();
+            $table->foreignId('curso_id')->nullable();
             $table->foreignId('rol_id');
-            $table->foreignId('curso_id');
             $table->foreignId('usuario_id')->nullable();
             $table->foreignId('encuesta_id')->constrained()->onDelete('cascade');
-            $table->enum('estado', ['En Proceso', 'Finalizado'])->default('En Proceso')
-                ->comment('En Proceso, Finalizado');
+            $table->enum('estado', ['Sin Iniciar', 'En Proceso', 'Finalizado'])->default('En Proceso')
+                ->comment('Sin Iniciar, En Proceso, Finalizado');
             $table->timestamps();
         });
     }

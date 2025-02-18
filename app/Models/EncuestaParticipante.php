@@ -12,7 +12,24 @@ class EncuestaParticipante extends Model
     protected $connection = 'establecimiento';
     protected $table = 'encuesta_participantes';
     protected $primaryKey = 'id';
-    protected $fillable = ['correo', 'rut', 'verificado', 'usuario_id', 'encuesta_id'];
+    protected $fillable = [
+        'rut',
+        'nombre',
+        'primerApellido',
+        'segundoApellido',
+        'fecha_inicio',
+        'rol_id',
+        'curso_id',
+        'usuario_id',
+        'encuesta_id',
+        'estado',
+    ];
+
+    // 🔹 Formatear todos los timestamps automáticamente
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('d-m-Y H:i');
+    }
 
     public function encuesta()
     {
