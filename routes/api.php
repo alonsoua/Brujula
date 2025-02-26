@@ -109,6 +109,13 @@ Route::prefix('bru')->group(function () {
     Route::prefix('estab')->namespace('App\Http\Controllers')->group(function () {
         Route::post('/login', 'Auth\AuthController@login');
 
+        // * Encuestas
+        Route::get('/encuesta/publica/{rbd}/{slug}', [EncuestaController::class, 'findPublica']);
+        Route::get('/encuestas/preguntas/publica/{rbd}/{encuesta_participante_id}', [EncuestaController::class, 'findPreguntasPublica']);
+        Route::post('/encuesta-participantes', [EncuestaParticipanteController::class, 'createOrUpdatePublico']);
+        // * Respuestas de Encuestas
+        Route::post('/encuesta-respuestas/publica', [EncuestaRespuestaController::class, 'createPublica']);
+
         Route::middleware(['auth:establecimiento', 'tenant'])->group(function () {
             Route::get('auth/me', 'Auth\MeController@me');
             Route::post('auth/logout', 'Auth\AuthController@logout');
@@ -116,7 +123,6 @@ Route::prefix('bru')->group(function () {
             // * Enpoints padre (master)
             // * Periodos
             Route::get('/periodos', [PeriodoController::class, 'index']);
-
             // * Roles
             Route::get('/roles', [RolController::class, 'index']);
             
@@ -260,7 +266,6 @@ Route::prefix('bru')->group(function () {
             // * Participantes de Encuestas
             Route::get('/encuesta-participantes', [EncuestaParticipanteController::class, 'index']);
             
-
             // * Respuestas de Encuestas
             Route::post('/encuesta-respuestas', [EncuestaRespuestaController::class, 'create']);
         });

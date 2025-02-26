@@ -18,6 +18,7 @@ class Encuesta extends Model
         'tipo',
         'roles',
         'imagen',
+        'slug',
         'estado',
         'usuario_id'
     ];

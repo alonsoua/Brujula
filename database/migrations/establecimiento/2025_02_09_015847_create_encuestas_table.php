@@ -20,6 +20,7 @@ class CreateEncuestasTable extends Migration
             $table->enum('tipo', ['Interna', 'Externa'])
                 ->comment('Interna, Externa');
             $table->json('roles')->comment('Interna = roles, Externa: estudiantes, apoderados');
+            $table->string('slug')->nullable();
             $table->string('imagen')->nullable();
             $table->enum('estado', ['Borrador', 'Publicada', 'Finalizada'])->default('Borrador')
                 ->comment('Borrador, Publicada, Finalizada');

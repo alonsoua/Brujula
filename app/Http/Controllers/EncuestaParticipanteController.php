@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Alumno;
 use App\Models\Encuesta;
 use App\Models\EncuestaParticipante;
 use App\Models\EncuestaPregunta;
+use App\Models\Master\Establecimiento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class EncuestaParticipanteController extends Controller
 {
@@ -77,11 +82,83 @@ class EncuestaParticipanteController extends Controller
         }
     }
 
-    public function create(Request $request)
+    private function getConexionPublica($rbd)
     {
-        // Crear participante
-        $participante = EncuestaParticipante::create($request->all());
-        return response()->json($participante, 201);
+        // 🔹 Buscar el tenant (establecimiento) según el RBD
+        $estab = Establecimiento::where('rbd', $rbd)->firstOrFail();
+
+        $password = decrypt($estab['bd_pass']);
+
+        // 🔹 Configurar la conexión dinámica a la base de datos del establecimiento
+        Config::set('database.connections.establecimiento', [
+            'driver' => 'mysql',
+            'host' => $estab['bd_host'] ?? '127.0.0.1',
+            'port' => $estab['bd_port'] ?? '3306',
+            'database' => $estab['bd_name'],
+            'username' => $estab['bd_user'],
+            'password' => $password, // 👈 Asegurar que la contraseña es válida
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ]);
+
+        Artisan::call('config:clear');
+
+        DB::purge('establecimiento');
+        DB::reconnect('establecimiento');
+        DB::setDefaultConnection('establecimiento');
+    }
+
+    public function createOrUpdatePublico(Request $request)
+    {
+        try {
+
+            $validatedData = $request->validate([
+                'rbd' => 'required',
+                'rut' => 'required',
+                'nombre' => 'required',
+                'primerApellido' => 'required',
+                'segundoApellido' => 'required',
+                'encuesta_id' => 'required|integer'
+            ]);
+            $this->getConexionPublica($validatedData['rbd']);
+
+            $alumno = Alumno::where('rut', $validatedData['rut'])->first();
+
+            if ($alumno) {
+                $validatedData['usuario_id'] = $alumno->id;
+                $curso = $alumno->cursos()->latest()->first();
+                $validatedData['curso_id'] = $curso ? $curso->id : null;
+                $validatedData['rol_id'] = 10;
+            } else {
+                $validatedData['usuario_id'] = null;
+                $validatedData['curso_id'] = null;
+                $validatedData['rol_id'] = 11;
+            }
+
+            $participante = EncuestaParticipante::updateOrCreate(
+                [
+                    'rut' => $validatedData['rut'],
+                    'encuesta_id' => $validatedData['encuesta_id']
+                ],
+                [
+                    'nombre' => $validatedData['nombre'],
+                    'primerApellido' => $validatedData['primerApellido'],
+                    'segundoApellido' => $validatedData['segundoApellido'],
+                    'curso_id' => $validatedData['curso_id'],
+                    'usuario_id' => $validatedData['usuario_id'],
+                    'rol_id' => $validatedData['rol_id'],
+                    'fecha_inicio' => now(),
+                    'estado' => 'En Proceso'
+                ]
+            );
+
+            return response()->json($participante, $participante->wasRecentlyCreated ? 201 : 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function update(Request $request, $participante_id)

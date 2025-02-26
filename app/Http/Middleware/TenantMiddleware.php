@@ -47,7 +47,6 @@ class TenantMiddleware
         try {
             // Desencripta la contraseña
             $password = decrypt($estab['bd_pass']);
-
             Config::set('database.connections.establecimiento', [
                 'driver' => 'mysql',
                 'host' => $estab['bd_host'] ?? '127.0.0.1',
