@@ -259,6 +259,7 @@ Route::prefix('bru')->group(function () {
             Route::get('/encuestas/{encuesta_id}', [EncuestaController::class, 'findOne']);
             Route::get('/encuestas/roles/{tipo}', [EncuestaController::class, 'findRoles']);
             Route::get('/encuestas/preguntas/{encuesta_participante_id}', [EncuestaController::class, 'findPreguntas']);
+            Route::get('/encuestas/idps/{encuesta_id}', [EncuestaController::class, 'findIDPS']);
             Route::post('/encuestas', [EncuestaController::class, 'create']);
             Route::put('/encuestas/{encuesta_id}', [EncuestaController::class, 'update']);
             Route::delete('/encuestas/{encuesta_id}', [EncuestaController::class, 'delete']);

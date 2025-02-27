@@ -47,6 +47,61 @@ class EncuestaController extends Controller
         }
     }
 
+    public function findIDPS($encuesta_id)
+    {
+        try {
+            // Obtener la encuesta con sus preguntas y opciones ordenadas por número
+            $encuesta = Encuesta::with(['preguntas' => function ($q) {
+                $q->orderBy('numero', 'asc');
+            }, 'preguntas.opciones'])->findOrFail($encuesta_id);
+
+            // Obtener todas las respuestas de los participantes para esta encuesta
+            $respuestas = EncuestaRespuesta::whereHas('pregunta', function ($query) use ($encuesta_id) {
+                $query->where('encuesta_id', $encuesta_id);
+            })->with(['pregunta.opciones', 'opcion', 'participante'])
+            ->join('encuesta_preguntas', 'encuesta_respuestas.encuesta_pregunta_id', '=', 'encuesta_preguntas.id')
+            ->orderBy('encuesta_preguntas.numero', 'asc')
+            ->get();
+
+            // Obtener participantes únicos
+            $participantes = $respuestas->pluck('participante')->unique()->values();
+
+            // Formatear los resultados
+            $resultados = $respuestas->groupBy('pregunta.numero')->map(function ($respuestasPorPregunta) {
+                return [
+                    'numero' => $respuestasPorPregunta->first()->pregunta->numero,
+                    'pregunta' => $respuestasPorPregunta->first()->pregunta->titulo,
+                    'opciones_disponibles' => $respuestasPorPregunta->first()->pregunta->opciones->map(function ($opcion) {
+                        return [
+                            'opcion' => $opcion->opcion,
+                            'texto' => $opcion->texto
+                        ];
+                    }),
+                    'respuestas' => $respuestasPorPregunta->map(function ($respuesta) {
+                        return [
+                            'participante' => $respuesta->participante->nombre,
+                            'opcion' => $respuesta->opcion->opcion,
+                            'texto_respuesta' => $respuesta->texto_respuesta,
+                        ];
+                    }),
+                ];
+            });
+
+            // Ordenar resultados por número de pregunta usando sortBy
+            $resultadosOrdenados = $resultados->sortBy('numero');
+
+            return response()->json([
+                'data' => [
+                    'encuesta' => $encuesta,
+                    'resultados' => $resultadosOrdenados,
+                    'participantes' => $participantes
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     private function getConexionPublica($rbd)
     {
         // 🔹 Buscar el tenant (establecimiento) según el RBD
@@ -122,7 +177,7 @@ class EncuestaController extends Controller
         return isset($validTipos[$tipo])
             ? Rol::select('id', 'name')
             ->where('tipo', $validTipos[$tipo])
-            ->when($tipo === 'Interna', fn($query) => $query->where('id', '>', 3))
+            ->when($tipo === 'Interna', fn($query) => $query->where('id', '>', 2))
             ->get()
             : collect();
     }
@@ -278,4 +333,5 @@ class EncuestaController extends Controller
 
         return response()->json($encuesta->load('preguntas.opciones'), 201);
     }
+
 }
