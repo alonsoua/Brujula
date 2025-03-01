@@ -238,15 +238,18 @@ class PuntajeIndicadorController extends Controller
             $idAlumno,
             $tipoIndicador,
         );
+        // return response()->json(['status' => 'success', 'code' => 200, 'puntajeIndicador' => $puntajeIndicador, 'idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
         // return response()->json(['idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
         $user = $request->user()->getUserData();
         logger()->info($request->input('puntaje'));
         if ($request->input('puntaje') === 0) {
             // ELIMINA
             try {
-                $id = $puntajeIndicador[0]['id'];
-                $PuntajeIndicador = PuntajeIndicador::findOrFail($id);
-                $PuntajeIndicador->delete();
+                if (count($puntajeIndicador) > 0) {
+                    $id = $puntajeIndicador[0]['id'];
+                    $PuntajeIndicador = PuntajeIndicador::findOrFail($id);
+                    $PuntajeIndicador->delete();
+                }
                 $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user['establecimiento']['id'], $tipoObjetivo);
                 return response()->json(['status' => 'success', 'code' => 200, 'promedio' => $promedio]);
             } catch (\Throwable $th) {
