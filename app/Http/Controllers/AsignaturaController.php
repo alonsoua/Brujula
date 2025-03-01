@@ -41,17 +41,20 @@ class AsignaturaController extends Controller
 
         $user = $request->user()->getUserData();
         $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idRol = $user['rolActivo']['id'];
         $idPeriodo = $idPeriodoHistorico === 'null' || $idPeriodoHistorico === 'undefined'
         ? $user['periodo']['id']
             : $idPeriodoHistorico;
 
         // 🔹 1️⃣ Obtener cursos desde establecimiento
-        $cursos = Curso::select('cursos.id', 'cursos.idGrado')
-        ->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
-            return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
-            ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
-        })
-            ->where('cursos.estado', 'Activo')
+        $cursos = Curso::select('cursos.id', 'cursos.idGrado');
+        if ($idRol === 7) {
+            $cursos->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
+                return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
+                    ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
+            });
+        }
+        $cursos = $cursos->where('cursos.estado', 'Activo')
             ->where('cursos.idPeriodo', $idPeriodo)
             ->where('cursos.id', $idCurso)
             ->distinct()

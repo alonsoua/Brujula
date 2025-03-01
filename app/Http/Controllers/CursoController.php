@@ -33,6 +33,7 @@ class CursoController extends Controller
     {
         $user = $request->user()->getUserData();
         $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idRol = $user['rolActivo']['id'];
         $idPeriodo = $idPeriodoHistorico === 'null' || 'undefined' ? $user['periodo']['id'] : $idPeriodoHistorico;
 
         $cursos = Curso::select(
@@ -41,12 +42,16 @@ class CursoController extends Controller
             'cursos.letra',
             'cursos.idProfesorJefe',
             'cursos.idGrado'
-        )
-            ->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
+        );
+
+        // Si el rol es docente (7), mostrar solo los cursos asignados
+        if ($idRol === 7) {
+            $cursos->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
                 return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
                 ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
-            })
-            ->where('cursos.estado', 'Activo')
+            });
+        }
+        $cursos = $cursos->where('cursos.estado', 'Activo')
             ->where('cursos.idPeriodo', $idPeriodo)
             ->orderBy('cursos.idGrado')
             ->orderBy('cursos.letra')
