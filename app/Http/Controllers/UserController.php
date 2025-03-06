@@ -53,21 +53,15 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    // public function getDocenteAsignaturas(Request $request, $id, $idEstablecimiento)
-    // {
-    //     $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-    //         $id,
-    //         $idEstablecimiento
-    //     );
-    //     $user = $request->user();
-    //     $idPeriodo = $user->idPeriodoActivo;
-    //     if ($idPeriodo === null) {
-    //         $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-    //         $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-    //     }
-    //     $asignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo);
-    //     return response($asignaturas, 200);
-    // }
+    public function getDocenteAsignaturas(Request $request, $idEstabUsuarioRol)
+    {
+        $user = $request->user()->getUserData();
+        $asignaturas = UsuarioAsignatura::getAsignaturaActiva(
+            $idEstabUsuarioRol,
+            $user['periodo']['id']
+        );
+        return response($asignaturas, 200);
+    }
 
     /**
      * Store a newly created resource in storage.

@@ -157,9 +157,9 @@ Route::prefix('bru')->group(function () {
             //     UserController::class,
             //     'getDocentesActivos'
             // ]);
-            // Route::get('/usuarios/docente/asignaturas/{id}/{idEstablecimiento}', [UserController::class, 'getDocenteAsignaturas']);
+            Route::get('/usuarios/docente/asignaturas/{idEstabUsuarioRol}', [UserController::class, 'getDocenteAsignaturas']);
+            Route::put('/usuarios/{id}', [UserController::class, 'update']);
             // Route::post('/usuarios', [UserController::class, 'store']);
-            // Route::put('/usuarios/{id}', [UserController::class, 'update']);
             // Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
             // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
@@ -171,7 +171,7 @@ Route::prefix('bru')->group(function () {
             Route::get('/cursos/usuario/{idPeriodoHistorico}', [CursoController::class, 'getCursosUsuario']);
             Route::post('/cursos', [CursoController::class, 'store']);
             Route::put('/cursos/{id}', [CursoController::class, 'update']);
-            // Route::get('/cursos/activos/establecimiento/{idestablecimiento}', [CursoController::class, 'getActivosEstablecimiento']);
+            Route::get('/cursos/activos/establecimiento', [CursoController::class, 'getActivosEstablecimiento']);
             // Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
 
             // * Alumnos

@@ -91,27 +91,47 @@ class UsuarioAsignatura extends Model
             ->get();
     }
 
-    public static function getAsignaturaActiva($idUsuarioEstablecimiento, $idPeriodo) {
-        return UsuarioAsignatura::select(
-                'asignaturas.id'
-                , 'asignaturas.nombre'
-                , 'asignaturas.idGrado'
-                , 'cursos.id as idCurso'
+    public static function getAsignaturaActiva($idEstabUsuarioRol, $idPeriodo)
+    {
+        // Consulta en la base de datos de establecimiento
+        return $usuarioAsignaturas = UsuarioAsignatura::select(
+            'usuario_asignaturas.idAsignatura',
+            'cursos.id as idCurso',
+            'cursos.idGrado'
             )
             ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
-            // ->leftJoin("asignaturas", "asignaturas.idGrado", "=", "cursos.idGrado")
-            ->leftJoin('asignaturas', function ($join) {
-                $join->on('asignaturas.id', '=', 'usuario_asignaturas.idAsignatura');
-                $join->on('asignaturas.idGrado', '=', 'cursos.idGrado');
-            })
-            // ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
-            ->where('usuario_asignaturas.idUsuarioEstablecimiento', $idUsuarioEstablecimiento)
+            ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol)
             ->where('cursos.estado', 'Activo')
-            ->where('asignaturas.estado', 'Activo')
             ->where('cursos.idPeriodo', $idPeriodo)
-            ->orderBy('asignaturas.id')
             ->distinct()
             ->get();
+
+        // Obtener los IDs de asignaturas para consultar en la base de datos master
+        $idsAsignaturas = $usuarioAsignaturas->pluck('idAsignatura')->unique()->toArray();
+
+        // Consulta en la base de datos master para obtener información de asignaturas
+        $asignaturas = \App\Models\Master\Asignatura::select(
+            'id',
+            'nombre',
+            'idGrado'
+        )
+            ->whereIn('id', $idsAsignaturas)
+            ->where('estado', 'Activo')
+            ->get()
+            ->keyBy('id');
+
+        // Combinar los resultados
+        return $usuarioAsignaturas->map(function ($item) use ($asignaturas) {
+            $asignatura = $asignaturas->get($item->idAsignatura);
+            if (!$asignatura) return null;
+
+            return [
+                'id' => $asignatura->id,
+                'nombre' => $asignatura->nombre,
+                'idGrado' => $asignatura->idGrado,
+                'idCurso' => $item->idCurso
+            ];
+        })->filter()->values();
     }
 
     public static function getCursoEstablecimientoActivo($idEstablecimiento, $idPeriodoActivo) {

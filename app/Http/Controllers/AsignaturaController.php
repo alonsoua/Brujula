@@ -139,7 +139,7 @@ class AsignaturaController extends Controller
      */
     public function getAsignaturasGrado($idgrado)
     {
-        return Asignatura::getAllGrado($idgrado);
+        return Asignatura::getAsignaturasGrado($idgrado);
     }
 
     /**

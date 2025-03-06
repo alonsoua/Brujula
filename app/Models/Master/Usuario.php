@@ -284,11 +284,19 @@ class Usuario extends Authenticatable
      */
     public static function getUsuariosPorEstablecimiento($idEstablecimiento)
     {
-        return self::select('usuarios.*', 'estab_usuarios_roles.id as idEstabUsuarioRol', 'estab_usuarios_roles.estado', 'estab_usuarios_roles.idRol', 'roles.name as nombreRol')
+        return self::select(
+            'usuarios.*',
+            'estab_usuarios_roles.id as idEstabUsuarioRol',
+            'estab_usuarios_roles.estado',
+            'estab_usuarios_roles.idRol',
+            'estab_usuarios_roles.ultima_conexion as ultimaConexionRol',
+            'roles.name as nombreRol'
+        )
         ->join('estab_usuarios_roles', 'usuarios.id', '=', 'estab_usuarios_roles.idUsuario')
         ->join('roles', 'estab_usuarios_roles.idRol', '=', 'roles.id')
         ->where('estab_usuarios_roles.idEstablecimiento', $idEstablecimiento)
             ->where('estab_usuarios_roles.estado', '!=', 2)
+            ->orderBy('usuarios.id')
             ->get();
     }
 

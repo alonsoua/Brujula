@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Master\Rol;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
@@ -14,6 +15,6 @@ class RolController extends Controller
      */
     public function index()
     {
-        return Role::all();
+        return Rol::where('tipo', 'Interno')->get();
     }
 }

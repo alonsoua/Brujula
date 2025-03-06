@@ -103,17 +103,11 @@ class CursoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    // public function getActivosEstablecimiento(Request $request, $idEstablecimiento)
-    // {
-    //     $user = $request->user();
-    //     $idPeriodo = $user->idPeriodoActivo;
-    //     if ($idPeriodo === null) {
-    //         $establecimiento = MasterEstablecimiento::getAll($user->idEstablecimientoActivo);
-    //         $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-    //     }
-
-    //     return Curso::getAll($idEstablecimiento, $idPeriodo);
-    // }
+    public function getActivosEstablecimiento(Request $request)
+    {
+        $user = $request->user()->getUserData();
+        return Curso::getAll($user['periodo']['id']);
+    }
 
     /**
      * Display a listing of the resource.
