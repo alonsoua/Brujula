@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Master\Asignatura;
 use App\Models\Curso;
 use App\Models\Master\Establecimiento;
+use App\Models\UsuarioAsignatura;
 use Illuminate\Http\Request;
 
 class AsignaturaController extends Controller
@@ -63,10 +64,24 @@ class AsignaturaController extends Controller
         // 🔹 2️⃣ Obtener los ID de grados
         $idGrados = $cursos->pluck('idGrado')->unique()->filter();
 
+
         // 🔹 3️⃣ Obtener asignaturas desde master agrupadas por idGrado
         $asignaturas = Asignatura::whereIn('idGrado', $idGrados)
             ->get()
             ->groupBy('idGrado');
+
+        // 🔹 3️⃣ Obtener los IDs de las asignaturas desde usuario_asignaturas solo si el $idRol es 7
+        if ($idRol === 7) {
+            $idAsignaturas = UsuarioAsignatura::where('idEstabUsuarioRol', $idEstabUsuarioRol)
+                ->pluck('idAsignatura');
+
+            // Filtrar las asignaturas por los $idAsignaturas
+            $asignaturas = $asignaturas->map(function ($grupoAsignaturas) use ($idAsignaturas) {
+                return $grupoAsignaturas->filter(function ($asignatura) use ($idAsignaturas) {
+                    return $idAsignaturas->contains($asignatura->id);
+                });
+            });
+        }
 
         // 🔹 4️⃣ Mapear datos correctamente
         $cursos->transform(function ($curso) use ($asignaturas) {

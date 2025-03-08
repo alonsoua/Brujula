@@ -100,6 +100,7 @@ class Usuario extends Authenticatable
         $estabsActivos = Estab_usuario_rol::with(['establecimiento'])
             ->where('idUsuario', $this->id)
             ->where('estado', 1)
+            ->where('isLogin', 1)
             ->get();
 
         // Si no existe ningún establecimiento activo, emitir un error

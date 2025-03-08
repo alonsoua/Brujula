@@ -58,7 +58,7 @@ class PuntajeIndicadorController extends Controller
 
         // Definir tipo de indicador y relación correcta
         $tipoIndicador = $tipoObjetivo === 'Ministerio' ? 'Normal' : 'Interno';
-        $relacionIndicador = $tipoObjetivo === 'Ministerio' ? 'indicador' : 'indicadorPersonalizado';
+        $relacionIndicador = $tipoObjetivo === 'Ministerio' ? 'indicador' : 'indicadoresPersonalizados';
         // Obtener puntajes de los indicadores en una sola consulta optimizada
         $puntajes = PuntajeIndicador::with([$relacionIndicador => function ($query) use ($idObjetivo) {
             $query->where('idObjetivo', $idObjetivo);
@@ -185,7 +185,7 @@ class PuntajeIndicadorController extends Controller
     public function getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $idEstablecimiento, $tipoObjetivo)
     {
         // Definir la relación correcta según el tipo de objetivo
-        $relacionIndicador = $tipoObjetivo === 'Ministerio' ? 'indicador' : 'indicadorPersonalizado';
+        $relacionIndicador = $tipoObjetivo === 'Ministerio' ? 'indicador' : 'indicadoresPersonalizados';
         $tipoIndicador = $tipoObjetivo === 'Ministerio' ? 'Normal' : 'Interno';
 
         // Obtener los puntajes de indicadores asociados al objetivo
@@ -220,7 +220,7 @@ class PuntajeIndicadorController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $puntaje)
+    public function update(Request $request)
     {
         $idPeriodo = $request->input('idPeriodo');
         $idCurso = $request->input('idCurso');
@@ -238,6 +238,8 @@ class PuntajeIndicadorController extends Controller
             $idAlumno,
             $tipoIndicador,
         );
+
+
         // return response()->json(['status' => 'success', 'code' => 200, 'puntajeIndicador' => $puntajeIndicador, 'idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
         // return response()->json(['idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
         $user = $request->user()->getUserData();
@@ -287,7 +289,7 @@ class PuntajeIndicadorController extends Controller
                     'idAlumno'          => $request->input('idAlumno'),
                     'puntaje'           => $request->input('puntaje'),
                     'tipoIndicador'     => $request->input('tipoIndicador'),
-                    'estado'            => $request->input('estado'),
+                    'estado'            => 'Activo',
                     'idUsuario_created' => $usuarioCreate,
                 ]);
                 $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user['establecimiento']['id'], $tipoObjetivo);

@@ -159,9 +159,11 @@ Route::prefix('bru')->group(function () {
             // ]);
             Route::get('/usuarios/docente/asignaturas/{idEstabUsuarioRol}', [UserController::class, 'getDocenteAsignaturas']);
             Route::put('/usuarios/{id}', [UserController::class, 'update']);
-            // Route::post('/usuarios', [UserController::class, 'store']);
+            Route::post('/usuarios', [UserController::class, 'store']);
+            Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
+            Route::get('/usuarios/correo/{correo}', [UserController::class, 'findCorreo']);
+            Route::post('/usuarios/addRol/{id}', [UserController::class, 'addRol']);
             // Route::put('/usuarios/vistas/{id}', [UserController::class, 'updateVistas']);
-            // Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
             // * Endpoints establecimiento (tenant)
 
@@ -239,7 +241,7 @@ Route::prefix('bru')->group(function () {
             // * Puntaje Indicador
             Route::get('/puntajes/indicadores/{idcurso}/{idasignatura}/{idObjetivo}/{tipo}', [PuntajeIndicadorController::class, 'getPuntajesIndicadores']);
             // Route::get('/puntajes/resumen/{idperiodo}/{idcurso}/{idasignatura}', [PuntajeIndicadorController::class, 'getNotasResumen']);
-            Route::put('/puntajes/{idPuntaje}', [PuntajeIndicadorController::class, 'update']);
+            Route::put('/puntajes', [PuntajeIndicadorController::class, 'update']);
 
             // * Puntaje Indicador Transformacion
             Route::get('/puntajes/indicadores/transformacion', [PuntajeIndicadorController::class, 'getPuntajesIndicadoresTransformacion']);

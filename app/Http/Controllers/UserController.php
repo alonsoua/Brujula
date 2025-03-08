@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Establecimiento;
 use App\Models\Master\Estab_usuario_rol;
 use App\Models\Master\Usuario;
@@ -33,6 +32,31 @@ class UserController extends Controller
     {
         $user = $request->user()->getUserData();
         return Usuario::getUsuariosPorEstablecimiento($user['establecimiento']['id']);
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function findCorreo($correo)
+    {
+        try {
+            $usuario = Usuario::where('correo', $correo)
+                ->with(['estabUsuariosRoles' => function ($query) {
+                    $query->where('estado', '!=', 2)
+                        ->with(['establecimiento', 'rol']);
+                }])
+                ->first();
+            return response()->json($usuario);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud.',
+                'mensaje' => $th->getMessage(),
+                'archivo' => $th->getFile(),
+                'linea' => $th->getLine()
+            ], 404);
+        }
     }
 
     /**
@@ -71,24 +95,28 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'email'           => 'required|email|max:80|unique:users',
-            'password'        => 'required|min:6|max:30',
-            'rut'             => 'required|max:15|unique:users',
-            'nombres'         => 'required|max:150',
-            'primerApellido'  => 'required|max:100',
-            'segundoApellido' => 'required|max:100',
-            'estado'          => 'required',
-        ]);
-
         try {
 
+            $request->validate([
+                'correo'          => 'required|email|max:80|unique:master.usuarios',
+                'password'        => 'required|min:6|max:30',
+                'rut'             => 'required|max:15|unique:master.usuarios',
+                'nombres'         => 'required|max:150',
+                'primerApellido'  => 'required|max:100',
+                'segundoApellido' => 'required|max:100',
+                'estado'          => 'required',
+            ]);
+
             DB::transaction(function () use ($request) {
+
+                $user = $request->user()->getUserData();
+                $usuarioId = $user['id'];
+                $idEstablecimiento = $user['establecimiento']['id'];
+
                 $avatar    = $request->input('avatar');
                 $rut       = $request->input('rut');
-                $idEstablecimiento = $request->input('idEstablecimiento');
-                $idRol     = $request->input('rol')['id'];
-                $nombreRol = $request->input('rol')['title'];
+                $idRol     = $request->input('idRol')['id'];
+                $nombreRol = $request->input('idRol')['title'];
 
 
                 if ( !is_null( $avatar ) ) {
@@ -105,10 +133,8 @@ class UserController extends Controller
                     $avatar = $nombreAvatar;
                 }
 
-                $userCreate = $request->user();
-
-                $usuario = User::Create([
-                    'email'              => $request->input('email'),
+                $usuario = Usuario::Create([
+                    'correo'              => $request->input('correo'),
                     'password'           => bcrypt($request->input('password')),
                     'avatar'             => $avatar,
                     'rut'                => $rut,
@@ -118,46 +144,121 @@ class UserController extends Controller
                     'idEstablecimientoActivo' => $idEstablecimiento,
                     'rolActivo'          => $nombreRol,
                     'estado'             => $request->input('estado'),
-                    'idUsuarioCreated'   => $userCreate['id'],
+                    'idUsuarioCreated'   => $usuarioId,
                 ]);
 
-                if ($nombreRol === 'Super Administrador' ||
-                    $nombreRol === 'Administrador Daem')
-                {
-                    // * Relaciona rol por medio de spatie
-                    // model_type = App\Models\User
-                    $usuario->assignRole($nombreRol);
 
-                } else {
-                    $usuarioEstablecimiento = UsuarioEstablecimiento::create([
-                        'idUsuario'         => $usuario->id,
-                        'idEstablecimiento' => $idEstablecimiento,
-                    ]);
+                $estabUsuarioRol = Estab_usuario_rol::create([
+                    'idEstablecimiento' => $idEstablecimiento,
+                    'idUsuario'         => $usuario->id,
+                    'idRol'             => $idRol,
+                ]);
 
-                    // * Relaciona rol directo en la Tabla
-                    // model_type = App\Models\UsuarioEstablecimiento
-                    model_has_roles::create([
-                        'role_id'    => $idRol,
-                        'model_type' => 'App\Models\UsuarioEstablecimiento',
-                        'model_id'   => $usuarioEstablecimiento->id,
-                    ]);
-
-                    // Asignaturas Habilitadas
-                    $asignaturas = $request->input('asignaturas');
+                // Asignaturas Habilitadas
+                $asignaturas = $request->input('asignaturas');
+                if ($asignaturas) {
                     foreach ($asignaturas as $key => $asignatura) {
                         UsuarioAsignatura::create([
-                            'idUsuarioEstablecimiento' => $usuarioEstablecimiento->id,
-                            'idCurso'                  => $asignatura['idCurso'],
-                            'idAsignatura'             => $asignatura['idAsignatura'],
+                            'idEstabUsuarioRol' => $estabUsuarioRol->id,
+                            'idCurso'           => $asignatura['idCurso'],
+                            'idAsignatura'      => $asignatura['idAsignatura'],
                         ]);
                     }
-                    return response($request->input('asignaturas'), 200);
                 }
-
-                return response(null, 200);
+                return response($request->input('asignaturas'), 200);
             });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Error de validación.',
+                'mensajes' => $e->errors()
+            ], 422);
         } catch (\Throwable $th) {
-            return response($th, 500);
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud.',
+                'mensaje' => $th->getMessage(),
+                'archivo' => $th->getFile(),
+                'linea' => $th->getLine()
+            ], 404);
+        }
+    }
+
+    public function addRol(Request $request, $id)
+    {
+        try {
+            $validatedData = $request->validate([
+                'correo' => 'required|max:80|unique:master.usuarios,correo,' . $id,
+                'rut' => 'required|max:15|unique:master.usuarios,rut,' . $id,
+                'nombres' => 'required|max:150',
+                'primerApellido' => 'required|max:100',
+                'segundoApellido' => 'required|max:100',
+            ]);
+
+            $user = $request->user()->getUserData();
+            $idEstablecimiento = $user['establecimiento']['id'];
+
+            $usuario = Usuario::findOrFail($id);
+
+            $rut = $validatedData['rut'];
+            $avatar = $request->input('avatar');
+
+
+            if (!is_null($avatar)) {
+                $nombreInsignia = formatNameImage($avatar, $rut);
+                if (!is_null($nombreInsignia)) {
+                    $avatarAntigua = $usuario->avatar;
+                    if ($avatarAntigua) {
+                        Storage::disk('avatars_usuarios')->delete($avatarAntigua);
+                    }
+                    saveStorageImagen('avatars_usuarios', $avatar, $nombreInsignia);
+                    $usuario->avatar = $nombreInsignia;
+                }
+            } else {
+                $avatarAntigua = $usuario->avatar;
+                if ($avatarAntigua) {
+                    Storage::disk('avatars_usuarios')->delete($avatarAntigua);
+                }
+                $usuario->avatar = null;
+            }
+
+            $usuario->correo = $validatedData['correo'];
+            $usuario->rut = $rut;
+            $usuario->nombres = $validatedData['nombres'];
+            $usuario->primerApellido = $validatedData['primerApellido'];
+            $usuario->segundoApellido = $validatedData['segundoApellido'];
+
+            $idRol     = $request->input('idRol')['id'];
+            $estabUsuarioRol = Estab_usuario_rol::create([
+                'idEstablecimiento' => $idEstablecimiento,
+                'idUsuario'         => $usuario->id,
+                'idRol'             => $idRol,
+            ]);
+
+            // Asignaturas Habilitadas
+            $asignaturas = $request->input('asignaturas');
+            if ($asignaturas) {
+                foreach ($asignaturas as $key => $asignatura) {
+                    UsuarioAsignatura::create([
+                        'idEstabUsuarioRol' => $estabUsuarioRol->id,
+                        'idCurso'           => $asignatura['idCurso'],
+                        'idAsignatura'      => $asignatura['idAsignatura'],
+                    ]);
+                }
+            }
+
+            $usuario->save();
+            return response($request->input('asignaturas'), 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Error de validación.',
+                'mensajes' => $e->errors()
+            ], 422);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud.',
+                'mensaje' => $th->getMessage(),
+                'archivo' => $th->getFile(),
+                'linea' => $th->getLine()
+            ], 404);
         }
     }
 
@@ -177,17 +278,6 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    // public function show($id)
-    // {
-    //     return User::findOrFail($id);
-    // }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -196,35 +286,28 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        Request()->validate([
-            'email' => 'required|max:80|unique:users,email,'.$id.',id' ,
-            'rut' => 'required|max:15|unique:users,rut,'.$id.',id' ,
-            'nombres'         => 'required|max:150',
-            'primerApellido'  => 'required|max:100',
-            'segundoApellido' => 'required|max:100',
-        ]);
-
         try {
-            $usuario = User::findOrFail($id);
+            $validatedData = $request->validate([
+                'correo' => 'required|max:80|unique:master.usuarios,correo,' . $id,
+                'rut' => 'required|max:15|unique:master.usuarios,rut,' . $id,
+                'nombres' => 'required|max:150',
+                'primerApellido' => 'required|max:100',
+                'segundoApellido' => 'required|max:100',
+            ]);
 
-            $rut    = $request->input('rut');
+            $usuario = Usuario::findOrFail($id);
+
+            $rut = $validatedData['rut'];
             $avatar = $request->input('avatar');
 
             if (!is_null($avatar)) {
-                $nombreInsignia = formatNameImage(
-                    $avatar
-                    , $rut
-                );
-                if ( !is_null($nombreInsignia) ) {
+                $nombreInsignia = formatNameImage($avatar, $rut);
+                if (!is_null($nombreInsignia)) {
                     $avatarAntigua = $usuario->avatar;
                     if ($avatarAntigua) {
                         Storage::disk('avatars_usuarios')->delete($avatarAntigua);
                     }
-                    saveStorageImagen(
-                        'avatars_usuarios'
-                        , $avatar
-                        , $nombreInsignia
-                    );
+                    saveStorageImagen('avatars_usuarios', $avatar, $nombreInsignia);
                     $usuario->avatar = $nombreInsignia;
                 }
             } else {
@@ -235,115 +318,44 @@ class UserController extends Controller
                 $usuario->avatar = null;
             }
 
-            $nombres = $request->input('nombres');
-            $email   = $request->input('email');
-            $primerApellido  = $request->input('primerApellido');
-            $segundoApellido = $request->input('segundoApellido');
+            $usuario->correo = $validatedData['correo'];
+            $usuario->rut = $rut;
+            $usuario->nombres = $validatedData['nombres'];
+            $usuario->primerApellido = $validatedData['primerApellido'];
+            $usuario->segundoApellido = $validatedData['segundoApellido'];
 
+            // Asignaturas Habilitadas
+            $idEstabUsuarioRol = $request->input('idEstabUsuarioRol');
+            UsuarioAsignatura::deleteUsuarioAsignaturas($idEstabUsuarioRol);
 
-            $usuario->email   = $email;
-            $usuario->rut     = $rut;
-            $usuario->nombres = $nombres;
-            $usuario->primerApellido  = $primerApellido;
-            $usuario->segundoApellido = $segundoApellido;
-
-            if ($request->input('nombreRol') === 'Super Administrador' ||
-                $request->input('nombreRol') === 'Administrador Daem')
-            {
-                //     // * Relaciona rol por medio de spatie
-                //     // model_type = App\Models\User
-                //     // $usuario->assignRole($nombreRol);
-
-                // return response($usuario, 200);
-            } else {
-
-                $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-                    $id,
-                    $request->input('idEstablecimiento'),
-                );
-
-                // Asignaturas Habilitadas
-                $asignaturas = $request->input('asignaturas');
-
-                UsuarioAsignatura::deleteUsuarioAsignaturas($idUsuarioEstablecimiento);
-
+            $asignaturas = $request->input('asignaturas');
+            if ($asignaturas) {
                 foreach ($asignaturas as $key => $asignatura) {
                     UsuarioAsignatura::create([
-                        'idUsuarioEstablecimiento' => $idUsuarioEstablecimiento,
-                        'idCurso'                  => $asignatura['idCurso'],
-                        'idAsignatura'             => $asignatura['idAsignatura'],
+                        'idEstabUsuarioRol' => $idEstabUsuarioRol,
+                        'idCurso' => $asignatura['idCurso'],
+                        'idAsignatura' => $asignatura['idAsignatura'],
                     ]);
                 }
             }
+
             $usuario->save();
 
             return response(null, 200);
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Error de validación.',
+                'mensajes' => $e->errors()
+            ], 422);
         } catch (\Throwable $th) {
-            return response($th, 500);
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud.',
+                'mensaje' => $th->getMessage(),
+                'archivo' => $th->getFile(),
+                'linea' => $th->getLine()
+            ], 404);
         }
     }
-
-    /**
-     * Update las vistas del usuario en el sistema.
-     *
-     * Establecimiento Activo
-     * Rol Activo
-     * Periodo Activo
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    // public function updateVistas(Request $request, $id)
-    // {
-    //     Request()->validate([
-    //         'idEstablecimientoActivo' => 'required',
-    //         'rolActivo' => 'required',
-    //         // 'idPeriodoActivo' => 'required',
-    //     ]);
-    //     try {
-    //         $usuario = User::findOrFail($id);
-
-    //         $idEstablecimientoActivo = $request->input('idEstablecimientoActivo');
-    //         $rolActivo               = $request->input('rolActivo');
-    //         $idPeriodoActivo         = $request->input('idPeriodoActivo');
-
-    //         // * Si cambia el establecimiento
-    //         if ($usuario['idEstablecimientoActivo'] != $idEstablecimientoActivo) {
-
-    //             $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-    //                 $id,
-    //                 $idEstablecimientoActivo
-    //             );
-    //             $existeRol = model_has_roles::getExisteRolInEstablecimiento(
-    //                 $idUsuarioEstablecimiento,
-    //                 $usuario['rolActivo']
-    //             );
-    //             if ($existeRol == false) {
-    //                 $roles = model_has_roles::getRolByModel_id(
-    //                     $idUsuarioEstablecimiento,
-    //                     'UsuarioEstablecimiento'
-    //                 );
-    //                 $rolActivo = $roles[0]['nombre'];
-    //             }
-
-    //             // consultar establecimiento para obtener periodo Activo
-    //             $establecimiento = Establecimiento::findOrFail($idEstablecimientoActivo);
-    //             $idPeriodoActivo = $establecimiento['idPeriodoActivo'];
-    //         }
-
-    //         $usuario->idEstablecimientoActivo = $idEstablecimientoActivo;
-    //         $usuario->rolActivo               = $rolActivo;
-    //         $usuario->idPeriodoActivo         = $idPeriodoActivo;
-    //         $usuario->save();
-
-    //         return response(null, 200);
-
-    //     } catch (\Throwable $th) {
-    //         return response($th, 500);
-    //     }
-    // }
 
     /**
      * Remove the specified resource from storage.
@@ -354,44 +366,9 @@ class UserController extends Controller
     public function destroy($id)
     {
         try {
-            $user = User::findOrFail($id);
-            $estado = 'Eliminado';
-            $user->estado = $estado;
+            $user = Estab_usuario_rol::findOrFail($id);
+            $user->estado = 2; // 2 = Eliminado
             $user->save();
-            if ($user->rolActivo !== 'Super Administrador' && $user->rolActivo !== 'Administrador Daem') {
-                // $idUsuarioEstablecimiento = UsuarioEstablecimiento::getId(
-                //     $user->id,
-                //     $user->idEstablecimientoActivo
-                // );
-
-                // $usuarioEstablecimiento = UsuarioEstablecimiento::findOrFail($idUsuarioEstablecimiento);
-
-                // $id_model_has_roles = model_has_roles::getRolByModel_id(
-                //     $idUsuarioEstablecimiento,
-                //     'App\Models\UsuarioEstablecimiento'
-                // );
-                // $model_has_roles = model_has_roles::where('model_id', $id_model_has_roles[0]->id)->get();
-                // $usuarioAsignaturas = UsuarioAsignatura::getAsignaturaActiva($idUsuarioEstablecimiento);
-                // foreach ($usuarioAsignaturas as $key => $usuarioAsignatura) {
-                //     UsuarioAsignatura::findOrFail($usuarioAsignatura->id)->delete();
-                // }
-
-                // $usuarioEstablecimiento->delete();
-                // $model_has_roles->delete();
-
-                // if ($cantidadEstablecimientos != 1) {
-                //     // dejar por defecto un establecimiento al azar de los que quedan como Activo
-                //     return response($user, 500);
-                // } else {
-                //     // si no tiene más establecimientos, eliminar cuenta
-                //     // * Que el eliminar sea solo un cambio de estado
-                //     // * tener en cuenta que no deberían poder loggearse los usuarios con estado eliminado
-                //     // * Tampoco deben aparecer en el listado de usuarios del sistema
-                //     // * si debería aparecer su nombre en los datos que modificó dentro del sistema
-                //     $user->delete();
-                // }
-
-            }
             return response(Null, 200);
 
         } catch (\Throwable $th) {

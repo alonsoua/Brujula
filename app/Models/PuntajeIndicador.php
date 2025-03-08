@@ -62,6 +62,11 @@ class PuntajeIndicador extends Model
         return $this->belongsTo(IndicadorPersonalizado::class, 'idIndicador', 'id');
     }
 
+    public function indicadoresPersonalizados()
+    {
+        return $this->belongsTo(IndicadoresPersonalizados::class, 'idIndicador', 'id');
+    }
+
     public static function getPuntajesIndicadores(
         $idPeriodo,
         $idCurso,

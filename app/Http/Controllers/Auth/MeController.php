@@ -7,14 +7,10 @@ use App\Models\Master\Ajuste;
 use App\Models\Master\Estab_usuario_rol;
 use App\Models\Master\Periodo;
 use App\Models\Master\Rol;
-use App\Models\UsuarioEstablecimiento;
-use App\Models\model_has_roles;
 use Illuminate\Http\Request;
 use Illuminate\Routing\UrlGenerator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+
 
 class MeController extends Controller
 {
@@ -29,7 +25,6 @@ class MeController extends Controller
 
     public function me(Request $request)
     {
-        
         $user = $request->user();
 
         // Obtener rol activo (Master)

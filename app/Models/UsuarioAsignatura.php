@@ -18,7 +18,7 @@ class UsuarioAsignatura extends Model
      */
 
     protected $fillable = [
-        'idUsuarioEstablecimiento',
+        'idEstabUsuarioRol',
         'idCurso',
         'idAsignatura',
     ];
@@ -175,9 +175,9 @@ class UsuarioAsignatura extends Model
             ->get();
     }
 
-    public static function deleteUsuarioAsignaturas($idUsuarioEstablecimiento) {
-
-        return UsuarioAsignatura::where('idUsuarioEstablecimiento', $idUsuarioEstablecimiento)
+    public static function deleteUsuarioAsignaturas($idEstabUsuarioRol)
+    {
+        return UsuarioAsignatura::where('idEstabUsuarioRol', $idEstabUsuarioRol)
             ->delete();
 
     }
