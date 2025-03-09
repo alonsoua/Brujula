@@ -33,7 +33,7 @@ class ObjetivoPersonalizado extends Model
 
     public function indicadoresPersonalizados()
     {
-        return $this->hasMany(IndicadorPersonalizado::class, 'idObjetivo');
+        return $this->hasMany(IndicadoresPersonalizados::class, 'idObjetivo');
     }
 
     // public static function getObjetivosActivosAsignatura($idAsignatura, $idEstablecimiento) {

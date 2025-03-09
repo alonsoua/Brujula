@@ -25,7 +25,6 @@ class IndicadoresPersonalizados extends Model
         'updated_at' => 'datetime:d-m-Y H:i:s',
     ];
 
-
     protected $fillable = [
         'nombre',
         'tipo',
@@ -39,6 +38,11 @@ class IndicadoresPersonalizados extends Model
         'created_at',
         'updated_at',
     ];
+
+    public function puntajesIndicadores()
+    {
+        return $this->hasMany(PuntajeIndicador::class, 'idIndicador');
+    }
 
     public static function getIndicadoresPersonalizados($idObjetivo) {
         $sql = 'SELECT

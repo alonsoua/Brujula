@@ -151,7 +151,7 @@ class Objetivo extends Model
                     ->where('idCurso', $idCurso)
                     ->where('idPeriodo', $idPeriodo)
                     ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
-                    ->where('tipoIndicador', 'Personalizado');
+                ->where('tipoIndicador', 'Interno');
             })
             ->get(['id', DB::raw('"Interno" as tipoObjetivo')]);
     }
