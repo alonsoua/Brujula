@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Curso;
-use App\Models\Periodo;
-use App\Models\Establecimiento;
 use App\Models\Alumno;
+use App\Models\Master\Establecimiento as MasterEstablecimiento;
+use App\Models\Master\Grado;
 use App\Models\UsuarioAsignatura;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -20,14 +20,8 @@ class CursoController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $idPeriodo = $user->idPeriodoActivo;
-        if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-        }
-
-        return Curso::getAll($user->idEstablecimientoActivo, $idPeriodo);
+        $user = $request->user()->getUserData();
+        return Curso::getAll($user['periodo']['id']);
     }
 
     /**
@@ -37,42 +31,29 @@ class CursoController extends Controller
      */
     public function getCursosUsuario(Request $request, $idPeriodoHistorico)
     {
-        $user = $request->user();
-        // OBTIENE ID_PERIODO
-        $id_periodo = $idPeriodoHistorico;
-        if ($id_periodo === 'null') {
-            $id_periodo = $user->idPeriodoActivo === null
-                ? Establecimiento::getIDPeriodoActivo($user->idEstablecimientoActivo)
-                : $user->idPeriodoActivo;
-        }
-        // $nombre_periodo = Periodo::where('id', $id_periodo)->value('nombre');
-        $id_usuario_establecimiento = null;
-        if (($user->rolActivo === 'Docente'
-            || $user->rolActivo === 'Docente Pie'
-            || $user->rolActivo === 'Asistente')) {
-            $id_usuario_establecimiento = User::getUsuarioEstablecimiento($user->id, $user->idEstablecimientoActivo);
-        }
+        $user = $request->user()->getUserData();
+        $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idRol = $user['rolActivo']['id'];
+        $idPeriodo = $idPeriodoHistorico === 'null' || 'undefined' ? $user['periodo']['id'] : $idPeriodoHistorico;
 
         $cursos = Curso::select(
             'cursos.id',
+            'cursos.nombre',
             'cursos.letra',
             'cursos.idProfesorJefe',
-            'cursos.idGrado',
-            'grados.nombre as nombreGrado',
-            'grados.idNivel'
-        )
-            ->join("grados", "cursos.idGrado", "=", "grados.id");
+            'cursos.idGrado'
+        );
 
-        if (!is_null($id_usuario_establecimiento)) {
-            $cursos = $cursos->leftjoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id");
+        // Si el rol es docente (7), mostrar solo los cursos asignados
+        if ($idRol === 7) {
+            $cursos->when(!is_null($idEstabUsuarioRol), function ($query) use ($idEstabUsuarioRol) {
+                return $query->leftJoin("usuario_asignaturas", "usuario_asignaturas.idCurso", "=", "cursos.id")
+                ->where('usuario_asignaturas.idEstabUsuarioRol', $idEstabUsuarioRol);
+            });
         }
-
         $cursos = $cursos->where('cursos.estado', 'Activo')
-                            ->where('cursos.idPeriodo', $id_periodo);
-        if (!is_null($id_usuario_establecimiento)) {
-            $cursos = $cursos->where('usuario_asignaturas.idUsuarioEstablecimiento', $id_usuario_establecimiento);
-        }
-        $cursos = $cursos->orderBy('cursos.idGrado')
+            ->where('cursos.idPeriodo', $idPeriodo)
+            ->orderBy('cursos.idGrado')
             ->orderBy('cursos.letra')
             ->distinct()
             ->get();
@@ -85,26 +66,26 @@ class CursoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getCursoEstablecimientoActivo(Request $request, $idEstablecimiento, $idPeriodo)
-    {
-        return UsuarioAsignatura::select(
-            'cursos.id',
-            'cursos.letra',
-            'cursos.idProfesorJefe',
-            'cursos.idGrado',
-            'grados.nombre as nombreGrado',
-            'grados.idNivel'
-        )
-            ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
-            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
-            ->where('cursos.idEstablecimiento', $idEstablecimiento)
-            ->where('cursos.idPeriodo', $idPeriodo)
-            ->where('cursos.estado', 'Activo')
-            ->orderBy('cursos.idGrado')
-            ->orderBy('cursos.letra')
-            ->distinct()
-            ->get();
-    }
+    // public function getCursoEstablecimientoActivo(Request $request, $idEstablecimiento, $idPeriodo)
+    // {
+    //     return UsuarioAsignatura::select(
+    //         'cursos.id',
+    //         'cursos.letra',
+    //         'cursos.idProfesorJefe',
+    //         'cursos.idGrado',
+    //         'grados.nombre as nombreGrado',
+    //         'grados.idNivel'
+    //     )
+    //         ->leftJoin("cursos", "cursos.id", "=", "usuario_asignaturas.idCurso")
+    //         ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
+    //         ->where('cursos.idEstablecimiento', $idEstablecimiento)
+    //         ->where('cursos.idPeriodo', $idPeriodo)
+    //         ->where('cursos.estado', 'Activo')
+    //         ->orderBy('cursos.idGrado')
+    //         ->orderBy('cursos.letra')
+    //         ->distinct()
+    //         ->get();
+    // }
 
     /**
      * Display a listing of the resource.
@@ -113,13 +94,8 @@ class CursoController extends Controller
      */
     public function getActivos(Request $request)
     {
-        $user = $request->user();
-        $idPeriodo = $user->idPeriodoActivo;
-        if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-        }
-        return Curso::getAllEstado($user->idEstablecimientoActivo, 'Activo', $idPeriodo);
+        $user = $request->user()->getUserData();
+        return Curso::getAllEstado('Activo', $user['periodo']['id']);
     }
 
     /**
@@ -127,16 +103,10 @@ class CursoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getActivosEstablecimiento(Request $request, $idEstablecimiento)
+    public function getActivosEstablecimiento(Request $request)
     {
-        $user = $request->user();
-        $idPeriodo = $user->idPeriodoActivo;
-        if ($idPeriodo === null) {
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
-        }
-
-        return Curso::getAll($idEstablecimiento, $idPeriodo);
+        $user = $request->user()->getUserData();
+        return Curso::getAll($user['periodo']['id']);
     }
 
     /**
@@ -144,24 +114,18 @@ class CursoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getCursoMatricula($tipo, $grado, $letra, $idPeriodo, $idestablecimiento)
+    public function getCursoImportCSV($idGrado, $letra, $idPeriodo)
     {
-        try {
-            $curso = Curso::select('cursos.id as id_curso')
-                ->join('grados', 'cursos.idGrado', '=', 'grados.id')
-                ->where('grados.idNivel', '=', $tipo)
-                ->where('grados.idGrado', '=', $grado)
-                ->where('cursos.letra', '=', $letra)
-                ->where('cursos.idPeriodo', '=', $idPeriodo)
-                ->where('cursos.idEstablecimiento', '=', $idestablecimiento)
-                ->where('cursos.estado', 'Activo')
-                ->first();
-            if ($curso != null) {
-                return $curso;
-            }
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
-        }
+        // Buscar el curso en la base de datos
+        $curso = Curso::select('id')
+            ->where('letra', '=', $letra)
+            ->where('idGrado', '=', $idGrado)
+            ->where('idPeriodo', '=', $idPeriodo)
+            ->where('estado', 'Activo')
+            ->first();
+
+        // Si el curso existe, devolver su ID
+        return $curso ? $curso->id : $this->storeImportCSV($idGrado, $letra, $idPeriodo);
     }
 
     /**
@@ -172,31 +136,31 @@ class CursoController extends Controller
      */
     public function store(Request $request)
     {
-
         $request->validate([
-            'idEstablecimiento' => 'required',
             'cantidad'          => 'required',
             'idGrado'           => 'required',
-            'estado'            => 'required',
         ]);
 
         try {
-
+            
             DB::transaction(function () use ($request) {
 
-                $establecimiento = Establecimiento::getAll($request->idEstablecimiento);
-                $idPeriodo = $establecimiento[0]['idPeriodoActivo'];
+                $user = $request->user()->getUserData();
                 $cantidad = intval($request->input('cantidad'));
-
+                $grado = Grado::find($request->input('idGrado'));
+                if (!$grado) {
+                    throw new \Exception("Grado no encontrado");
+                }
                 $letra = 'A';
                 for ($i = 0; $i < $cantidad; $i++) {
-                    Curso::Create([
-                        'letra'             => $letra,
-                        'idProfesorJefe'    => Null,
-                        'idEstablecimiento' => $request->input('idEstablecimiento'),
-                        'idGrado'           => $request->input('idGrado'),
-                        'estado'            => $request->input('estado'),
-                        'idPeriodo'         => $idPeriodo,
+                    Curso::Create(
+                        [
+                            'nombre'         => $grado->nombre,
+                            'letra'          => $letra,
+                            'idProfesorJefe' => Null,
+                            'idGrado'        => $request->input('idGrado'),
+                            'idPeriodo'      => $user['periodo']['id'],
+                            'estado'         => 'Activo',
                     ]);
                     $letra++;
                 }
@@ -214,55 +178,32 @@ class CursoController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function storeImportCSV(Request $request)
+    private function storeImportCSV($idGrado, $letra, $idPeriodo)
     {
-
-        $request->validate([
-            'letra'             => 'required',
-            'idGrado'           => 'required',
-            'idEstablecimiento' => 'required',
-            'idPeriodo'         => 'required',
-        ]);
-
         try {
+            return DB::transaction(function () use ($idGrado, $letra, $idPeriodo) {
+                // Obtener el nombre del grado
+                $grado = Grado::find($idGrado);
+                if (!$grado) {
+                    throw new \Exception("Grado no encontrado");
+                }
 
-            DB::transaction(function () use ($request) {
-                Curso::Create([
-                    'letra'             => $request->input('letra'),
-                    'idProfesorJefe'    => Null,
-                    'idGrado'           => $request->input('idGrado'),
-                    'idEstablecimiento' => $request->input('idEstablecimiento'),
-                    'idPeriodo'         => $request->input('idPeriodo'),
-                    'estado'            => 'Activo',
+                // Crear el nuevo curso
+                $curso = Curso::create([
+                        'nombre'         => $grado->nombre, // Nombre basado en el grado
+                        'letra'          => $letra,
+                        'idProfesorJefe' => null,
+                        'idGrado'        => $idGrado,
+                        'idPeriodo'      => $idPeriodo,
+                        'estado'         => 'Activo',
                 ]);
 
-                return response(null, 200);
+                return $curso->id; // Retorna el ID del nuevo curso
             });
         } catch (\Throwable $th) {
-            return response($th, 500);
+            logger()->error("Error al crear curso: " . $th->getMessage());
+            return null; // Retorna null en caso de error
         }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
     }
 
     /**
@@ -299,19 +240,19 @@ class CursoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function ordenarLista(Request $request, $idCurso)
-    {
-        try {
+    // public function ordenarLista(Request $request, $idCurso)
+    // {
+    //     try {
 
-            foreach ($request->input('lista') as $key => $lista_alumno) {
-                $alumno = Alumno::findOrFail($lista_alumno['id']);
-                $alumno->numLista = $lista_alumno['orden'];
-                $alumno->save();
-            }
+    //         foreach ($request->input('lista') as $key => $lista_alumno) {
+    //             $alumno = Alumno::findOrFail($lista_alumno['id']);
+    //             $alumno->numLista = $lista_alumno['orden'];
+    //             $alumno->save();
+    //         }
 
-            return response('success', 200);
-        } catch (\Throwable $th) {
-            return response($th, 500);
-        }
-    }
+    //         return response('success', 200);
+    //     } catch (\Throwable $th) {
+    //         return response($th, 500);
+    //     }
+    // }
 }

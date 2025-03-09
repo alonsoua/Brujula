@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Master\DiagnosticoPie;
+use App\Models\Master\Prioritario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Alumno extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "alumnos";
     /**
      * The attributes that are mass assignable.
@@ -34,49 +36,51 @@ class Alumno extends Model
         'idEstablecimiento',
     ];
 
-    public static function getAll($idEstablecimiento, $idPeriodo = null)
+    public function curso()
     {
-        $alumnos = Alumno::select(
-            'alumnos.*',
-            'alumnos_cursos.idCurso',
-            'alumnos_cursos.estado',
-            'prioritarios.nombre as nombrePrioritario',
-            'diagnosticos_pie.nombre as nombreDiagnostico',
-            'diagnosticos_pie.tipoNee as tipoNee',
-            'cursos.letra',
-            'grados.nombre as nombreGrado',
-            'establecimientos.nombre as nombreEstablecimiento'
-        )
-            ->leftJoin("prioritarios", "alumnos.idPrioritario", "=", "prioritarios.id")
-            ->leftJoin("diagnosticos_pie", "alumnos.idDiagnostico", "=", "diagnosticos_pie.id")
-            ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
-            ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
-            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
-            ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id");
-        if (!is_null($idEstablecimiento)) {
-            $alumnos = $alumnos->where('cursos.idEstablecimiento', $idEstablecimiento);
-        }
-        if (!is_null($idPeriodo)) {
-            $alumnos = $alumnos->where('cursos.idPeriodo', $idPeriodo);
-        }
-        $alumnos = $alumnos->orderBy('establecimientos.id')
-            ->orderBy('grados.id')
-            ->orderBy('cursos.letra')
-            ->orderBy('alumnos.numLista')
-            ->get();
-
-        return $alumnos;
+        return $this->belongsToMany(Curso::class, 'alumnos_cursos', 'idAlumno', 'idCurso')
+        ->withPivot('estado')
+        ->wherePivot('estado', 'Activo'); 
     }
 
-    public static function getAlumnosCursoEstablecimiento($idCurso, $idEstablecimiento)
+    public function prioritario()
     {
+        return $this->belongsTo(Prioritario::class, 'idPrioritario', 'id');
+    }
 
+    public function diagnostico()
+    {
+        return $this->belongsTo(DiagnosticoPie::class, 'idDiagnostico', 'id');
+    }
+
+    public static function getAll($idPeriodo = null)
+    {
+        return Alumno::with(['curso' => function ($query) use ($idPeriodo) {
+            $query->select(
+                'cursos.id',
+                'letra',
+                'nombre',
+                'idPeriodo',
+                'idGrado'
+            )->where('idPeriodo', $idPeriodo);
+        }, 'prioritario:id,nombre', 'diagnostico:id,nombre,tipoNee'])
+        ->select('alumnos.*', 'alumnos_cursos.idCurso', 'alumnos_cursos.estado')
+        ->leftJoin('alumnos_cursos', 'alumnos.id', '=', 'alumnos_cursos.idAlumno')
+        ->leftJoin('cursos', 'alumnos_cursos.idCurso', '=', 'cursos.id') // Asegurar que la tabla cursos esté unida
+        ->whereHas('curso', function ($query) use ($idPeriodo) {
+            $query->where('idPeriodo', $idPeriodo);
+        })
+            ->orderBy('cursos.idGrado')
+            ->orderBy('cursos.letra')
+            ->orderBy('alumnos.numLista')
+        ->get();
+    }
+
+    public static function getSiguienteNumLista($idCurso)
+    {
         return Alumno::leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
-            ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
             ->where('alumnos_cursos.idCurso', $idCurso)
-            ->where('cursos.idEstablecimiento', $idEstablecimiento)
-            ->orderBy('numLista')
-            ->get();
+            ->max('alumnos.numLista') + 1;
     }
 
     public static function getAlumnosCurso($idCurso)
@@ -104,48 +108,33 @@ class Alumno extends Model
 
     public static function getAlumno($idAlumno)
     {
-
         return Alumno::select(
-            'alumnos.*',
-            'alumnos_cursos.idCurso',
-            'alumnos_cursos.estado'
-
+            'alumnos.id',
+            'alumnos.nombres',
+            'alumnos.primerApellido',
+            'alumnos.segundoApellido',
+            'alumnos_cursos.idCurso'
         )
             ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->where('alumnos_cursos.idAlumno', $idAlumno)
             ->where('alumnos_cursos.estado', 'Activo')
-            ->get();
-    }
-
-    public static function getAlumnoEstablecimiento($idAlumno)
-    {
-
-        return Alumno::select(
-            'establecimientos.*'
-        )
-            ->leftJoin("establecimientos", "alumnos.idEstablecimiento", "=", "establecimientos.id")
-            ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
-            ->where('alumnos.id', $idAlumno)
-            ->where('alumnos_cursos.estado', 'Activo')
-            ->get();
+            ->first();
     }
 
     public static function getAlumnoCurso($idPeriodo, $idAlumno)
     {
         return Alumno::select(
-            'alumnos_cursos.idCurso',
-            'cursos.*',
-            'grados.id as idTablaGrados',
-            'grados.*'
+            'cursos.id',
+            'cursos.nombre',
+            'cursos.letra',
+            'cursos.idProfesorJefe',
+            'cursos.idGrado',
         )
             ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
-            ->leftJoin("grados", "cursos.idGrado", "=", "grados.id")
             ->where('alumnos_cursos.idAlumno', $idAlumno)
-            // ->where('cursos.idPeriodo', $idPeriodo)
+            ->where('cursos.idPeriodo', $idPeriodo)
             ->where('alumnos_cursos.estado', 'Activo')
-            ->get();
+            ->first();
     }
-    // Alumno::getAlumnoEstablecimiento($idAlumno);
-    // $curso = Alumno::($idPeriodo, $idAlumno);
 }

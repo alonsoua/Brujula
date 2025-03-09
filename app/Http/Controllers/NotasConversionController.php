@@ -15,11 +15,11 @@ class NotasConversionController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function getNotasConversion(Request $request, $cantidadIndicadores, $puntajeObtenido)
-    {
+    {   
+
         if ($cantidadIndicadores > 0 && $puntajeObtenido > 0) {
-            $user = $request->user();
-            $establecimiento = Establecimiento::getAll($user->idEstablecimientoActivo);
-            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $establecimiento[0]->idPeriodoActivo, $user->idEstablecimientoActivo);
+            $user = $request->user()->getUserData();
+            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $user['periodo']['id']);
         } else {
             $notaConversion = '-';
         }
@@ -31,11 +31,10 @@ class NotasConversionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getPromedio($cantidadIndicadores, $puntajeObtenido, $idEstablecimiento)
+    public function getPromedio($cantidadIndicadores, $puntajeObtenido, $idPeriodo)
     {
         if ($cantidadIndicadores > 0) {
-            $establecimiento = Establecimiento::getAll($idEstablecimiento);
-            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $establecimiento[0]->idPeriodoActivo, $idEstablecimiento);
+            $notaConversion = NotasConversion::getNotasConversion($cantidadIndicadores, $puntajeObtenido, $idPeriodo);
         } else {
             $notaConversion = '-';
         }
@@ -44,7 +43,8 @@ class NotasConversionController extends Controller
 
     public function getPromedioNota($puntajes)
     {
-        // Filtrar puntajes mayores a 0
+       
+        // Filtrar puntajes mayores a 0        
         $valores = array_filter(array_map(fn($p) => $p->puntaje, $puntajes), fn($v) => $v > 0);
 
         // Verificar si hay valores válidos

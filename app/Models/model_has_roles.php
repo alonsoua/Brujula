@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class model_has_roles extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "model_has_roles";
     public $timestamps = false;
     /**

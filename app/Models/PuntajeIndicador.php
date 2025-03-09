@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Master\Asignatura;
+use App\Models\Master\Periodo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PuntajeIndicador extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "puntajes_indicadores";
     /**
      * The attributes that are mass assignable.
@@ -29,6 +31,41 @@ class PuntajeIndicador extends Model
         'created_at',
         'updated_at',
     ];
+
+    public function periodo()
+    {
+        return $this->belongsTo(Periodo::class, 'idPeriodo', 'id');
+    }
+
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class, 'idCurso', 'id');
+    }
+
+    public function asignatura()
+    {
+        return $this->belongsTo(Asignatura::class, 'idAsignatura', 'id');
+    }
+
+    public function alumno()
+    {
+        return $this->belongsTo(Alumno::class, 'idAlumno', 'id');
+    }
+
+    public function indicador()
+    {
+        return $this->belongsTo(Indicador::class, 'idIndicador', 'id');
+    }
+
+    public function indicadorPersonalizado()
+    {
+        return $this->belongsTo(IndicadorPersonalizado::class, 'idIndicador', 'id');
+    }
+
+    public function indicadoresPersonalizados()
+    {
+        return $this->belongsTo(IndicadoresPersonalizados::class, 'idIndicador', 'id');
+    }
 
     public static function getPuntajesIndicadores(
         $idPeriodo,

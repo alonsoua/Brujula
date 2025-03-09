@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Actividad;
-use App\Models\Asignatura;
+use App\Models\Master\Asignatura;
 use App\Models\Indicador;
-use App\Models\Objetivo;
+use App\Models\Master\Objetivo;
 use App\Models\Unidad;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;

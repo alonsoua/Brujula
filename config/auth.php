@@ -36,8 +36,16 @@ return [
     */
 
     'guards' => [
+        'master' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
+        'establecimiento' => [
+            'driver' => 'sanctum',
+            'provider' => 'usuarios', // Asegúrate de definir este provider
+        ],
         'api' => [
-            'driver' => 'jwt',
+            'driver' => 'sanctum',
             'provider' => 'users',
             // 'hash' => false,
         ],
@@ -67,13 +75,12 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\Master\User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'usuarios' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Master\Usuario::class,
+        ],
     ],
 
     /*
@@ -91,10 +98,25 @@ return [
     |
     */
 
+    // 'passwords' => [
+    //     'users' => [
+    //         'provider' => 'users',
+    //         'table' => 'password_resets',
+    //         'expire' => 60,
+    //         'throttle' => 60,
+    //     ],
+    // ],
+
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'table' => 'password_resets',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'establecimientos_usuarios' => [
+            'provider' => 'establecimientos_usuarios',
+            'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

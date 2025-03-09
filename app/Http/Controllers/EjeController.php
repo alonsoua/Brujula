@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Eje;
-use App\Models\Objetivo;
+use App\Models\Master\Objetivo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,22 +27,12 @@ class EjeController extends Controller
     public function getEjesPorAsignatura($idAsignatura)
     {
         try {
-            $sql_o =
-                'SELECT
-                      ejes.id
-                    , ejes.nombre
-                FROM ejes
-                WHERE
-                    ejes.idAsignatura = '.$idAsignatura.'
-                ';
-
-            $ejes = DB::select($sql_o, []);
-            if ($ejes != null) {
-                return $ejes;
-            }
-            return response()->json(['status' => 'error', 'message' => 'Sin Registros']);
+            return Eje::select('id', 'nombre')
+                ->where('idAsignatura', $idAsignatura)
+                ->get();
+      
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 

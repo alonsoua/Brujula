@@ -59,7 +59,7 @@ trait InformeHogarPDFTrait
             position:fixed;
             top:0;
           }
-
+          
           footer {
             left: -50px;
             right: 0px;
@@ -302,12 +302,11 @@ trait InformeHogarPDFTrait
 
     $htmlHeadNotas = '
             <tr>
-                <th class="text-center">ASIGNATURA</th>
+                <th class="text-left" style="padding-left: 4px;">ASIGNATURA</th>
                 <th class="text-center" colspan="' . $columnasNotas . '">NIVEL DE LOGRO</th>
                 <th class="colDescripcion" colspan="1">PROMEDIO</th>
             </tr>
         ';
-
 
     $htmlBodyNotas = '';
     $promedioFinal = 0;
@@ -318,7 +317,7 @@ trait InformeHogarPDFTrait
 
         $htmlBodyNotas .= '
               <tr>
-                <td class="text-center" style="margin: 200px! important;">
+                <td class="text-left" style="margin: 200px! important; padding-left: 4px;">
                   ' . $asignatura['nombreAsignatura'] . '
                 </td>
             ';

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * This file is part of the hyn/multi-tenant package.
+ * This file is part of the  package.
  *
  * (c) Daniël Klabbers <daniel@klabbers.email>
  *
@@ -9,7 +9,6 @@
  * file that was distributed with this source code.
  *
  * @see https://tenancy.dev
- * @see https://github.com/hyn/multi-tenant
  */
 
 return [
@@ -44,15 +43,6 @@ return [
             'https' => 443
         ],
 
-        /**
-         * The generator taking care of hooking into the Apache services and files.
-         */
-        'generator' => \Hyn\Tenancy\Generators\Webserver\Vhost\ApacheGenerator::class,
-
-        /**
-         * The view that holds the vhost configuration template.
-         */
-        'view' => 'tenancy.generators::webserver.apache.vhost',
 
         /**
          * Specify the disk you configured in the filesystems.php file where to store
@@ -129,16 +119,6 @@ return [
              */
             'https' => 443
         ],
-
-        /**
-         * The generator taking care of hooking into the nginx services and files.
-         */
-        'generator' => \Hyn\Tenancy\Generators\Webserver\Vhost\NginxGenerator::class,
-
-        /**
-         * The view that holds the vhost configuration template.
-         */
-        'view' => 'tenancy.generators::webserver.nginx.vhost',
 
         /**
          * Specify the disk you configured in the filesystems.php file where to store

@@ -75,32 +75,22 @@ class NotasController extends Controller
 
     public function getAllNotasCurso($idPeriodo, $idCurso)
     {
-        $notasObjetivos = Notas::select('notas.*')
-            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
+        $notasMinisterio = Notas::select('notas.*', 'objetivos.abreviatura')
+        ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
+        ->where('notas.idPeriodo', $idPeriodo)
             ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Ministerio')
-            ->orderBy('objetivos.abreviatura')
+        ->where('notas.tipoObjetivo', 'Ministerio');
+
+        $notasInternas = Notas::select('notas.*', 'objetivos_personalizados.abreviatura')
+        ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
+        ->where('notas.idPeriodo', $idPeriodo)
+        ->where('notas.idCurso', $idCurso)
+        ->where('notas.tipoObjetivo', 'Interno')
+        ->unionAll($notasMinisterio) // 🔹 Une ambas consultas en una sola llamada
+            ->orderBy('abreviatura')
             ->get();
 
-        $notasObjetivosPersonalizados = Notas::select('notas.*')
-            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Interno')
-            ->orderBy('objetivos_personalizados.abreviatura')
-            ->get();
-
-        $notas = array();
-        foreach ($notasObjetivos as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        foreach ($notasObjetivosPersonalizados as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        return $notas;
+        return $notasInternas;
     }
 
     public function getAll($idPeriodo, $idCurso)
@@ -234,15 +224,14 @@ class NotasController extends Controller
     {
         try {
             DB::transaction(function () use ($data) {
-                $tipoObjetivo = $data['idEstablecimiento'] ? 'Interno' : 'Ministerio';
                 Notas::Create([
-                    'nota'        => floatval($data['nota']),
-                    'idAlumno'    => $data['idAlumno'],
-                    'idCurso'     => $data['idCurso'],
+                    'nota'         => floatval($data['nota']),
+                    'idAlumno'     => $data['idAlumno'],
+                    'idCurso'      => $data['idCurso'],
                     'idAsignatura' => $data['idAsignatura'],
-                    'idPeriodo'   => $data['idPeriodo'],
-                    'idObjetivo'  => $data['idObjetivo'],
-                    'tipoObjetivo' => $tipoObjetivo,
+                    'idPeriodo'    => $data['idPeriodo'],
+                    'idObjetivo'   => $data['idObjetivo'],
+                    'tipoObjetivo' => $data['tipoObjetivo'],
                 ]);
             });
             return response()->json(['status' => 'success', 'message' => 'Nota Creada']);
@@ -259,143 +248,11 @@ class NotasController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateNotasScript(Request $request, $idCurso, $idGrado)
-    {
-        try {
-            $user = $request->user();
-            $idEstablecimientoActivo = $user->idEstablecimientoActivo;
-            $idPeriodo = null;
-            $response = array();
-            // foreach ($cursos as $key => $curso) {
-            $asignaturas = $this->asignaturaController->getActivosGrado($idGrado);
-            foreach ($asignaturas as $key => $asignatura) {
-                $idAsignatura = $asignatura->id;
-                $objetivos = $this->objetivoController->getObjetivosActivosAsignaturaEstablecimiento(
-                    $idEstablecimientoActivo,
-                    $idAsignatura
-                );
-
-                foreach ($objetivos as $key => $objetivo) {
-                    $idObjetivo = $objetivo->id;
-                    $tipoObjetivo = $objetivo->tipo;
-                    $alumnosNotas = $this->puntajeIndicadorController->getPuntajesIndicadores(
-                        $idPeriodo,
-                        $idCurso,
-                        $idAsignatura,
-                        $idObjetivo,
-                        $tipoObjetivo
-                    );
-                    // return response()->json(['asignatura' => $asignatura, 'alumnosNotas' => $alumnosNotas]);
-                    foreach ($alumnosNotas as $key => $alumno) {
-                        if ($alumno['promedio'] !== 'undefined') {
-
-                            $idAlumno = $alumno['idAlumno'];
-                            $promedio = $alumno['promedio'];
-                            if (is_object($promedio)) {
-                                $nota = $promedio->nota;
-                                $data = array(
-                                    'idCurso' => $idCurso,
-                                    'idAlumno' => $idAlumno,
-                                    'idAsignatura' => $idAsignatura,
-                                    'idPeriodo' => $idPeriodo,
-                                    'idObjetivo' => $idObjetivo,
-                                    'tipoObjetivo' => $tipoObjetivo,
-                                    'nota' => floatval($nota),
-                                );
-
-                                $res = $this->updateNotaNew($data);
-                                array_push($response, array(
-                                    'idCurso' => $data['idCurso'],
-                                    'idAlumno' => $data['idAlumno'],
-                                    'idAsignatura' => $data['idAsignatura'],
-                                    'tipoObjetivo' => $data['tipoObjetivo'],
-                                    'nota' => $data['nota'],
-                                    'response' => $res,
-                                ));
-                                // return $response;
-                            }
-                        }
-                    }
-                }
-            }
-            // }
-            return $response;
-            // return response()->json(['status' => 'success', 'message' => 'Notas Actualizadas']);
-        } catch (\Exception $th) {
-            return response()->json(['status' => 'error', 'message' => $th]);
-        }
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function updateNotaNew($request)
-    {
-        $nota = DB::select(
-            'SELECT
-                n.id,
-                n.nota,
-                n.tipoObjetivo
-            FROM notas as n
-            WHERE
-                n.idAlumno = ' . $request['idAlumno'] . ' AND
-                n.idAsignatura = ' . $request['idAsignatura'] . ' AND
-                n.idCurso = ' . $request['idCurso'] . ' AND
-                n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                n.idObjetivo = ' . $request['idObjetivo'] . ' AND
-                n.tipoObjetivo IS NULL
-            '
-        );
-        // n.tipoObjetivo = "' . $request['tipoObjetivo'] . '"
-        $response = null;
-
-        if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
-            $response = $this->store($request);
-        } else if (count($nota) === 1) {
-            if (is_null($nota[0]->tipoObjetivo)) {
-                $data = array(
-                    'idNota' => $nota[0]->id,
-                    'nota' => $request['nota'],
-                    'tipoObjetivo' => $request['tipoObjetivo'],
-                );
-                $response = $this->update($data);
-            } else {
-                $response = 'Nota ya formateada.';
-            }
-        } else if (count($nota) === 2) {
-            // si ambas son null
-            // $this->destroy($nota[1]->id);
-            if ($nota[0]->tipoObjetivo === null && $nota[1]->tipoObjetivo === null) {
-                $data = array(
-                    'idNota' => $nota[0]->id,
-                    'nota' => $request['nota'],
-                    'tipoObjetivo' => $request['tipoObjetivo'],
-                );
-                $response = $this->update($data);
-            }
-            // else {
-            //     return $nota;
-            // }
-        }
-        return $response;
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update($data)
     {
         try {
             $nota = Notas::findOrFail($data['idNota']);
             $nota->nota = $data['nota'];
-            $nota->tipoObjetivo = $data['tipoObjetivo'];
             $nota->save();
 
             return response()->json(['status' => 'success', 'message' => 'Nota actualizada', 'data' => $data]);
@@ -405,74 +262,32 @@ class NotasController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function updateNota(Request $request)
     {
-        $tipoObjetivo = $request['idEstablecimiento'] ? 'Interno' : 'Ministerio';
-        // return $request;
-        // die();
-        $nota = DB::select(
-            'SELECT
-                n.id,
-                n.nota,
-                n.tipoObjetivo
-            FROM notas as n
-            WHERE
-                n.idAlumno = ' . $request['idAlumno'] . ' AND
-                n.idAsignatura = ' . $request['idAsignatura'] . ' AND
-                n.idCurso = ' . $request['idCurso'] . ' AND
-                n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                n.idObjetivo = ' . $request['idObjetivo'] . ' AND
-                n.tipoObjetivo = "' . $tipoObjetivo . '"
-            '
-        );
+        $nota = Notas::where([
+            'idAlumno' => $request->input('idAlumno'),
+            'idAsignatura' => $request->input('idAsignatura'),
+            'idCurso' => $request->input('idCurso'),
+            'idPeriodo' => $request->input('idPeriodo'),
+            'idObjetivo' => $request->input('idObjetivo'),
+            'tipoObjetivo' => $request->input('tipoObjetivo')
+        ])->first();
 
-        if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
-            $nota2 = DB::select(
-                'SELECT
-                    n.id,
-                    n.nota,
-                    n.tipoObjetivo
-                FROM notas as n
-                WHERE
-                    n.idAlumno = ' . $request['idAlumno'] . ' AND
-                    n.idAsignatura = ' . $request['idAsignatura'] . ' AND
-                    n.idCurso = ' . $request['idCurso'] . ' AND
-                    n.idPeriodo = ' . $request['idPeriodo'] . ' AND
-                    n.idObjetivo = ' . $request['idObjetivo'] . ' AND
-                    n.tipoObjetivo IS NULL
-                '
-            );
-            if (count($nota2) === 0 && $request['nota'] !== 0) {
-                $response = $this->store($request);
-            } else if (count($nota2) === 1) {
-                $data = array(
-                    'idNota' => $nota[0]->id,
-                    'nota' => $request['nota'],
-                    'tipoObjetivo' => $tipoObjetivo,
-                );
-                $response = $this->update($data);
-            }
-        } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
-            $data = array(
-                'idNota' => $nota[0]->id,
-                'nota' => $request['nota'],
-                'tipoObjetivo' => $tipoObjetivo,
-            );
-            $response = $this->update($data);
-        } else if ($request['nota'] === 0) { // Eliminar
-            $response = $this->destroy($nota[0]->id);
-        } else if (count($nota) === 2) {
-            $response = $this->destroy($nota[0]->id);
-            return response()->json(['status' => 'error', 'message' => 'Notas más de 2', 'notas' => $nota]);
+        if (!$nota && $request->input('nota') !== 0) {
+            // * Crear nueva nota
+            return $this->store($request);
+        } else if ($nota && $request->input('nota') !== 0) {
+            // * Si la nota existe y la nueva NOTA NO ES "0, actualiza
+            return $this->update([
+                'idNota' => $nota->id,
+                'nota' => $request->input('nota'),
+            ]);
+        } elseif ($nota && $request->input('nota') === 0) {
+            // * Si la nota existe y la nueva NOTA ES "0", ELIMINA
+            return $this->destroy($nota->id);
         }
 
-        return $response;
+        return response()->json(['status' => 'error', 'message' => 'Operación no válida']);
     }
 
     /**
@@ -489,7 +304,205 @@ class NotasController extends Controller
             return response()->json(['status' => 'success', 'message' => 'Nota Eliminada']);
         } catch (\Throwable $th) {
             return response()->json(['status' => 'error', 'message delete' => $th]);
-            // return response($th, 500);
         }
     }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    // public function updateNotasScript(Request $request, $idCurso, $idGrado)
+    // {
+    //     try {
+    //         $user = $request->user();
+    //         $idEstablecimientoActivo = $user->idEstablecimientoActivo;
+    //         $idPeriodo = null;
+    //         $response = array();
+    //         // foreach ($cursos as $key => $curso) {
+    //         $asignaturas = $this->asignaturaController->getActivosGrado($idGrado);
+    //         foreach ($asignaturas as $key => $asignatura) {
+    //             $idAsignatura = $asignatura->id;
+    //             $objetivos = $this->objetivoController->getObjetivosActivosAsignaturaEstablecimiento(
+    //                 $idEstablecimientoActivo,
+    //                 $idAsignatura
+    //             );
+
+    //             foreach ($objetivos as $key => $objetivo) {
+    //                 $idObjetivo = $objetivo->id;
+    //                 $tipoObjetivo = $objetivo->tipo;
+    //                 $alumnosNotas = $this->puntajeIndicadorController->getPuntajesIndicadores(
+    //                     $idPeriodo,
+    //                     $idCurso,
+    //                     $idAsignatura,
+    //                     $idObjetivo,
+    //                     $tipoObjetivo
+    //                 );
+    //                 // return response()->json(['asignatura' => $asignatura, 'alumnosNotas' => $alumnosNotas]);
+    //                 foreach ($alumnosNotas as $key => $alumno) {
+    //                     if ($alumno['promedio'] !== 'undefined') {
+
+    //                         $idAlumno = $alumno['idAlumno'];
+    //                         $promedio = $alumno['promedio'];
+    //                         if (is_object($promedio)) {
+    //                             $nota = $promedio->nota;
+    //                             $data = array(
+    //                                 'idCurso' => $idCurso,
+    //                                 'idAlumno' => $idAlumno,
+    //                                 'idAsignatura' => $idAsignatura,
+    //                                 'idPeriodo' => $idPeriodo,
+    //                                 'idObjetivo' => $idObjetivo,
+    //                                 'tipoObjetivo' => $tipoObjetivo,
+    //                                 'nota' => floatval($nota),
+    //                             );
+
+    //                             $res = $this->updateNotaNew($data);
+    //                             array_push($response, array(
+    //                                 'idCurso' => $data['idCurso'],
+    //                                 'idAlumno' => $data['idAlumno'],
+    //                                 'idAsignatura' => $data['idAsignatura'],
+    //                                 'tipoObjetivo' => $data['tipoObjetivo'],
+    //                                 'nota' => $data['nota'],
+    //                                 'response' => $res,
+    //                             ));
+    //                             // return $response;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         // }
+    //         return $response;
+    //         // return response()->json(['status' => 'success', 'message' => 'Notas Actualizadas']);
+    //     } catch (\Exception $th) {
+    //         return response()->json(['status' => 'error', 'message' => $th]);
+    //     }
+    // }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    // public function updateNotaNew($request)
+    // {
+    //     $nota = DB::select(
+    //         'SELECT
+    //             n.id,
+    //             n.nota,
+    //             n.tipoObjetivo
+    //         FROM notas as n
+    //         WHERE
+    //             n.idAlumno = ' . $request['idAlumno'] . ' AND
+    //             n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+    //             n.idCurso = ' . $request['idCurso'] . ' AND
+    //             n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+    //             n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+    //             n.tipoObjetivo IS NULL
+    //         '
+    //     );
+    //     // n.tipoObjetivo = "' . $request['tipoObjetivo'] . '"
+    //     $response = null;
+
+    //     if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
+    //         $response = $this->store($request);
+    //     } else if (count($nota) === 1) {
+    //         if (is_null($nota[0]->tipoObjetivo)) {
+    //             $data = array(
+    //                 'idNota' => $nota[0]->id,
+    //                 'nota' => $request['nota'],
+    //                 'tipoObjetivo' => $request['tipoObjetivo'],
+    //             );
+    //             $response = $this->update($data);
+    //         } else {
+    //             $response = 'Nota ya formateada.';
+    //         }
+    //     } else if (count($nota) === 2) {
+    //         // si ambas son null
+    //         // $this->destroy($nota[1]->id);
+    //         if ($nota[0]->tipoObjetivo === null && $nota[1]->tipoObjetivo === null) {
+    //             $data = array(
+    //                 'idNota' => $nota[0]->id,
+    //                 'nota' => $request['nota'],
+    //                 'tipoObjetivo' => $request['tipoObjetivo'],
+    //             );
+    //             $response = $this->update($data);
+    //         }
+    //         // else {
+    //         //     return $nota;
+    //         // }
+    //     }
+    //     return $response;
+    // }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    // public function updateNota(Request $request)
+    // {
+    //     $tipoObjetivo = $request['tipoObjetivo'];
+    //     $nota = DB::select(
+    //         'SELECT
+    //             n.id,
+    //             n.nota,
+    //             n.tipoObjetivo
+    //         FROM notas as n
+    //         WHERE
+    //             n.idAlumno = ' . $request['idAlumno'] . ' AND
+    //             n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+    //             n.idCurso = ' . $request['idCurso'] . ' AND
+    //             n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+    //             n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+    //             n.tipoObjetivo = "' . $tipoObjetivo . '"
+    //         '
+    //     );
+
+    //     if (count($nota) === 0 && $request['nota'] !== 0) { // CREATE
+    //         $nota2 = DB::select(
+    //             'SELECT
+    //                 n.id,
+    //                 n.nota,
+    //                 n.tipoObjetivo
+    //             FROM notas as n
+    //             WHERE
+    //                 n.idAlumno = ' . $request['idAlumno'] . ' AND
+    //                 n.idAsignatura = ' . $request['idAsignatura'] . ' AND
+    //                 n.idCurso = ' . $request['idCurso'] . ' AND
+    //                 n.idPeriodo = ' . $request['idPeriodo'] . ' AND
+    //                 n.idObjetivo = ' . $request['idObjetivo'] . ' AND
+    //                 n.tipoObjetivo IS NULL
+    //             '
+    //         );
+    //         if (count($nota2) === 0 && $request['nota'] !== 0) {
+    //             $response = $this->store($request);
+    //         } else if (count($nota2) === 1) {
+    //             $data = array(
+    //                 'idNota' => $nota[0]->id,
+    //                 'nota' => $request['nota'],
+    //                 'tipoObjetivo' => $tipoObjetivo,
+    //             );
+    //             $response = $this->update($data);
+    //         }
+    //     } else if (count($nota) === 1 && $request['nota'] !== 0) { // UPDATE
+    //         $data = array(
+    //             'idNota' => $nota[0]->id,
+    //             'nota' => $request['nota'],
+    //             'tipoObjetivo' => $tipoObjetivo,
+    //         );
+    //         $response = $this->update($data);
+    //     } else if ($request['nota'] === 0) { // Eliminar
+    //         $response = $this->destroy($nota[0]->id);
+    //     } else if (count($nota) === 2) {
+    //         $response = $this->destroy($nota[0]->id);
+    //         return response()->json(['status' => 'error', 'message' => 'Notas más de 2', 'notas' => $nota]);
+    //     }
+
+    //     return $response;
+    // }
 }

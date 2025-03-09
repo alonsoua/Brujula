@@ -33,8 +33,8 @@ class IndicadorController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getIndicadoresPersonalizados($idObjetivo)
-    {
-        return IndicadoresPersonalizados::getIndicadorespersonalizados($idObjetivo);
-    }
+    // public function getIndicadoresPersonalizados($idObjetivo)
+    // {
+    //     return IndicadoresPersonalizados::getIndicadorespersonalizados($idObjetivo);
+    // }
 }

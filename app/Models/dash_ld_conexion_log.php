@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class dash_ld_conexion_log extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "dash_ld_conexion_logs";
 
     /**

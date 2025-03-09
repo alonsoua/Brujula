@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PuntajeIndicadorTransformacion extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "puntajes_indicadores_transformacion";
     /**
      * The attributes that are mass assignable.
@@ -25,10 +25,10 @@ class PuntajeIndicadorTransformacion extends Model
         'estado',
     ];
 
-    public static function getPuntajes($idPeriodo, $idEstablecimiento) {
+    public static function getPuntajes($idPeriodo)
+    {
         return PuntajeIndicadorTransformacion::select('*')
-        ->where('puntajes_indicadores_transformacion.idPeriodo', $idPeriodo)
-        ->where('puntajes_indicadores_transformacion.idEstablecimiento', $idEstablecimiento)
+            ->where('puntajes_indicadores_transformacion.idPeriodo', $idPeriodo)
         ->get();
     }
 }

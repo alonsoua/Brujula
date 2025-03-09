@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Notas extends Model
 {
     use HasFactory;
-
+    protected $connection = 'establecimiento';
     protected $table = "notas";
     /**
      * The attributes that are mass assignable.
@@ -61,100 +62,29 @@ class Notas extends Model
         return $notas;
     }
 
-    public static function getNotasAsignatura($idPeriodo, $idCurso, $idAsignatura)
-    {
-        // return Notas::select('*')
-        //     ->where('idPeriodo', $idPeriodo)
-        //     ->where('idCurso', $idCurso)
-        //     ->where('idAsignatura', $idAsignatura)
-        //     ->get();
-
-        $notasObjetivos = Notas::select('notas.*')
-            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.idAsignatura', $idAsignatura)
-            ->where('notas.tipoObjetivo', 'Ministerio')
-            ->orderBy('objetivos.abreviatura')
-            ->get();
-
-        $notasObjetivosPersonalizados = Notas::select('notas.*')
-            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.idAsignatura', $idAsignatura)
-            ->where('notas.tipoObjetivo', 'Interno')
-            ->orderBy('objetivos_personalizados.abreviatura')
-            ->get();
-
-        $notas = array();
-        foreach ($notasObjetivos as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        foreach ($notasObjetivosPersonalizados as $key => $nota) {
-            array_push($notas, $nota);
-        }
-        return $notas;
-    }
-
-    public static function getAllNotasCurso($idPeriodo, $idCurso)
-    {
-        $notasObjetivos = Notas::select('notas.*')
-            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Ministerio')
-            ->orderBy('objetivos.abreviatura')
-            ->get();
-
-        $notasObjetivosPersonalizados = Notas::select('notas.*')
-            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.tipoObjetivo', 'Interno')
-            ->orderBy('objetivos_personalizados.abreviatura')
-            ->get();
-
-        $notas = array();
-        foreach ($notasObjetivos as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        foreach ($notasObjetivosPersonalizados as $key => $nota) {
-            array_push($notas, $nota);
-        }
-        return $notas;
-    }
-
     public static function getNotasAlumno($idPeriodo, $idCurso, $idAlumno)
     {
-        $notasObjetivos = Notas::select('notas.*')
-            ->leftJoin("objetivos", "objetivos.id", "=", "notas.idObjetivo")
+        $notas = Notas::select(
+            'notas.id',
+            'notas.nota',
+            'notas.idAsignatura',
+            'notas.idObjetivo',
+            DB::raw("CASE WHEN notas.tipoObjetivo = 'Ministerio' THEN objetivos.abreviatura ELSE objetivos_personalizados.abreviatura END as abreviatura")
+        )
+            ->leftJoin('objetivos', function ($join) {
+                $join->on('objetivos.id', '=', 'notas.idObjetivo')
+                ->where('notas.tipoObjetivo', '=', 'Ministerio');
+            })
+            ->leftJoin('objetivos_personalizados', function ($join) {
+                $join->on('objetivos_personalizados.id', '=', 'notas.idObjetivo')
+                ->where('notas.tipoObjetivo', '=', 'Interno');
+            })
             ->where('notas.idPeriodo', $idPeriodo)
             ->where('notas.idCurso', $idCurso)
             ->where('notas.idAlumno', $idAlumno)
-            ->where('notas.tipoObjetivo', 'Ministerio')
-            ->orderBy('objetivos.abreviatura')
-            ->get();
+        ->orderBy('abreviatura')
+        ->get();
 
-        $notasObjetivosPersonalizados = Notas::select('notas.*')
-            ->leftJoin("objetivos_personalizados", "objetivos_personalizados.id", "=", "notas.idObjetivo")
-            ->where('notas.idPeriodo', $idPeriodo)
-            ->where('notas.idCurso', $idCurso)
-            ->where('notas.idAlumno', $idAlumno)
-            ->where('notas.tipoObjetivo', 'Interno')
-            ->orderBy('objetivos_personalizados.abreviatura')
-            ->get();
-
-        $notas = array();
-        foreach ($notasObjetivos as $key => $nota) {
-            array_push($notas, $nota);
-        }
-
-        foreach ($notasObjetivosPersonalizados as $key => $nota) {
-            array_push($notas, $nota);
-        }
         return $notas;
     }
 }
