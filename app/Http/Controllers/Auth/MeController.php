@@ -74,7 +74,7 @@ class MeController extends Controller
                 'insignia' => $establecimiento->insignia,
             ],
             'rolActivo' => [
-                'id' => $rolActivo->id_rol,
+                'id' => $rolActivo->id,
                 'nombre' => $rolActivo->rol->name ?? null,
                 'guard_name' => $rolActivo->rol->guard_name ?? null,
             ],

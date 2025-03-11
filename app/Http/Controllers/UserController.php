@@ -375,4 +375,20 @@ class UserController extends Controller
             return response($th, 500);
         }
     }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|string',
+            'password' => 'required|string|min:8|confirmed'
+        ]);
+
+        $userId = decrypt($request->userId);
+        $user = Usuario::findOrFail($userId);
+
+        $user->password = bcrypt($request->password);
+        $user->save();
+
+        return response()->json(['message' => 'Contraseña actualizada con éxito.']);
+    }
 }

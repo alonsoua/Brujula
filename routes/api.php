@@ -30,6 +30,7 @@ use App\Http\Controllers\EncuestaController;
 use App\Http\Controllers\EncuestaParticipanteController;
 use App\Http\Controllers\EncuestaRespuestaController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +109,10 @@ Route::prefix('bru')->group(function () {
     // ESTABLECIMIENTOS
     Route::prefix('estab')->namespace('App\Http\Controllers')->group(function () {
         Route::post('/login', 'Auth\AuthController@login');
+
+        Route::post('/password/sendResetLink', [AuthController::class, 'sendResetLink']);
+        Route::post('/password/reset', [UserController::class, 'resetPassword']);
+
 
         // * Encuestas
         Route::get('/encuesta/publica/{rbd}/{slug}', [EncuestaController::class, 'findPublica']);
@@ -274,3 +279,4 @@ Route::prefix('bru')->group(function () {
         });
     });
 });
+

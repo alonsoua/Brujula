@@ -18,6 +18,9 @@ use App\Models\Master\Usuario;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Mail\PasswordResetMail;
 
 
 class AuthController extends Controller
@@ -166,7 +169,8 @@ class AuthController extends Controller
         )
             ->join('roles', 'roles.id', '=', 'estab_usuarios_roles.idRol')
             ->join('establecimientos', 'establecimientos.id', '=', 'estab_usuarios_roles.idEstablecimiento')
-            ->where('idUsuario', $idUsuario);
+            ->where('estab_usuarios_roles.idUsuario', $idUsuario)
+            ->where('estab_usuarios_roles.estado', 1);
 
         if ($idEstablecimiento) {
             $query->where('idEstablecimiento', $idEstablecimiento);
@@ -266,6 +270,32 @@ class AuthController extends Controller
             return response()->json(['message' => 'Sesión cerrada exitosamente'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al cerrar sesión', 'details' => $e->getMessage()], 500);
+        }
+    }
+
+    // * RECUPERACIÓN DE COTNRASEÑA
+    /**
+     * Envia un enlace de restablecimiento de contraseña al correo electrónico del usuario.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function sendResetLink(Request $request)
+    {
+        try {
+            $request->validate(['email' => 'required|email|exists:usuarios,correo']);
+
+            $user = Usuario::where('correo', $request->email)->first();
+            $encryptedUserId = encrypt($user->id);
+            $resetLink = env('FRONT_URL') . "/reset-password/{$encryptedUserId}";
+
+            // Enviar el correo
+            Mail::to($user->correo)->send(new PasswordResetMail($resetLink));
+
+            return response()->json(['message' => 'Enlace de restablecimiento enviado.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al enviar el enlace de restablecimiento', 'details' => $e->getMessage()], 500);
         }
     }
 }
