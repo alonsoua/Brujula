@@ -45,11 +45,11 @@ class MeController extends Controller
             );
         }
 
-        // Obtener los permisos del rol activo (Master)
-        $permisos = Rol::rolHasPermisos($rolActivo->idRol);
-
         // Obtener ajustes del establecimiento (Master)
         $ajustes = Ajuste::getAjustes($establecimiento->id, $establecimiento->idPeriodoActivo);
+
+        // Obtener los permisos del rol activo (Master)
+        $permisos = Rol::rolHasPermisos($rolActivo->idRol, $ajustes->evaluaciones_activo);
 
         if (!$ajustes) {
             return response()->json(['error' => 'El establecimiento no cuenta con los ajustes configurados para el periodo actual.'], 400);
@@ -75,6 +75,7 @@ class MeController extends Controller
             ],
             'rolActivo' => [
                 'id' => $rolActivo->id,
+                'idRol' => $rolActivo->idRol,
                 'nombre' => $rolActivo->rol->name ?? null,
                 'guard_name' => $rolActivo->rol->guard_name ?? null,
             ],

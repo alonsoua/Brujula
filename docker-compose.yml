@@ -35,7 +35,7 @@ services:
       - db_network
 
 volumes:
-  db_data:                               # Volumen para almacenar datos de MySQL
+  db_data:                           # Volumen para almacenar datos de MySQL
 
 networks:
   db_network:

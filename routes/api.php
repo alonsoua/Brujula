@@ -31,6 +31,9 @@ use App\Http\Controllers\EncuestaParticipanteController;
 use App\Http\Controllers\EncuestaRespuestaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\EvaluacionController;
+use App\Http\Controllers\EvaluacionIndicadorController;
+use App\Http\Controllers\EvaluacionNotaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -276,6 +279,20 @@ Route::prefix('bru')->group(function () {
             
             // * Respuestas de Encuestas
             Route::post('/encuesta-respuestas', [EncuestaRespuestaController::class, 'create']);
+
+            // * Evaluaciones
+            Route::get('/evaluaciones', [EvaluacionController::class, 'index']);
+            Route::post('/evaluaciones', [EvaluacionController::class, 'store']);
+            Route::put('/evaluaciones/{id}', [EvaluacionController::class, 'update']);
+            Route::delete('/evaluaciones/{id}', [EvaluacionController::class, 'destroy']);
+
+            // * Evaluaciones Indicadores
+            Route::post('/evaluaciones-indicadores', [EvaluacionIndicadorController::class, 'store']);
+            Route::put('/evaluaciones-indicadores/{id}', [EvaluacionIndicadorController::class, 'update']);
+            Route::delete('/evaluaciones-indicadores/{id}', [EvaluacionIndicadorController::class, 'destroy']);
+
+            // * Evaluaciones Notas
+            Route::post('/evaluaciones-notas', [EvaluacionNotaController::class, 'store']);
         });
     });
 });

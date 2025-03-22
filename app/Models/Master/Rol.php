@@ -82,7 +82,7 @@ class Rol extends Model
         return $this->hasMany(User::class, 'role_id', 'id');
     }
 
-    public static function rolHasPermisos($idRol)
+    public static function rolHasPermisos($idRol, $evaluacionesActivo)
     {
         $permisos = DB::connection('master')->table('role_has_permissions')
             ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
@@ -97,6 +97,18 @@ class Rol extends Model
                 ];
             })
             ->toArray();
+
+        if ($evaluacionesActivo && (($idRol == 7 || $idRol == 8 || $idRol == 9))) {
+            // Agrega permisos de evaluaciones
+            array_unshift($permisos, ['action' => 'delete', 'subject' => 'evaluaciones']);
+            array_unshift($permisos, ['action' => 'update', 'subject' => 'evaluaciones']);
+            array_unshift($permisos, ['action' => 'create', 'subject' => 'evaluaciones']);
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'evaluaciones']);
+            // Elimina permisos de avances
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'update' && $permiso['subject'] == 'avances');
+            });
+        }
 
         array_unshift($permisos, ['action' => 'read', 'subject' => 'home']);
         return $permisos;
