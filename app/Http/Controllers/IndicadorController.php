@@ -28,6 +28,21 @@ class IndicadorController extends Controller
         return $indicadores;
     }
 
+    public function getIndicadoresEvaluacion($idObjetivo, $tipo)
+    {
+        if ($tipo === 'Ministerio') {
+            $indicadores = Indicador::getIndicadoresobjetivo($idObjetivo);
+        } else if ($tipo === 'Interno') {
+            $indicadores = IndicadoresPersonalizados::getIndicadoresobjetivo($idObjetivo);
+        }
+
+        foreach ($indicadores as $key => $indicador) {
+            $indicador->tipo = $tipo;
+        }
+
+        return $indicadores;
+    }
+
     /**
      * Display a listing of the resource.
      *

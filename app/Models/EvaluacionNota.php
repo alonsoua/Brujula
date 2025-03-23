@@ -12,11 +12,10 @@ class EvaluacionNota extends Model
     protected $table = "evaluaciones_notas";
     protected $fillable = [
         'nota',
-        'tipoIndicador',
         'idAlumno',
         'idEvaluacion',
-        'idUsuarioCreated',
-        'idUsuarioUpdated',
+        'idUsuario_created',
+        'idUsuario_updated',
     ];
 
     // Relación inversa con Evaluacion

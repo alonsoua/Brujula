@@ -12,7 +12,9 @@ class EvaluacionIndicador extends Model
     protected $table = "evaluaciones_indicadores";
     protected $fillable = [
         'idObjetivo',
+        'tipoObjetivo',
         'idIndicador',
+        'tipoIndicador',
         'idEvaluacion',
     ];
 

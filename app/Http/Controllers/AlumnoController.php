@@ -333,7 +333,6 @@ class AlumnoController extends Controller
                 // 📌 4️⃣ Obtener o crear el curso
                 $letraExcel = $sheet->getCell('F' . $i)->getValue();
                 $id_curso = $this->cursoController->getCursoImportCSV($idGrado, $letraExcel, $user['periodo']['id']);
-                logger()->info("Curso obtenido o creado", ['idCurso' => $id_curso, 'grado' => $idGrado, 'letra' => $letraExcel]);
 
                 // 📌 5️⃣ Obtener información del alumno
                 $rut = $sheet->getCell('G' . $i)->getValue() . '' . $sheet->getCell('H' . $i)->getValue();
@@ -356,10 +355,8 @@ class AlumnoController extends Controller
                 // 📌 6️⃣ Verificar si el alumno ya existe
                 $alumno = Alumno::where('rut', $rut)->first();
                 if (!$alumno) {
-                    logger()->info("Creando nuevo alumno", ['rut' => $rut, 'nombre' => $alumnoData['nombres']]);
                     $datosmatricula = $this->store(new Request($alumnoData));
                 } else {
-                    logger()->info("Actualizando alumno existente", ['rut' => $rut, 'idAlumno' => $alumno->id]);
                     $datosmatricula = $this->update(new Request($alumnoData), $alumno->id);
                 }
 

@@ -217,6 +217,7 @@ Route::prefix('bru')->group(function () {
 
             // * Indicadores
             Route::get('/indicadores/objetivo/{idObjetivo}/{tipo}', [IndicadorController::class, 'getIndicadoresObjetivo']);
+            Route::get('/indicadores/evaluacion/{idObjetivo}/{tipo}', [IndicadorController::class, 'getIndicadoresEvaluacion']);
             // Route::get('/indicadores/personalizados/{idObjetivo}', [IndicadorController::class, 'getIndicadoresPersonalizados']);
 
             // * Indicador Personalizado
@@ -288,10 +289,9 @@ Route::prefix('bru')->group(function () {
 
             // * Evaluaciones Indicadores
             Route::post('/evaluaciones-indicadores', [EvaluacionIndicadorController::class, 'store']);
-            Route::put('/evaluaciones-indicadores/{id}', [EvaluacionIndicadorController::class, 'update']);
-            Route::delete('/evaluaciones-indicadores/{id}', [EvaluacionIndicadorController::class, 'destroy']);
-
+            Route::get('/evaluaciones-indicadores/{idEvaluacion}', [EvaluacionIndicadorController::class, 'index']);
             // * Evaluaciones Notas
+            Route::get('/evaluaciones-notas/{idEvaluacion}', [EvaluacionNotaController::class, 'index']);
             Route::post('/evaluaciones-notas', [EvaluacionNotaController::class, 'store']);
         });
     });

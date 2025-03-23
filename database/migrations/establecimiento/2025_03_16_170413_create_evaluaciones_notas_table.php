@@ -16,7 +16,6 @@ class CreateEvaluacionesNotasTable extends Migration
         Schema::connection('establecimiento')->create('evaluaciones_notas', function (Blueprint $table) {
             $table->id();
             $table->decimal('nota', 4, 2);
-            $table->string('tipoIndicador');
             $table->unsignedBigInteger('idAlumno');
             $table->foreign('idAlumno')->references('id')->on('alumnos')->onDelete('no action');
             $table->unsignedBigInteger('idEvaluacion');

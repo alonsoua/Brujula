@@ -12,9 +12,10 @@ class EvaluacionIndicadorController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index($idEvaluacion)
     {
-        //
+        $evaluacionesIndicadores = EvaluacionIndicador::where('idEvaluacion', $idEvaluacion)->get();
+        return response()->json($evaluacionesIndicadores, 200);
     }
 
     /**
@@ -35,22 +36,40 @@ class EvaluacionIndicadorController extends Controller
      */
     public function store(Request $request)
     {
+
+        // verificar si en el mismo idObjetivo y idEvaluacion, ya existen indocadores que no vienen en el request.
+        // si es el caso eliminar los que no vienen y agregar los nuevos.
+        // Si existen notas ingresadas a la evaluacion en evaluaciones notas
+        // eliminar notas del indicador eliminado
+        // agregar notas a los nuevos indicadores.
         try {
             // Validar los datos requeridos
             $request->validate([
                 'idObjetivo' => 'required|integer',
-                'idIndicador' => 'required|integer',
+                'tipoObjetivo' => 'required|string',
+                'indicadores' => 'required|array',
+                'indicadores.*.idIndicador' => 'required|integer',
+                'indicadores.*.tipoIndicador' => 'required|string',
                 'idEvaluacion' => 'required|integer',
             ]);
 
-            // Crear el EvaluacionIndicador
-            $evaluacionIndicador = new EvaluacionIndicador($request->all());
+            $evaluacionesIndicadores = [];
 
-            // Guardar el EvaluacionIndicador
-            $evaluacionIndicador->save();
+            // Crear y guardar cada EvaluacionIndicador
+            foreach ($request->indicadores as $indicador) {
+                $evaluacionIndicador = new EvaluacionIndicador([
+                    'idObjetivo' => $request->idObjetivo,
+                    'tipoObjetivo' => $request->tipoObjetivo,
+                    'idIndicador' => $indicador['idIndicador'],
+                    'tipoIndicador' => $indicador['tipoIndicador'],
+                    'idEvaluacion' => $request->idEvaluacion,
+                ]);
+                $evaluacionIndicador->save();
+                $evaluacionesIndicadores[] = $evaluacionIndicador;
+            }
 
             // Retornar respuesta
-            return response()->json($evaluacionIndicador, 201);
+            return response()->json($evaluacionesIndicadores, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {

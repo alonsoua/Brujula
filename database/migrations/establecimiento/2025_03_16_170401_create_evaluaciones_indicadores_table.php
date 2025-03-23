@@ -16,7 +16,9 @@ class CreateEvaluacionesIndicadoresTable extends Migration
         Schema::connection('establecimiento')->create('evaluaciones_indicadores', function (Blueprint $table) {
             $table->id();
             $table->integer('idObjetivo');
+            $table->string('tipoObjetivo');
             $table->integer('idIndicador');
+            $table->string('tipoIndicador');
             $table->unsignedBigInteger('idEvaluacion');
             $table->foreign('idEvaluacion')->references('id')->on('evaluaciones')->onDelete('cascade');
             $table->timestamps();

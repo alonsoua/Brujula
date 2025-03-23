@@ -20,10 +20,16 @@ class PuntajeIndicadorController extends Controller
      */
     protected $notasConversionController;
 
+    /**
+     * @var notasController
+     */
+    protected $notasController;
+
     public function __construct()
     {
         $this->alumnoController = app('App\Http\Controllers\AlumnoController');
         $this->notasConversionController = app('App\Http\Controllers\NotasConversionController');
+        $this->notasController = app('App\Http\Controllers\NotasController');
     }
 
     /**
@@ -100,90 +106,11 @@ class PuntajeIndicadorController extends Controller
      * * $tipo
      * @return \Illuminate\Http\Response
      */
-    // public function getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $idEstablecimiento, $tipoObjetivo)
-    // {
-    //     $promedio = null;
-    //     $puntajes = array();
 
-    //     $tablaIndicador = $tipoObjetivo === 'Ministerio' ? 'indicadores' : 'indicadores_personalizados';
-    //     $tipoIndicador = $tipoObjetivo === 'Ministerio' ? 'Normal' : 'Interno';
-    //     // * $tipoPuntaje - Normal - Interno - Personalizado
-    //     $puntajesIndicador =  DB::select(
-    //         'SELECT
-    //             pi.id
-    //             , pi.idAlumno
-    //             , pi.idIndicador
-    //             , pi.puntaje
-    //             , pi.tipoIndicador
-    //             , pi.estado
-    //             , pi.idUsuario_created
-    //             , pi.idUsuario_updated
-    //             , pi.created_at
-    //             , pi.updated_at
-    //             , i.idObjetivo as idObjetivoIndicador
-    //         FROM puntajes_indicadores as pi
-    //         LEFT JOIN ' . $tablaIndicador . ' as i
-    //             ON pi.idIndicador = i.id
-    //         WHERE
-    //             pi.idAlumno = ' . $idAlumno . ' AND
-    //             i.idObjetivo = ' . $idObjetivo . ' AND
-    //             pi.idPeriodo = ' . $idPeriodo . ' AND
-    //             pi.idCurso = ' . $idCurso . ' AND
-    //             pi.idAsignatura = ' . $idAsignatura . ' AND
-    //             pi.tipoIndicador = "' . $tipoIndicador . '" AND
-    //             pi.estado = "Activo"
-    //         '
-    //     );
-
-    //     $puntajesIndicadorPersonalizado =  DB::select(
-    //         'SELECT
-    //             pi.id
-    //             , pi.idAlumno
-    //             , pi.idIndicador
-    //             , pi.puntaje
-    //             , pi.tipoIndicador
-    //             , pi.estado
-    //             , pi.idUsuario_created
-    //             , pi.idUsuario_updated
-    //             , pi.created_at
-    //             , pi.updated_at
-    //             , i.tipo_objetivo
-    //             , i.idObjetivo as idObjetivoIndicadorPersonalizado
-    //         FROM puntajes_indicadores as pi
-    //         LEFT JOIN indicador_personalizados as i
-    //             ON pi.idIndicador = i.id
-    //         WHERE
-    //             pi.idAlumno = ' . $idAlumno . ' AND
-    //             pi.idPeriodo = ' . $idPeriodo . ' AND
-    //             pi.idCurso = ' . $idCurso . ' AND
-    //             pi.idAsignatura = ' . $idAsignatura . ' AND
-    //             pi.tipoIndicador = "Personalizado" AND
-    //             pi.estado = "Activo" AND
-    //             i.tipo_objetivo = "' . $tipoObjetivo . '" AND
-    //             i.idObjetivo = ' . $idObjetivo . ' AND
-    //             i.estado = "Aprobado"
-    //         '
-    //     );
-    //     foreach ($puntajesIndicador as $key => $puntajeIndicador) {
-    //         array_push($puntajes, $puntajeIndicador);
-    //     }
-
-    //     foreach ($puntajesIndicadorPersonalizado as $key => $puntajePersonalizado) {
-    //         array_push($puntajes, $puntajePersonalizado);
-    //     }
-
-    //     // SETEA PUNTAJES ALUMNOS
-    //     if ($puntajes) {
-    //         $promedio = $this->getPromedioConversion($puntajes, $idEstablecimiento, $idPeriodo);
-    //     } else {
-    //         $promedio = 'undefined';
-    //     }
-
-    //     return $promedio;
-    // }
-
-    public function getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $idEstablecimiento, $tipoObjetivo)
+    public function getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user, $tipoObjetivo)
     {
+        $evaluaciones_activo = $user['ajustes']['evaluaciones_activo'];
+        $idEstablecimiento = $user['establecimiento']['id'];
         // Definir la relación correcta según el tipo de objetivo
         $relacionIndicador = $tipoObjetivo === 'Ministerio' ? 'indicador' : 'indicadoresPersonalizados';
         $tipoIndicador = $tipoObjetivo === 'Ministerio' ? 'Normal' : 'Interno';
@@ -208,9 +135,24 @@ class PuntajeIndicadorController extends Controller
         if ($puntajes->isEmpty()) {
             return 'undefined';
         }
+        $result = $this->getPromedioConversion($puntajes, $idEstablecimiento, $idPeriodo);
+        if ($evaluaciones_activo === 1) {
+            // Llamar a storeOrUpdate
+            $data = [
+                'idAlumno' => $idAlumno,
+                'idCurso' => $idCurso,
+                'idAsignatura' => $idAsignatura,
+                'idPeriodo' => $idPeriodo,
+                'idObjetivo' => $idObjetivo,
+                'tipoObjetivo' => $tipoObjetivo,
+                'nota' => $result['nota']
+            ];
+
+            $this->notasController->storeOrUpdate($data);
+        }
 
         // Calcular el promedio de conversión
-        return $this->getPromedioConversion($puntajes, $idEstablecimiento, $idPeriodo);
+        return $result;
     }
 
     /**
@@ -239,11 +181,7 @@ class PuntajeIndicadorController extends Controller
             $tipoIndicador,
         );
 
-
-        // return response()->json(['status' => 'success', 'code' => 200, 'puntajeIndicador' => $puntajeIndicador, 'idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
-        // return response()->json(['idPeriodo' => $idPeriodo, 'idCurso' => $idCurso, 'idAsignatura' => $idAsignatura, 'idIndicador' => $idIndicador, 'idAlumno' => $idAlumno, 'tipoIndicador' => $tipoIndicador]);
         $user = $request->user()->getUserData();
-        logger()->info($request->input('puntaje'));
         if ($request->input('puntaje') === 0) {
             // ELIMINA
             try {
@@ -252,7 +190,7 @@ class PuntajeIndicadorController extends Controller
                     $PuntajeIndicador = PuntajeIndicador::findOrFail($id);
                     $PuntajeIndicador->delete();
                 }
-                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user['establecimiento']['id'], $tipoObjetivo);
+                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user, $tipoObjetivo);
                 return response()->json(['status' => 'success', 'code' => 200, 'promedio' => $promedio]);
             } catch (\Throwable $th) {
                 return response($th, 500);
@@ -272,7 +210,7 @@ class PuntajeIndicadorController extends Controller
                 $puntajeIndicador->idUsuario_updated = $usuarioUpdate;
 
                 $puntajeIndicador->save();
-                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user['establecimiento']['id'], $tipoObjetivo);
+                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user, $tipoObjetivo);
                 return response()->json(['status' => 'success', 'code' => 200, 'promedio' => $promedio]);
             } catch (\Throwable $th) {
                 return response($th, 500);
@@ -292,7 +230,7 @@ class PuntajeIndicadorController extends Controller
                     'estado'            => 'Activo',
                     'idUsuario_created' => $usuarioCreate,
                 ]);
-                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user['establecimiento']['id'], $tipoObjetivo);
+                $promedio = $this->getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user, $tipoObjetivo);
                 return response()->json(['PuntajeIndicador' => $PuntajeIndicador, 'code' => 200, 'promedio' => $promedio]);
             } catch (\Throwable $th) {
                 return response($th, 500);
