@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Master\Ajuste;
+use App\Models\Notas;
 use App\Models\PuntajeIndicador;
 use App\Models\PuntajeIndicadorTransformacion;
 use Illuminate\Http\Request;
@@ -20,16 +21,11 @@ class PuntajeIndicadorController extends Controller
      */
     protected $notasConversionController;
 
-    /**
-     * @var notasController
-     */
-    protected $notasController;
 
     public function __construct()
     {
         $this->alumnoController = app('App\Http\Controllers\AlumnoController');
         $this->notasConversionController = app('App\Http\Controllers\NotasConversionController');
-        $this->notasController = app('App\Http\Controllers\NotasController');
     }
 
     /**
@@ -131,10 +127,12 @@ class PuntajeIndicadorController extends Controller
         ->where('puntaje', '!=', 0) // Asegurar que solo se traigan puntajes válidos
             ->get();
 
+        logger()->info($puntajes);
         // Si no hay puntajes, retornar 'undefined'
         if ($puntajes->isEmpty()) {
             return 'undefined';
         }
+
         $result = $this->getPromedioConversion($puntajes, $idEstablecimiento, $idPeriodo);
         if ($evaluaciones_activo === 1) {
             // Llamar a storeOrUpdate
@@ -147,12 +145,44 @@ class PuntajeIndicadorController extends Controller
                 'tipoObjetivo' => $tipoObjetivo,
                 'nota' => $result['nota']
             ];
-
-            $this->notasController->storeOrUpdate($data);
+            $this->storeOrUpdateNota($data);
         }
 
         // Calcular el promedio de conversión
         return $result;
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storeOrUpdateNota($data)
+    {
+        try {
+            DB::transaction(function () use ($data) {
+                $nota = Notas::updateOrCreate(
+                    [
+                        'idAlumno'     => $data['idAlumno'],
+                        'idCurso'      => $data['idCurso'],
+                        'idAsignatura' => $data['idAsignatura'],
+                        'idPeriodo'    => $data['idPeriodo'],
+                        'idObjetivo'   => $data['idObjetivo'],
+                        'tipoObjetivo' => $data['tipoObjetivo'],
+                    ],
+                    ['nota' => floatval($data['nota'])]
+                );
+                $nota->save();
+                if ($nota->wasRecentlyCreated) {
+                    return response()->json(['status' => 'success', 'message' => 'Nota creada']);
+                } else {
+                    return response()->json(['status' => 'success', 'message' => 'Nota actualizada']);
+                }
+            });
+        } catch (\Throwable $th) {
+            return response()->json(['status' => 'error', 'message' => $th->getMessage()], 500);
+        }
     }
 
     /**
@@ -264,6 +294,8 @@ class PuntajeIndicadorController extends Controller
         }
         return $promedio;
     }
+
+
 
 
     /**

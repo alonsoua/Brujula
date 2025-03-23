@@ -241,38 +241,6 @@ class NotasController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function storeOrUpdate($data)
-    {
-        try {
-            DB::transaction(function () use ($data) {
-                $nota = Notas::updateOrCreate(
-                    [
-                        'idAlumno'     => $data['idAlumno'],
-                        'idCurso'      => $data['idCurso'],
-                        'idAsignatura' => $data['idAsignatura'],
-                        'idPeriodo'    => $data['idPeriodo'],
-                        'idObjetivo'   => $data['idObjetivo'],
-                        'tipoObjetivo' => $data['tipoObjetivo'],
-                    ],
-                    ['nota' => floatval($data['nota'])]
-                );
-
-                if ($nota->wasRecentlyCreated) {
-                    return response()->json(['status' => 'success', 'message' => 'Nota creada']);
-                } else {
-                    return response()->json(['status' => 'success', 'message' => 'Nota actualizada']);
-                }
-            });
-        } catch (\Throwable $th) {
-            return response()->json(['status' => 'error', 'message' => $th->getMessage()], 500);
-        }
-    }
 
     /**
      * Update the specified resource in storage.

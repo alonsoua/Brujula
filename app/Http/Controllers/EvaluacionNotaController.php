@@ -114,7 +114,9 @@ class EvaluacionNotaController extends Controller
                     'idObjetivo' => $evaluacionIndicador->idObjetivo,
                     'tipoObjetivo' => $evaluacionIndicador->tipoObjetivo,
                     'idIndicador' => $evaluacionIndicador->idIndicador,
-                    'tipoIndicador' => $evaluacionIndicador->tipoIndicador,
+                    'tipoIndicador' => $evaluacionIndicador->tipoIndicador === 'Ministerio'
+                        ? 'Normal'
+                        : 'Interno',
                     'idAlumno' => $idAlumno,
                     'puntaje' => $nota
                 ];
