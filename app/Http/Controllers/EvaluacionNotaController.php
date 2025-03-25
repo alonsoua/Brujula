@@ -59,6 +59,7 @@ class EvaluacionNotaController extends Controller
                     ->where('idAlumno', $request->idAlumno)
                     ->delete();
 
+                $this->actualizarPuntajesIndicadores($request, $idPeriodo);
                 return response()->json(['message' => 'Evaluación nota eliminada debido a que la nota es 0'], 200);
             }
 

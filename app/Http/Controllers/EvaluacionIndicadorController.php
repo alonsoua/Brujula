@@ -2,11 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Alumnos_Cursos;
+use App\Models\Evaluacion;
 use App\Models\EvaluacionIndicador;
+use App\Models\EvaluacionNota;
 use Illuminate\Http\Request;
 
 class EvaluacionIndicadorController extends Controller
 {
+
+    protected $evaluacionNotaController;
+    protected $puntajeIndicadorController;
+    public function __construct()
+    {
+        $this->evaluacionNotaController = new EvaluacionNotaController();
+        $this->puntajeIndicadorController = new PuntajeIndicadorController();
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -36,42 +48,152 @@ class EvaluacionIndicadorController extends Controller
      */
     public function store(Request $request)
     {
-
-        // verificar si en el mismo idObjetivo y idEvaluacion, ya existen indocadores que no vienen en el request.
-        // si es el caso eliminar los que no vienen y agregar los nuevos.
-        // Si existen notas ingresadas a la evaluacion en evaluaciones notas
-        // eliminar notas del indicador eliminado
-        // agregar notas a los nuevos indicadores.
         try {
+            $user = $request->user()->getUserData();
+            $idPeriodo = $user['periodo']['id'];
             // Validar los datos requeridos
             $request->validate([
                 'idObjetivo' => 'required|integer',
                 'tipoObjetivo' => 'required|string',
-                'indicadores' => 'required|array',
-                'indicadores.*.idIndicador' => 'required|integer',
-                'indicadores.*.tipoIndicador' => 'required|string',
+                'indicadores' => 'array',
+                'indicadores.*.idIndicador' => 'integer',
+                'indicadores.*.tipoIndicador' => 'string',
                 'idEvaluacion' => 'required|integer',
             ]);
 
-            $evaluacionesIndicadores = [];
+            // Obtener indicadores existentes
+            $indicadoresExistentes = EvaluacionIndicador::where('idObjetivo', $request->idObjetivo)
+                ->where('idEvaluacion', $request->idEvaluacion)
+                ->get()
+                ->keyBy('idIndicador');
 
-            // Crear y guardar cada EvaluacionIndicador
-            foreach ($request->indicadores as $indicador) {
+            // Obtener solo los nuevos indicadores (que no existen actualmente)
+            $nuevosIndicadores = collect($request->indicadores)
+                ->keyBy('idIndicador')
+                ->reject(function ($value, $key) use ($indicadoresExistentes) {
+                    return $indicadoresExistentes->has($key);
+                });
+
+            // Obtener indicadores a eliminar (están en existentes pero no en el request)
+            $indicadoresAEliminar = $indicadoresExistentes->reject(function ($value, $key) use ($request) {
+                return collect($request->indicadores)->pluck('idIndicador')->contains($key);
+            });
+
+            // Eliminar indicadores que ya no están presentes
+            foreach ($indicadoresAEliminar as $indicador) {
+                $this->eliminarPuntajesIndicadores($request, $idPeriodo, $request->idObjetivo, $request->tipoObjetivo, $indicador->idIndicador, $indicador->tipoIndicador);
+                $evaluacionIndicador = EvaluacionIndicador::where('id', $indicador->id)
+                    ->first();
+                $evaluacionIndicador->delete();
+            }
+
+            // Crear o mantener indicadores
+            foreach ($nuevosIndicadores as $idIndicador => $indicadorData) {
+                // Crear nuevo indicador
                 $evaluacionIndicador = new EvaluacionIndicador([
                     'idObjetivo' => $request->idObjetivo,
                     'tipoObjetivo' => $request->tipoObjetivo,
-                    'idIndicador' => $indicador['idIndicador'],
-                    'tipoIndicador' => $indicador['tipoIndicador'],
+                    'idIndicador' => $indicadorData['idIndicador'],
+                    'tipoIndicador' => $indicadorData['tipoIndicador'],
                     'idEvaluacion' => $request->idEvaluacion,
                 ]);
                 $evaluacionIndicador->save();
-                $evaluacionesIndicadores[] = $evaluacionIndicador;
+
+                $evaluacionNota = EvaluacionNota::where('idEvaluacion', $request->idEvaluacion)
+                    ->get();
+                foreach ($evaluacionNota as $nota) {
+
+                    $params = [
+                        'nota' => $nota->nota,
+                        'idAlumno' => $nota->idAlumno,
+                        'idEvaluacion' => $request->idEvaluacion,
+                    ];
+                    $newRequest = new Request($params);
+                    $newRequest->setUserResolver(function () use ($request) {
+                        return $request->user();
+                    });
+                    // Agregar notas a los nuevos indicadores
+                    $this->evaluacionNotaController->store($newRequest);
+                }
             }
 
             // Retornar respuesta
-            return response()->json($evaluacionesIndicadores, 201);
+            return response()->json($nuevosIndicadores->values(), 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // Nueva función para actualizar los puntajes de indicadores
+    protected function eliminarPuntajesIndicadores(Request $request, $idPeriodo, $idObjetivo, $tipoObjetivo, $idIndicador, $tipoIndicador)
+    {
+        try {
+            $idEvaluacion = $request->idEvaluacion;
+
+            $evaluacion = Evaluacion::where('id', $idEvaluacion)->first();
+            $alumnos = Alumnos_Cursos::where('idCurso', $evaluacion->idCurso)->get();
+            foreach ($alumnos as $alumno) {
+                $data = [
+                    'idPeriodo' => $idPeriodo,
+                    'idCurso' => $evaluacion->idCurso,
+                    'idAsignatura' => $evaluacion->idAsignatura,
+                    'idObjetivo' => $idObjetivo,
+                    'tipoObjetivo' => $tipoObjetivo,
+                    'idIndicador' => $idIndicador,
+                    'tipoIndicador' => $tipoIndicador === 'Ministerio'
+                        ? 'Normal'
+                        : 'Interno',
+                    'idAlumno' => $alumno->idAlumno,
+                    'puntaje' => 0
+                ];
+
+                // Crear un nuevo Request con los datos necesarios
+                $newRequest = new Request($data);
+                $newRequest->setUserResolver(function () use ($request) {
+                    return $request->user();
+                });
+
+                // Llamar al método update de PuntajeIndicadorController
+                $this->puntajeIndicadorController->update($newRequest);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    protected function agregarPuntajesIndicadores(Request $request, $idPeriodo, $idObjetivo, $tipoObjetivo, $idIndicador, $tipoIndicador)
+    {
+        try {
+            $idEvaluacion = $request->idEvaluacion;
+
+            $evaluacion = Evaluacion::where('id', $idEvaluacion)->first();
+            $alumnos = Alumnos_Cursos::where('idCurso', $evaluacion->idCurso)->get();
+            foreach ($alumnos as $alumno) {
+                $data = [
+                    'idPeriodo' => $idPeriodo,
+                    'idCurso' => $evaluacion->idCurso,
+                    'idAsignatura' => $evaluacion->idAsignatura,
+                    'idObjetivo' => $idObjetivo,
+                    'tipoObjetivo' => $tipoObjetivo,
+                    'idIndicador' => $idIndicador,
+                    'tipoIndicador' => $tipoIndicador === 'Ministerio'
+                        ? 'Normal'
+                        : 'Interno',
+                    'idAlumno' => $alumno->idAlumno,
+                    'puntaje' => 0
+                ];
+
+                // Crear un nuevo Request con los datos necesarios
+                $newRequest = new Request($data);
+                $newRequest->setUserResolver(function () use ($request) {
+                    return $request->user();
+                });
+
+                // Llamar al método update de PuntajeIndicadorController
+                $this->puntajeIndicadorController->update($newRequest);
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -86,49 +208,5 @@ class EvaluacionIndicadorController extends Controller
     public function show($id)
     {
         //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        try {
-            // Validar los datos requeridos
-            $request->validate([
-                'idObjetivo' => 'required|integer',
-                'idIndicador' => 'required|integer',
-                'idEvaluacion' => 'required|integer',
-            ]);
-
-            // Obtener el EvaluacionIndicador existente
-            $evaluacionIndicador = EvaluacionIndicador::findOrFail($id);
-
-            // Actualizar el EvaluacionIndicador
-            $evaluacionIndicador->update($request->all());
-
-            // Retornar respuesta
-            return response()->json($evaluacionIndicador, 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        // Al eliminar una evaluación indicador, todas las notas ingresadas 
-        // en cada indicador de puntajes_indicadores, deben ser eliminadas.
     }
 }

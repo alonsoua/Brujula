@@ -105,6 +105,7 @@ class PuntajeIndicadorController extends Controller
 
     public function getPromedioIndicadoresAlumno($idPeriodo, $idCurso, $idAsignatura, $idObjetivo, $idAlumno, $user, $tipoObjetivo)
     {
+
         $evaluaciones_activo = $user['ajustes']['evaluaciones_activo'];
         $idEstablecimiento = $user['establecimiento']['id'];
         // Definir la relación correcta según el tipo de objetivo
@@ -127,13 +128,9 @@ class PuntajeIndicadorController extends Controller
         ->where('puntaje', '!=', 0) // Asegurar que solo se traigan puntajes válidos
             ->get();
 
-        logger()->info($puntajes);
-        // Si no hay puntajes, retornar 'undefined'
-        if ($puntajes->isEmpty()) {
-            return 'undefined';
-        }
 
         $result = $this->getPromedioConversion($puntajes, $idEstablecimiento, $idPeriodo);
+
         if ($evaluaciones_activo === 1) {
             // Llamar a storeOrUpdate
             $data = [
@@ -143,9 +140,15 @@ class PuntajeIndicadorController extends Controller
                 'idPeriodo' => $idPeriodo,
                 'idObjetivo' => $idObjetivo,
                 'tipoObjetivo' => $tipoObjetivo,
-                'nota' => $result['nota']
+                'nota' => empty($result) ? 0 : $result['nota']
             ];
+
             $this->storeOrUpdateNota($data);
+        }
+
+        // Si no hay puntajes, retornar 'undefined'
+        if ($puntajes->isEmpty()) {
+            return 'undefined';
         }
 
         // Calcular el promedio de conversión
@@ -162,22 +165,38 @@ class PuntajeIndicadorController extends Controller
     {
         try {
             DB::transaction(function () use ($data) {
-                $nota = Notas::updateOrCreate(
-                    [
+                if ($data['nota'] == 0 || $data['nota'] == 'undefined') {
+                    $notaExistente = Notas::where([
                         'idAlumno'     => $data['idAlumno'],
                         'idCurso'      => $data['idCurso'],
                         'idAsignatura' => $data['idAsignatura'],
                         'idPeriodo'    => $data['idPeriodo'],
                         'idObjetivo'   => $data['idObjetivo'],
                         'tipoObjetivo' => $data['tipoObjetivo'],
-                    ],
-                    ['nota' => floatval($data['nota'])]
-                );
-                $nota->save();
-                if ($nota->wasRecentlyCreated) {
-                    return response()->json(['status' => 'success', 'message' => 'Nota creada']);
+                    ])->first();
+
+                    if ($notaExistente) {
+                        $notaExistente->delete();
+                        return response()->json(['status' => 'success', 'message' => 'Nota eliminada']);
+                    }
                 } else {
-                    return response()->json(['status' => 'success', 'message' => 'Nota actualizada']);
+                    $nota = Notas::updateOrCreate(
+                        [
+                            'idAlumno'     => $data['idAlumno'],
+                            'idCurso'      => $data['idCurso'],
+                            'idAsignatura' => $data['idAsignatura'],
+                            'idPeriodo'    => $data['idPeriodo'],
+                            'idObjetivo'   => $data['idObjetivo'],
+                            'tipoObjetivo' => $data['tipoObjetivo'],
+                        ],
+                        ['nota' => floatval($data['nota'])]
+                    );
+                    $nota->save();
+                    if ($nota->wasRecentlyCreated) {
+                        return response()->json(['status' => 'success', 'message' => 'Nota creada']);
+                    } else {
+                        return response()->json(['status' => 'success', 'message' => 'Nota actualizada']);
+                    }
                 }
             });
         } catch (\Throwable $th) {
@@ -292,6 +311,7 @@ class PuntajeIndicadorController extends Controller
                 $promedio['nota'] = $this->notasConversionController->getPromedioNota($puntajes);
             }
         }
+
         return $promedio;
     }
 

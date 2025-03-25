@@ -156,6 +156,32 @@ class Objetivo extends Model
             ->get(['id', DB::raw('"Interno" as tipoObjetivo')]);
     }
 
+    public static function getObjetivosEvaluados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
+    {
+        return Objetivo::whereIn('id', $idsObjetivos)
+            ->whereHas('evaluaciones_indicadores.puntajesIndicadores', function ($query) use ($idAsignatura, $idPeriodo, $idCurso) {
+                $query->where('idAsignatura', $idAsignatura)
+                    ->where('idCurso', $idCurso)
+                    ->where('idPeriodo', $idPeriodo)
+                    ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
+                    ->where('tipoIndicador', 'Normal');
+            })
+            ->get(['id', DB::raw('"Ministerio" as tipoObjetivo')]);
+    }
+
+    public static function getObjetivosEvaluadosPersonalizados($idsObjetivos, $idAsignatura, $idPeriodo, $idCurso)
+    {
+        return ObjetivoPersonalizado::whereIn('id', $idsObjetivos)
+            ->whereHas('indicadoresPersonalizados.puntajesIndicadores', function ($query) use ($idAsignatura, $idPeriodo, $idCurso) {
+                $query->where('idAsignatura', $idAsignatura)
+                    ->where('idCurso', $idCurso)
+                    ->where('idPeriodo', $idPeriodo)
+                    ->where('puntaje', '!=', 0) // 🔹 Solo traer puntajes válidos
+                    ->where('tipoIndicador', 'Interno');
+            })
+            ->get(['id', DB::raw('"Interno" as tipoObjetivo')]);
+    }
+
     // public static function getObjetivosBetwen($idCursoInicio, $idCursoFin)
     // {
     //     $sql = 'SELECT
