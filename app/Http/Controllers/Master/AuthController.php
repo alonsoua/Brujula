@@ -53,8 +53,14 @@ class AuthController extends Controller
         // Buscar al usuario por correo en la base de datos
         $user = \App\Models\Master\User::where('correo', $credentials['correo'])->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['error' => 'Credenciales inválidas'], 401);
+        // Verificar si el usuario existe
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 401);
+        }
+
+        // Verificar si la contraseña es correcta
+        if (!Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['error' => 'Contraseña incorrecta'], 401);
         }
 
         // Obtener datos del establecimiento asociado

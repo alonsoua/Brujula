@@ -23,8 +23,10 @@ class EvaluacionController extends Controller
                     ->addSelect(DB::raw("CONCAT(nombre, ' ', letra) as nombreCurso"));
             }, 'asignatura' => function ($query) {
                 $query->select('id', 'nombre as nombreAsignatura');
+        }, 'evaluacionesIndicadores.objetivos' => function ($query) {
+            $query->select('id', 'abreviatura', 'tipo', 'priorizacionInterna', 'nombre');
             }])
-            ->orderBy('fecha', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
         return response()->json($evaluaciones, 200);
     }

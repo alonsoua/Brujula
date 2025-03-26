@@ -58,8 +58,8 @@ class AuthController extends Controller
 
             // 🔹 Paso 1: Verificar credenciales en la tabla estab_usuarios
             $user = Usuario::where('correo', $credentials['correo'])->first();
-            if (!$user && !Hash::check($credentials['password'], $user->password)) {
-                return response()->json(['error' => 'Credenciales inválidas'], 401);
+            if (!$user || !Hash::check($credentials['password'], $user->password)) {
+                return response()->json(['error' => 'Credenciales inválidas.'], 401);
             }
 
             $this->updateUltimaConexionUser($user);
@@ -117,7 +117,7 @@ class AuthController extends Controller
                 'message' => $th->getMessage(),
                 'trace' => $th->getTraceAsString(),
             ]);
-            return response()->json(['error' => 'Error al iniciar sesión'], 500);
+            return response()->json(['error' => 'Credenciales inválidas.'], 500);
         }
     }
 
