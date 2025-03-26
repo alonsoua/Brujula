@@ -295,10 +295,15 @@ class AlumnoController extends Controller
     }
 
 
-    public function importAlumnosCSV(Request $request)
+    public function importAlumnos(Request $request)
     {
         try {
             logger()->info('Inicio de importación de alumnos desde CSV');
+
+            // Validar el archivo antes de procesarlo
+            $request->validate([
+                'lista' => 'required|file|mimes:csv,xlsx,xls|max:10240' // máximo 10MB
+            ]);
 
             // 📌 1️⃣ Procesar el archivo CSV
             $documento = $request->file('lista');
@@ -307,8 +312,41 @@ class AlumnoController extends Controller
             $documento->move($destinationPath, $name);
 
             $FileName = storage_path('/app/Imports') . "/" . $name;
-            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
-            $spreadsheet = $reader->load($FileName);
+
+            // Determinar el tipo de archivo y crear el lector apropiado
+            $extension = strtolower($documento->getClientOriginalExtension());
+
+            try {
+                switch ($extension) {
+                    case 'csv':
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+                        break;
+                    case 'xlsx':
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+                        break;
+                    case 'xls':
+                        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+                        // Configuraciones específicas para archivos XLS antiguos
+                        $reader->setReadDataOnly(true);
+                        break;
+                    default:
+                        throw new \Exception('Formato de archivo no soportado. Use CSV, XLSX o XLS.');
+                }
+
+                // Verificar si el archivo es legible antes de procesarlo
+                if (!$reader->canRead($FileName)) {
+                    throw new \Exception('El archivo no puede ser leído. Por favor, verifique que no está corrupto y es un archivo válido de ' . strtoupper($extension));
+                }
+
+                $spreadsheet = $reader->load($FileName);
+            } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+                logger()->error("Error al leer el archivo", ['error' => $e->getMessage()]);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Error al leer el archivo. Por favor, asegúrese de que el archivo no está corrupto y es un formato válido.'
+                ]);
+            }
+
             $sheet = $spreadsheet->getSheet(0);
 
             // 📌 2️⃣ Recorrer filas del CSV

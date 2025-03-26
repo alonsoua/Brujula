@@ -193,7 +193,7 @@ Route::prefix('bru')->group(function () {
             Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
 
             // * Imports
-            Route::post('/alumnos/importCSV', [AlumnoController::class, 'importAlumnosCSV']);
+            Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
             // Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
 
             // * Ejes
@@ -290,6 +290,7 @@ Route::prefix('bru')->group(function () {
             // * Evaluaciones Indicadores
             Route::post('/evaluaciones-indicadores', [EvaluacionIndicadorController::class, 'store']);
             Route::get('/evaluaciones-indicadores/{idEvaluacion}', [EvaluacionIndicadorController::class, 'index']);
+            Route::get('/evaluaciones-indicadores-usados/{idObjetivo}/{tipoObjetivo}/{idCurso}/{idAsignatura}/{idEvaluacion}', [EvaluacionIndicadorController::class, 'getIndicadoresUsados']);
             // * Evaluaciones Notas
             Route::get('/evaluaciones-notas/{idEvaluacion}', [EvaluacionNotaController::class, 'index']);
             Route::post('/evaluaciones-notas', [EvaluacionNotaController::class, 'store']);

@@ -30,6 +30,27 @@ class EvaluacionIndicadorController extends Controller
         return response()->json($evaluacionesIndicadores, 200);
     }
 
+    public function getIndicadoresUsados($idObjetivo, $tipoObjetivo, $idCurso, $idAsignatura, $idEvaluacion)
+    {
+
+        try {
+            // Consulta que filtra evaluaciones_indicadores por idObjetivo y tipoObjetivo
+            // y relaciona con evaluaciones filtrando por idCurso y idAsignatura
+            $indicadoresUsados = EvaluacionIndicador::join('evaluaciones', 'evaluaciones_indicadores.idEvaluacion', '=', 'evaluaciones.id')
+                ->where('evaluaciones_indicadores.idObjetivo', $idObjetivo)
+                ->where('evaluaciones_indicadores.tipoObjetivo', $tipoObjetivo)
+                ->where('evaluaciones.idCurso', $idCurso)
+                ->where('evaluaciones.idAsignatura', $idAsignatura)
+                ->where('evaluaciones.id', '!=', $idEvaluacion)
+                ->select('evaluaciones_indicadores.idIndicador', 'evaluaciones.nombre as nombreEvaluacion')
+                ->get();
+
+            return response()->json($indicadoresUsados, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al obtener los indicadores usados: ' . $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      *
