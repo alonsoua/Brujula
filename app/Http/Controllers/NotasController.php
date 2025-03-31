@@ -93,47 +93,6 @@ class NotasController extends Controller
         return $notasInternas;
     }
 
-    public function getAll($idPeriodo, $idCurso)
-    {
-        // * Conexión Brújula > Libro digital
-        try {
-            $response = Notas::select(
-                'notas.*',
-                'alumnos.tipoDocumento',
-                'alumnos.rut as rutAlumno',
-                'alumnos.nombres as nombreAlumno',
-                'alumnos.primerApellido',
-                'alumnos.segundoApellido',
-                'periodos.nombre as nombrePeriodo',
-                'grados.idGrado as idGrado',
-                'grados.idNivel as nivelGrado',
-                'grados.nombre as nombreGrado',
-                'cursos.letra',
-                'asignaturas.nombre as nombreAsignatura',
-                // 'users.rut as rutDocente'
-            )
-                ->leftJoin("alumnos", "alumnos.id", "=", "notas.idAlumno")
-                ->leftJoin("periodos", "periodos.id", "=", "notas.idPeriodo")
-                ->leftJoin("cursos", "cursos.id", "=", "notas.idCurso")
-                ->leftJoin("grados", "grados.id", "=", "cursos.idGrado")
-                ->leftJoin("asignaturas", "asignaturas.id", "=", "notas.idAsignatura")
-                // ->leftJoin("usuario_asignaturas", "usuario_asignaturas.idAsignatura", "=", "notas.idAsignatura")
-                // ->leftJoin("usuario_establecimientos", "usuario_establecimientos.id", "=", "usuario_asignaturas.idUsuarioEstablecimiento")
-                // ->leftJoin("users", "users.id", "=", "usuario_establecimientos.idUsuario")
-                ->where('notas.idPeriodo', $idPeriodo)
-                ->where('notas.idCurso', $idCurso)
-                ->where('asignaturas.estado', 'Activo')
-                ->where('cursos.estado', 'Activo')
-                ->get();
-
-            return $response;
-        } catch (\Throwable $th) {
-            return response()->json(['status' => 'error', 'response' => $th]);
-        }
-        // return $response;
-    }
-
-
     public function calcularNota(Request $request, $idAlumno, $idCurso, $idAsignatura, $idPeriodo, $idObjetivo)
     {
         $user = $request->user();

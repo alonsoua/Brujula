@@ -60,6 +60,12 @@ use App\Http\Controllers\EvaluacionNotaController;
 *    Artisan::call('migrate');
 *});
 */
+/* TENANTS MIGRATIONS */
+
+Route::get('tenant-migrate', function () {
+    Artisan::call('tenants:migrate');
+});
+
 
 Route::prefix('bru')->group(function () {
 
@@ -238,7 +244,6 @@ Route::prefix('bru')->group(function () {
             Route::get('/notas/getAllNotasCurso/{idPeriodo}/{idCurso}', [NotasController::class, 'getAllNotasCurso']);
             Route::post('/notas/updateNota/', [NotasController::class, 'updateNota']);
             // Route::get('/notas/calcularNota/{idAlumno}/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}', [NotasController::class, 'calcularNota']);
-            // Route::get('/notas/getAll/{idPeriodo}/{idCurso}', [NotasController::class, 'getAll']);
             // Route::get('/notas/calcularNotaCurso/{idCurso}/{idAsignatura}/{idPeriodo}/{idObjetivo}', [NotasController::class, 'calcularNotaCurso']);
 
             // // * NotasConversion
@@ -259,11 +264,6 @@ Route::prefix('bru')->group(function () {
             Route::get('/informe/hogar/{idAlumno}/{tipo}/{tipoInforme}', [InformeHogarController::class, 'createPDF']);
             Route::post('/informes/resumenAnualPdf', [InformesController::class, 'resumenAnualPdf']);
             // Route::get('/notas/update/notas/{idCurso}/{idGrado}', [NotasController::class, 'updateNotasScript']);
-
-            // // * DASH
-            // // ? CONEXIÓN BRÚJULA > LD
-            // Route::get('/dash/conexionLd/getLogs/{idPeriodo}', [DashController::class, 'getLdConexions']);
-            // Route::post('/dash/conexionLd/addLog', [DashController::class, 'addLdConexion']);
 
             // * Encuestas
             Route::get('/encuestas', [EncuestaController::class, 'index']);
@@ -294,6 +294,12 @@ Route::prefix('bru')->group(function () {
             // * Evaluaciones Notas
             Route::get('/evaluaciones-notas/{idEvaluacion}', [EvaluacionNotaController::class, 'index']);
             Route::post('/evaluaciones-notas', [EvaluacionNotaController::class, 'store']);
+
+            // * DASH
+            // ? CONEXIÓN BRÚJULA > LD
+            Route::get('/dash/conexionLd/getLogs', [DashController::class, 'getLdConexions']);
+            Route::post('/dash/conexionLd/addLog', [DashController::class, 'addLdConexion']);
+            Route::post('/dash/conexionLd/notas', [DashController::class, 'getAllNotas']);
         });
     });
 });

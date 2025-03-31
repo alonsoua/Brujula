@@ -162,7 +162,6 @@ class AlumnoController extends Controller
                     'nombre_prioritario' => $nombrePrioritario,
                 ]);
 
-
                 Alumnos_Cursos::Create([
                     'idAlumno' => $alumno->id,
                     'idCurso'  => $idCurso,
@@ -357,7 +356,7 @@ class AlumnoController extends Controller
 
                 // 📌 Validar que el periodo en el archivo coincide con el periodo activo
                 if ($user['periodo']['nombre'] != $periodoExcel) {
-                    logger()->error("Periodo no coincide en la fila $i", ['archivo' => $periodoExcel, 'sistema' => $user['periodo']['nombre']]);
+                    logger()->error("Periodo no coincide en la fila $i", ['archivo' => $periodoExcel, 'sistema' => $user['periodo']['nombre'], 'row' => $row]);
                     return response()->json(['status' => 'error', 'message' => 'El periodo no coincide']);
                 }
 
@@ -392,9 +391,12 @@ class AlumnoController extends Controller
 
                 // 📌 6️⃣ Verificar si el alumno ya existe
                 $alumno = Alumno::where('rut', $rut)->first();
+                logger()->info("Data a ingresar", ['alumnoData' => $alumnoData]);
                 if (!$alumno) {
+                    logger()->info("CREAR ALUMNO");
                     $datosmatricula = $this->store(new Request($alumnoData));
                 } else {
+                    logger()->info("EDITAR ALUMNO");
                     $datosmatricula = $this->update(new Request($alumnoData), $alumno->id);
                 }
 
@@ -416,8 +418,23 @@ class AlumnoController extends Controller
             logger()->info("Importación finalizada correctamente");
             return response()->json(['status' => 'success', 'message' => 'Importación completada']);
         } catch (\Exception $e) {
-            logger()->error("Error general en la importación", ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            logger()->error("Error general en la importación", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ocurrió un error durante la importación. Por favor, revise los detalles del error.',
+                'error' => [
+                    'type' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]
+            ]);
         }
     }
 

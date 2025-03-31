@@ -23,9 +23,13 @@ class dash_ld_conexion extends Model
         'created_at' => 'datetime:d-m-Y H:i:s',
     ];
     protected $fillable = [
-        'idEstablecimiento',
         'idPeriodo',
         'idUsuario',
         'created_at',
     ];
+
+    public function logs()
+    {
+        return $this->hasMany(dash_ld_conexion_log::class, 'idLdConexion', 'id');
+    }
 }

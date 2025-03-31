@@ -130,15 +130,45 @@ class EvaluacionController extends Controller
      */
     public function destroy($id)
     {
-        // Obtener la evaluación existente
-        $evaluacion = Evaluacion::findOrFail($id);
+        try {
+            // Obtener la evaluación existente con sus relaciones
+            $evaluacion = Evaluacion::with(['evaluacionesIndicadores', 'evaluacionesNotas'])
+                ->findOrFail($id);
 
-        // Cambiar el estado de la evaluación a 'inactivo'
-        $evaluacion->update([
-            'estado' => 'inactivo'
-        ]);
+            // Obtener las relaciones
+            $evaluacionesIndicadores = $evaluacion->evaluacionesIndicadores;
+            $evaluacionesNotas = $evaluacion->evaluacionesNotas;
 
-        // Retornar respuesta indicando que la evaluación fue "eliminada"
-        return response()->json(['message' => 'La evaluación ha sido desactivada exitosamente'], 200);
+            // Crear instancia del controlador de notas
+            $evaluacionNotaController = new EvaluacionNotaController();
+
+            // 3.- Eliminar puntajes_indicadores enviando nota 0 para cada alumno
+            foreach ($evaluacionesNotas as $nota) {
+                $request = new Request([
+                    'nota' => 0,
+                    'idAlumno' => $nota->idAlumno,
+                    'idEvaluacion' => $id
+                ]);
+
+                // Mantener el usuario actual en el nuevo Request
+                $request->setUserResolver(function () {
+                    return request()->user();
+                });
+
+                $evaluacionNotaController->store($request);
+            }
+
+            // 4.- Eliminar evaluaciones_indicadores
+            foreach ($evaluacionesIndicadores as $indicador) {
+                $indicador->delete();
+            }
+
+            // Finalmente eliminar la evaluación
+            $evaluacion->delete();
+
+            return response()->json(['message' => 'La evaluación y sus registros relacionados han sido eliminados exitosamente'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }
