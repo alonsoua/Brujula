@@ -17,7 +17,9 @@ class Evaluacion extends Model
         'idCurso',
         'idAsignatura',
         'idEstabUsuarioRol',
+        'idSubperiodo',
         'estado',
+        'estado_sync',
     ];
 
     public function curso()
@@ -40,5 +42,10 @@ class Evaluacion extends Model
     public function evaluacionesNotas()
     {
         return $this->hasMany(EvaluacionNota::class, 'idEvaluacion', 'id');
+    }
+
+    public function subperiodo()
+    {
+        return $this->belongsTo(Subperiodo::class, 'idSubperiodo', 'id');
     }
 }

@@ -21,6 +21,7 @@ class PuntajeIndicador extends Model
         'idPeriodo',
         'idCurso',
         'idAsignatura',
+        'idSubperiodo',
         'idIndicador',
         'idAlumno',
         'puntaje',

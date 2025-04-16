@@ -25,6 +25,7 @@ class Notas extends Model
         'idAsignatura',
         'idObjetivo',
         'tipoObjetivo',
+        'idSubperiodo',
     ];
 
     public static function getNotaObjetivo($idAlumno, $idCurso, $idPeriodo, $idAsignatura, $idObjetivo)
