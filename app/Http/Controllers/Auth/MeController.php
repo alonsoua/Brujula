@@ -7,6 +7,7 @@ use App\Models\Master\Ajuste;
 use App\Models\Master\Estab_usuario_rol;
 use App\Models\Master\Periodo;
 use App\Models\Master\Rol;
+use App\Models\Subperiodo;
 use Illuminate\Http\Request;
 use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Storage;
@@ -56,7 +57,10 @@ class MeController extends Controller
         }
 
         $periodo = Periodo::find($ajustes->idPeriodo);
-        
+
+        // Obtener ajustes del establecimiento (Master)
+        $subperiodos = Subperiodo::getSubperiodos($ajustes->id);
+
         return response()->json([
             'id' => $user->id,
             'email' => $user->correo,
@@ -79,6 +83,7 @@ class MeController extends Controller
                 'nombre' => $rolActivo->rol->name ?? null,
                 'guard_name' => $rolActivo->rol->guard_name ?? null,
             ],
+            'subperiodos' => $subperiodos,
             'ability' => $permisos,
         ]);
     }
