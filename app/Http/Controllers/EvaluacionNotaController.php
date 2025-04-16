@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Evaluacion;
 use App\Models\EvaluacionNota;
 use App\Models\EvaluacionIndicador;
+use App\Models\PuntajeIndicador;
 use Illuminate\Http\Request;
 
 class EvaluacionNotaController extends Controller
@@ -108,6 +109,9 @@ class EvaluacionNotaController extends Controller
             $evaluacionesIndicadores = EvaluacionIndicador::where('idEvaluacion', $idEvaluacion)->get();
 
             foreach ($evaluacionesIndicadores as $evaluacionIndicador) {
+                $tipoIndicador = $evaluacionIndicador->tipoIndicador === 'Ministerio'
+                    ? 'Normal'
+                    : 'Interno';
                 $data = [
                     'idPeriodo' => $idPeriodo,
                     'idCurso' => $evaluacion->idCurso,
@@ -115,9 +119,7 @@ class EvaluacionNotaController extends Controller
                     'idObjetivo' => $evaluacionIndicador->idObjetivo,
                     'tipoObjetivo' => $evaluacionIndicador->tipoObjetivo,
                     'idIndicador' => $evaluacionIndicador->idIndicador,
-                    'tipoIndicador' => $evaluacionIndicador->tipoIndicador === 'Ministerio'
-                        ? 'Normal'
-                        : 'Interno',
+                    'tipoIndicador' => $tipoIndicador,
                     'idAlumno' => $idAlumno,
                     'puntaje' => $nota
                 ];
@@ -128,8 +130,20 @@ class EvaluacionNotaController extends Controller
                     return $request->user();
                 });
 
-                // Llamar al método update de PuntajeIndicadorController
-                $this->puntajeIndicadorController->update($newRequest);
+                $puntajeIndicador = PuntajeIndicador::select('puntajes_indicadores.puntaje')
+                    ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
+                    ->where('puntajes_indicadores.idCurso', $evaluacion->idCurso)
+                    ->where('puntajes_indicadores.idAsignatura', $evaluacion->idAsignatura)
+                    ->where('puntajes_indicadores.idIndicador', $evaluacionIndicador->idIndicador)
+                    ->where('puntajes_indicadores.idAlumno', $idAlumno)
+                    ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
+                    ->where('puntajes_indicadores.estado', 'Activo')
+                    ->value('puntaje');
+
+                if ($nota > $puntajeIndicador) {
+                    // Llamar al método update de PuntajeIndicadorController
+                    $this->puntajeIndicadorController->update($newRequest);
+                }
             }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

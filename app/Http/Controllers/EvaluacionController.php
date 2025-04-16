@@ -50,6 +50,7 @@ class EvaluacionController extends Controller
                 'fecha' => 'required|date',
                 'idAsignatura' => 'required|integer',
                 'idCurso' => 'required|integer',
+                'idSubperiodo' => 'required|integer',
             ]);
 
             // Crear la evaluación
@@ -58,6 +59,7 @@ class EvaluacionController extends Controller
                 'fecha' => $request->fecha,
                 'idAsignatura' => $request->idAsignatura,
                 'idCurso' => $request->idCurso,
+                'idSubperiodo' => $request->idSubperiodo,
                 'idEstabUsuarioRol' => $idEstabUsuarioRol,
                 'estado' => 'activo',
             ]);
@@ -106,6 +108,7 @@ class EvaluacionController extends Controller
                 'fecha' => 'required|date',
                 'idAsignatura' => 'required|integer',
                 'idCurso' => 'required|integer',
+                'idSubperiodo' => 'required|integer',
             ]);
 
             // Obtener la evaluación existente
