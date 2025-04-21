@@ -14,9 +14,12 @@ class AddEstadoSyncToEvaluaciones extends Migration
     public function up()
     {
         Schema::connection('establecimiento')->table('evaluaciones', function (Blueprint $table) {
-            $table->enum('estado_sync', ['new', 'sync', 'update'])
+            $table->enum('estado_sync', ['no_sync', 'sync', 'de_sync'])
                 ->after('estado')
-                ->comment('new: Evaluaciones nuevas con o sin notas. sync: Sincronizado a LD. update: Se actualizó por lo que se debe volver a sincronizar.');
+                ->comment('
+                no_sync: Evaluaciones nuevas no sincronizadas. 
+                sync: Evaluaciones sincronizadas a LD. 
+                de_sync: Evaluaciones desincronizadas de LD.');
         });
     }
 
