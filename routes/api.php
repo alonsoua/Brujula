@@ -282,7 +282,7 @@ Route::prefix('bru')->group(function () {
             Route::post('/encuesta-respuestas', [EncuestaRespuestaController::class, 'create']);
 
             // * Evaluaciones
-            Route::get('/evaluaciones', [EvaluacionController::class, 'index']);
+            Route::get('/evaluaciones/{idSubperiodo}', [EvaluacionController::class, 'index']);
             Route::post('/evaluaciones', [EvaluacionController::class, 'store']);
             Route::put('/evaluaciones/{id}', [EvaluacionController::class, 'update']);
             Route::delete('/evaluaciones/{id}', [EvaluacionController::class, 'destroy']);

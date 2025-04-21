@@ -13,11 +13,12 @@ class EvaluacionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, $idSubperiodo)
     {
         $user = $request->user()->getUserData();
         $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
         $evaluaciones = Evaluacion::where('idEstabUsuarioRol', $idEstabUsuarioRol)
+            ->where('idSubperiodo', $idSubperiodo)
             ->with(['curso' => function ($query) {
                 $query->select('id', 'nombre as nombreCurso', 'letra')
                     ->addSelect(DB::raw("CONCAT(nombre, ' ', letra) as nombreCurso"));
