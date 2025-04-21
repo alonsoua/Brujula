@@ -100,15 +100,32 @@ class EvaluacionNotaController extends Controller
     // Nueva función para actualizar los puntajes de indicadores
     protected function actualizarPuntajesIndicadores(Request $request, $idPeriodo)
     {
+
         try {
             $idEvaluacion = $request->idEvaluacion;
             $idAlumno = $request->idAlumno;
-            $nota = $request->nota;
 
             $evaluacion = Evaluacion::where('id', $idEvaluacion)->first();
             $evaluacionesIndicadores = EvaluacionIndicador::where('idEvaluacion', $idEvaluacion)->get();
 
             foreach ($evaluacionesIndicadores as $evaluacionIndicador) {
+
+
+                // PROMEDIAR
+                $promedioIndicador = Evaluacion::join('evaluaciones_indicadores', 'evaluaciones_indicadores.idEvaluacion', '=', 'evaluaciones.id')
+                    ->join('evaluaciones_notas', 'evaluaciones_notas.idEvaluacion', '=', 'evaluaciones.id')
+                    ->where('evaluaciones.estado', 'activo')
+                    ->where('evaluaciones.idCurso', $evaluacion->idCurso)
+                    ->where('evaluaciones.idSubperiodo', $evaluacion->idSubperiodo)
+                    ->where('evaluaciones_indicadores.idIndicador', $evaluacionIndicador->idIndicador)
+                    ->where('evaluaciones_indicadores.tipoIndicador', $evaluacionIndicador->tipoIndicador)
+                    ->where('evaluaciones_notas.idAlumno', $idAlumno)
+                    ->pluck('evaluaciones_notas.nota');
+
+                $puntaje = $promedioIndicador->isEmpty() ? 0 : $promedioIndicador->avg();
+
+                logger()->info(['puntaje' => $puntaje]);
+
                 $tipoIndicador = $evaluacionIndicador->tipoIndicador === 'Ministerio'
                     ? 'Normal'
                     : 'Interno';
@@ -121,7 +138,7 @@ class EvaluacionNotaController extends Controller
                     'idIndicador' => $evaluacionIndicador->idIndicador,
                     'tipoIndicador' => $tipoIndicador,
                     'idAlumno' => $idAlumno,
-                    'puntaje' => $nota
+                    'puntaje' => $puntaje
                 ];
 
                 // Crear un nuevo Request con los datos necesarios
@@ -130,34 +147,16 @@ class EvaluacionNotaController extends Controller
                     return $request->user();
                 });
 
-                $puntajeIndicador = PuntajeIndicador::select('puntajes_indicadores.puntaje')
-                    ->where('puntajes_indicadores.idPeriodo', $idPeriodo)
-                    ->where('puntajes_indicadores.idCurso', $evaluacion->idCurso)
-                    ->where('puntajes_indicadores.idAsignatura', $evaluacion->idAsignatura)
-                    ->where('puntajes_indicadores.idIndicador', $evaluacionIndicador->idIndicador)
-                    ->where('puntajes_indicadores.idAlumno', $idAlumno)
-                    ->where('puntajes_indicadores.tipoIndicador', $tipoIndicador)
-                    ->where('puntajes_indicadores.estado', 'Activo')
-                    ->value('puntaje');
-
-                if ($nota > $puntajeIndicador) {
-                    // Llamar al método update de PuntajeIndicadorController
-                    $this->puntajeIndicadorController->update($newRequest);
-                }
+                $this->puntajeIndicadorController->update($newRequest);
             }
         } catch (\Exception $e) {
+            logger()->error('Error al actualizar los puntajes de indicadores', [
+                'mensaje' => $e->getMessage(),
+                'archivo' => $e->getFile(),
+                'linea' => $e->getLine(),
+                'traza' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
     }
 }

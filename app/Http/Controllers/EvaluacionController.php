@@ -62,6 +62,7 @@ class EvaluacionController extends Controller
                 'idSubperiodo' => $request->idSubperiodo,
                 'idEstabUsuarioRol' => $idEstabUsuarioRol,
                 'estado' => 'activo',
+                'estado_sync' => 'no_sync',
             ]);
 
             // Guardar la evaluación
@@ -115,7 +116,11 @@ class EvaluacionController extends Controller
             $evaluacion = Evaluacion::findOrFail($id);
 
             // Actualizar la evaluación
-            $evaluacion->update($request->all());
+            $params = $request->all();
+            if ($evaluacion->estado_sync === 'sync') {
+                $params['estado_sync'] = 'de_sync';
+            }
+            $evaluacion->update($params);
 
             return response()->json($evaluacion, 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
