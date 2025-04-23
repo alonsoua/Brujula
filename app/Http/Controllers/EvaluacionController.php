@@ -32,6 +32,28 @@ class EvaluacionController extends Controller
         return response()->json($evaluaciones, 200);
     }
 
+    public function getEvaluacionesAsignatura($idAsignatura, $idSubperiodo)
+    {
+        try {
+            $evaluaciones = Evaluacion::where('idAsignatura', $idAsignatura)
+                ->where('idSubperiodo', $idSubperiodo)
+                ->where('estado', 'activo')
+                ->with(['evaluacionesIndicadores' => function ($query) {
+                    $query->with(['indicador' => function ($query) {
+                        $query->select('id', 'nombre');
+                    }, 'objetivos' => function ($query) {
+                        $query->select('id', 'nombre');
+                    }]);
+                }])
+                ->orderBy('fecha', 'asc')
+                ->get();
+            return response()->json($evaluaciones, 200);
+        } catch (\Exception $e) {
+            logger()->info(['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      *

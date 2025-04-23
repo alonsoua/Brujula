@@ -104,9 +104,25 @@ class Rol extends Model
             array_unshift($permisos, ['action' => 'update', 'subject' => 'evaluaciones']);
             array_unshift($permisos, ['action' => 'create', 'subject' => 'evaluaciones']);
             array_unshift($permisos, ['action' => 'read', 'subject' => 'evaluaciones']);
+
             // Elimina permisos de avances
             $permisos = array_filter($permisos, function ($permiso) {
                 return !($permiso['action'] == 'update' && $permiso['subject'] == 'avances');
+            });
+
+            // Elimina permisos de resumen oas
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'read' && $permiso['subject'] == 'resumen');
+            });
+
+            // Elimina permisos de resumen anual
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'read' && $permiso['subject'] == 'resumenanual');
+            });
+
+            // Elimina permisos de informehogar
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'read' && $permiso['subject'] == 'informehogar');
             });
         }
 

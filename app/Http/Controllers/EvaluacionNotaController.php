@@ -34,6 +34,16 @@ class EvaluacionNotaController extends Controller
         }
     }
 
+    public function getNotasAsignatura($idAsignatura, $idSubperiodo)
+    {
+        return Evaluacion::join('evaluaciones_notas', 'evaluaciones.id', '=', 'evaluaciones_notas.idEvaluacion')
+            ->where('evaluaciones.idAsignatura', $idAsignatura)
+            ->where('evaluaciones.idSubperiodo', $idSubperiodo)
+            ->where('evaluaciones.estado', 'activo')
+            ->select('evaluaciones_notas.*')
+            ->get();
+    }
+
 
     /**
      * Store a newly created resource in storage.

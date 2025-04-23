@@ -28,4 +28,9 @@ class EvaluacionIndicador extends Model
     {
         return $this->belongsTo(Objetivo::class, 'idObjetivo', 'id');
     }
+
+    public function indicador()
+    {
+        return $this->belongsTo(Indicador::class, 'idIndicador', 'id');
+    }
 }
