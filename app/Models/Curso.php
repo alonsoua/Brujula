@@ -82,6 +82,7 @@ class Curso extends Model
                 'id' => $curso->id,
                 'nombre' => $curso->nombre,
                 'letra' => $curso->letra,
+                'idProfesorJefe' => $curso->idProfesorJefe,
                 'nombreProfesorJefe' => $profesor ? "{$profesor->nombres} {$profesor->primerApellido} {$profesor->segundoApellido}" : null,
                 'idGrado' => $curso->idGrado,
                 'estado' => $curso->estado,

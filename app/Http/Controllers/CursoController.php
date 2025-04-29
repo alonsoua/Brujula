@@ -129,6 +129,47 @@ class CursoController extends Controller
     }
 
     /**
+     * Actualiza el profesor jefe de un curso.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function updateProfesorJefe(Request $request)
+    {
+        try {
+            $request->validate([
+                'idCurso' => 'required|integer',
+                'idProfesorJefe' => 'required|integer',
+            ]);
+
+            $curso = Curso::find($request->idCurso);
+
+            if (!$curso) {
+                return response()->json([
+                    'status' => 'Error',
+                    'message' => 'Curso no encontrado'
+                ], 404);
+            }
+
+            $curso->idProfesorJefe = $request->idProfesorJefe;
+            $curso->save();
+
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Profesor jefe actualizado correctamente',
+                'data' => $curso
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Error al actualizar el profesor jefe',
+                'error' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine()
+            ], 500);
+        }
+    }
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request

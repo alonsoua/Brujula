@@ -174,6 +174,7 @@ Route::prefix('bru')->group(function () {
             //     'getDocentesActivos'
             // ]);
             Route::get('/usuarios/docente/asignaturas/{idEstabUsuarioRol}', [UserController::class, 'getDocenteAsignaturas']);
+            Route::get('/usuarios/docentes', [UserController::class, 'getDocentes']);
             Route::put('/usuarios/{id}', [UserController::class, 'update']);
             Route::post('/usuarios', [UserController::class, 'store']);
             Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
@@ -188,6 +189,7 @@ Route::prefix('bru')->group(function () {
             Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
             Route::get('/cursos/usuario/{idPeriodoHistorico}', [CursoController::class, 'getCursosUsuario']);
             Route::post('/cursos', [CursoController::class, 'store']);
+            Route::put('/cursos/profesorJefe', [CursoController::class, 'updateProfesorJefe']);
             Route::put('/cursos/{id}', [CursoController::class, 'update']);
             Route::get('/cursos/activos/establecimiento', [CursoController::class, 'getActivosEstablecimiento']);
             // Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);

@@ -87,6 +87,18 @@ class UserController extends Controller
         return response($asignaturas, 200);
     }
 
+    public function getDocentes(Request $request)
+    {
+        $user = $request->user()->getUserData();
+        $docentes = Usuario::select('usuarios.id as idUsuario', 'estab_usuarios_roles.id as idEstabUsuarioRol', 'usuarios.nombres', 'usuarios.primerApellido', 'usuarios.segundoApellido', 'usuarios.rut')
+            ->join('estab_usuarios_roles', 'usuarios.id', '=', 'estab_usuarios_roles.idUsuario')
+            ->where('estab_usuarios_roles.idEstablecimiento', $user['establecimiento']['id'])
+            ->where('estab_usuarios_roles.idRol', 7)
+            ->where('estab_usuarios_roles.estado', 1)
+            ->get();
+        return response($docentes, 200);
+    }
+
     /**
      * Store a newly created resource in storage.
      *
