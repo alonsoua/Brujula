@@ -54,6 +54,28 @@ class EvaluacionController extends Controller
         }
     }
 
+    public function getEvaluacionesCurso($idCurso, $idSubperiodo)
+    {
+        $query = Evaluacion::where('idSubperiodo', $idSubperiodo);
+
+        if ($idCurso != 0) {
+            $query->where('idCurso', $idCurso);
+        }
+
+        $evaluaciones = $query->with(['asignatura' => function ($query) {
+            $query->select('id', 'nombre as nombreAsignatura');
+        }, 'estabUsuarioRol' => function ($query) {
+            $query->with(['usuario' => function ($query) {
+                $query->select('id', 'nombres', 'primerApellido', 'segundoApellido');
+            }]);
+        }, 'curso' => function ($query) {
+            $query->select('id')
+                ->addSelect(DB::raw("CONCAT(nombre, ' ', letra) as nombreCurso"));
+        }])
+            ->get();
+        return response()->json($evaluaciones, 200);
+    }
+
     /**
      * Store a newly created resource in storage.
      *

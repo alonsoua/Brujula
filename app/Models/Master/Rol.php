@@ -82,11 +82,11 @@ class Rol extends Model
         return $this->hasMany(User::class, 'role_id', 'id');
     }
 
-    public static function rolHasPermisos($idRol, $evaluacionesActivo)
+    public static function rolHasPermisos($rolActivo, $evaluacionesActivo)
     {
         $permisos = DB::connection('master')->table('role_has_permissions')
             ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
-            ->where('role_has_permissions.role_id', $idRol)
+            ->where('role_has_permissions.role_id', $rolActivo->idRol)
             ->select('permissions.name')
             ->get()
             ->map(function ($permiso) {
@@ -98,7 +98,37 @@ class Rol extends Model
             })
             ->toArray();
 
-        if ($evaluacionesActivo && (($idRol == 7 || $idRol == 8 || $idRol == 9))) {
+
+        // Verificar si el usuario es profesor jefe de algún curso
+        $esProfesorJefe = DB::connection('establecimiento')
+            ->table('cursos')
+            ->where('idProfesorJefe', $rolActivo->id)
+            ->exists();
+
+        // Si es profesor jefe, agregar permisos de sincronización LD
+        if ($esProfesorJefe) {
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'sincronizacion']);
+            array_unshift($permisos, ['action' => 'create', 'subject' => 'sincronizacion']);
+            array_unshift($permisos, ['action' => 'update', 'subject' => 'sincronizacion']);
+        }
+
+        // Si es director agregar permisos para ver sincronización
+        if ($rolActivo->idRol == 3 || $rolActivo->idRol == 6) {
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'sincronizacion']);
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'evaluaciones']);
+
+            // Elimina permisos de resumen anual
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'read' && $permiso['subject'] == 'resumenanual');
+            });
+
+            // Elimina permisos de informehogar
+            $permisos = array_filter($permisos, function ($permiso) {
+                return !($permiso['action'] == 'read' && $permiso['subject'] == 'informehogar');
+            });
+        }
+
+        if ($evaluacionesActivo && (($rolActivo->idRol == 7 || $rolActivo->idRol == 8 || $rolActivo->idRol == 9))) {
             // Agrega permisos de evaluaciones
             array_unshift($permisos, ['action' => 'delete', 'subject' => 'evaluaciones']);
             array_unshift($permisos, ['action' => 'update', 'subject' => 'evaluaciones']);
@@ -108,11 +138,6 @@ class Rol extends Model
             // Elimina permisos de avances
             $permisos = array_filter($permisos, function ($permiso) {
                 return !($permiso['action'] == 'update' && $permiso['subject'] == 'avances');
-            });
-
-            // Elimina permisos de resumen oas
-            $permisos = array_filter($permisos, function ($permiso) {
-                return !($permiso['action'] == 'read' && $permiso['subject'] == 'resumen');
             });
 
             // Elimina permisos de resumen anual

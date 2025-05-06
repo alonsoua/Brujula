@@ -41,6 +41,10 @@ class Curso extends Model
         ->withPivot('estado')
         ->wherePivot('estado', 'Activo');
     }
+    public function grado()
+    {
+        return $this->belongsTo(Grado::class, 'idGrado');
+    }
 
     public static function getCurso($idCurso)
     {

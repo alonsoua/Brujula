@@ -61,6 +61,34 @@ class CursoController extends Controller
         return $cursos;
     }
 
+    public function getCursosProfesorJefe(Request $request)
+    {
+        $user = $request->user()->getUserData();
+        $idEstabUsuarioRol = $user['rolActivo']['idEstabUsuarioRol'];
+        $idPeriodo = $user['periodo']['id'];
+
+        $cursos = Curso::select(
+            'cursos.id',
+            'cursos.nombre',
+            'cursos.letra',
+            'cursos.idProfesorJefe',
+            'cursos.idGrado'
+        )
+            ->where('idPeriodo', $idPeriodo)
+            ->where('estado', 'Activo');
+
+        // Si el rol no es Director (3), filtrar solo por profesor jefe
+        if ($user['rolActivo']['id'] != 3) {
+            $cursos->where('idProfesorJefe', $idEstabUsuarioRol);
+        }
+
+        $cursos = $cursos->orderBy('cursos.idGrado')
+            ->orderBy('cursos.letra')
+            ->get();
+
+        return $cursos;
+    }
+
     /**
      * Display a listing of the resource.
      *

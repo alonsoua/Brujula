@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Master\Asignatura;
+use App\Models\Master\Estab_usuario_rol;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +20,10 @@ class Evaluacion extends Model
         'idEstabUsuarioRol',
         'idSubperiodo',
         'estado',
-        'estado_sync',
+        'fecha_sync',
+        'log',
+        'id_evaluacion_ld',
+        'estado_sync'
     ];
 
     public function curso()
@@ -30,6 +34,11 @@ class Evaluacion extends Model
     public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'idAsignatura', 'id');
+    }
+
+    public function estabUsuarioRol()
+    {
+        return $this->belongsTo(Estab_usuario_rol::class, 'idEstabUsuarioRol', 'id');
     }
 
     // Relación con EvaluacionIndicador

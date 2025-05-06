@@ -188,6 +188,7 @@ Route::prefix('bru')->group(function () {
             Route::get('/cursos', [CursoController::class, 'index']);
             Route::get('/cursos/activos', [CursoController::class, 'getActivos']);
             Route::get('/cursos/usuario/{idPeriodoHistorico}', [CursoController::class, 'getCursosUsuario']);
+            Route::get('/cursos/profesorJefe', [CursoController::class, 'getCursosProfesorJefe']);
             Route::post('/cursos', [CursoController::class, 'store']);
             Route::put('/cursos/profesorJefe', [CursoController::class, 'updateProfesorJefe']);
             Route::put('/cursos/{id}', [CursoController::class, 'update']);
@@ -291,6 +292,7 @@ Route::prefix('bru')->group(function () {
             Route::put('/evaluaciones/{id}', [EvaluacionController::class, 'update']);
             Route::delete('/evaluaciones/{id}', [EvaluacionController::class, 'destroy']);
             Route::get('/evaluaciones/asignatura/{idAsignatura}/{idSubperiodo}', [EvaluacionController::class, 'getEvaluacionesAsignatura']);
+            Route::get('/evaluaciones/curso/{idCurso}/{idSubperiodo}', [EvaluacionController::class, 'getEvaluacionesCurso']);
 
             // * Evaluaciones Indicadores
             Route::post('/evaluaciones-indicadores', [EvaluacionIndicadorController::class, 'store']);
@@ -300,11 +302,16 @@ Route::prefix('bru')->group(function () {
             Route::get('/evaluaciones-notas/{idEvaluacion}', [EvaluacionNotaController::class, 'index']);
             Route::post('/evaluaciones-notas', [EvaluacionNotaController::class, 'store']);
             Route::get('/evaluaciones-notas/asignatura/{idAsignatura}/{idSubperiodo}', [EvaluacionNotaController::class, 'getNotasAsignatura']);
+
             // * DASH
             // ? CONEXIÓN BRÚJULA > LD
             Route::get('/dash/conexionLd/getLogs', [DashController::class, 'getLdConexions']);
             Route::post('/dash/conexionLd/addLog', [DashController::class, 'addLdConexion']);
             Route::post('/dash/conexionLd/notas', [DashController::class, 'getAllNotas']);
+
+
+            // * Sincronización BRÚJULA > LD
+            Route::post('/sincronizar-evaluaciones', [DashController::class, 'sincronizarEvaluaciones']);
         });
     });
 });

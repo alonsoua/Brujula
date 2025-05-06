@@ -23,4 +23,10 @@ class EvaluacionNota extends Model
     {
         return $this->belongsTo(Evaluacion::class, 'idEvaluacion', 'id');
     }
+
+    // Relación con Alumno
+    public function alumno()
+    {
+        return $this->belongsTo(Alumno::class, 'idAlumno', 'id');
+    }
 }

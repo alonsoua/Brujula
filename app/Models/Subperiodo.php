@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Master\Ajuste;
+use App\Models\Master\Periodo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

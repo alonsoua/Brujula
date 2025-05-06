@@ -50,7 +50,8 @@ class MeController extends Controller
         $ajustes = Ajuste::getAjustes($establecimiento->id, $establecimiento->idPeriodoActivo);
 
         // Obtener los permisos del rol activo (Master)
-        $permisos = Rol::rolHasPermisos($rolActivo->idRol, $ajustes->evaluaciones_activo);
+        logger()->info(['rolActivo' => $rolActivo->id]);
+        $permisos = Rol::rolHasPermisos($rolActivo, $ajustes->evaluaciones_activo);
 
         if (!$ajustes) {
             return response()->json(['error' => 'El establecimiento no cuenta con los ajustes configurados para el periodo actual.'], 400);
