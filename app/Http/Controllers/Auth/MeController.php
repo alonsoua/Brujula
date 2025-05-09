@@ -50,7 +50,6 @@ class MeController extends Controller
         $ajustes = Ajuste::getAjustes($establecimiento->id, $establecimiento->idPeriodoActivo);
 
         // Obtener los permisos del rol activo (Master)
-        logger()->info(['rolActivo' => $rolActivo->id]);
         $permisos = Rol::rolHasPermisos($rolActivo, $ajustes->evaluaciones_activo);
 
         if (!$ajustes) {

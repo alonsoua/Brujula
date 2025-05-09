@@ -24,6 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+
+        // * Sincronización múltiple BRÚJULA > LD
+        $schedule->command('sincronizar-multiples')->everyFiveMinutes();
         // $schedule->command('inspire')->hourly();
     }
 

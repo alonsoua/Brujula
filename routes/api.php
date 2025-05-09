@@ -34,6 +34,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\EvaluacionController;
 use App\Http\Controllers\EvaluacionIndicadorController;
 use App\Http\Controllers\EvaluacionNotaController;
+use App\Http\Controllers\SyncLibroController;
 
 /*
 |--------------------------------------------------------------------------
@@ -193,7 +194,7 @@ Route::prefix('bru')->group(function () {
             Route::put('/cursos/profesorJefe', [CursoController::class, 'updateProfesorJefe']);
             Route::put('/cursos/{id}', [CursoController::class, 'update']);
             Route::get('/cursos/activos/establecimiento', [CursoController::class, 'getActivosEstablecimiento']);
-            // Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
+            Route::put('/cursos/ordenar/lista/{idCurso}', [CursoController::class, 'ordenarLista']);
 
             // * Alumnos
             Route::get('/alumnos', [AlumnoController::class, 'index']);
@@ -311,8 +312,11 @@ Route::prefix('bru')->group(function () {
 
 
             // * Sincronización BRÚJULA > LD
-            Route::post('/sincronizar-evaluaciones', [DashController::class, 'sincronizarEvaluaciones']);
+            Route::post('/sincronizar-evaluaciones', [SyncLibroController::class, 'sincronizarEvaluaciones']);
         });
     });
+
+    // * Sincronización múltiple BRÚJULA > LD
+    Route::post('/sincronizar-multiples', [SyncLibroController::class, 'sincronizarEvaluacionesMultiples']);
 });
 

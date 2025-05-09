@@ -143,8 +143,6 @@ class EvaluacionNotaController extends Controller
 
                 $puntaje = $promedioIndicador->isEmpty() ? 0 : $promedioIndicador->avg();
 
-                logger()->info(['puntaje' => $puntaje]);
-
                 $tipoIndicador = $evaluacionIndicador->tipoIndicador === 'Ministerio'
                     ? 'Normal'
                     : 'Interno';

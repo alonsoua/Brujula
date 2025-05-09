@@ -309,19 +309,19 @@ class CursoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    // public function ordenarLista(Request $request, $idCurso)
-    // {
-    //     try {
+    public function ordenarLista(Request $request, $idCurso)
+    {
+        try {
 
-    //         foreach ($request->input('lista') as $key => $lista_alumno) {
-    //             $alumno = Alumno::findOrFail($lista_alumno['id']);
-    //             $alumno->numLista = $lista_alumno['orden'];
-    //             $alumno->save();
-    //         }
+            foreach ($request->input('lista') as $key => $lista_alumno) {
+                $alumno = Alumno::findOrFail($lista_alumno['id']);
+                $alumno->numLista = $lista_alumno['orden'];
+                $alumno->save();
+            }
 
-    //         return response('success', 200);
-    //     } catch (\Throwable $th) {
-    //         return response($th, 500);
-    //     }
-    // }
+            return response('success', 200);
+        } catch (\Throwable $th) {
+            return response($th, 500);
+        }
+    }
 }
