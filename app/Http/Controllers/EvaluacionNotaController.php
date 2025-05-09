@@ -73,7 +73,6 @@ class EvaluacionNotaController extends Controller
                 $this->actualizarPuntajesIndicadores($request, $idPeriodo);
                 return response()->json(['message' => 'Evaluación nota eliminada debido a que la nota es 0'], 200);
             }
-
             // Crear o actualizar la evaluación nota
             $evaluacionNota = EvaluacionNota::updateOrCreate(
                 [
@@ -93,7 +92,17 @@ class EvaluacionNotaController extends Controller
             } else {
                 $evaluacionNota->idUsuario_updated = $idUsuario;
             }
-            $evaluacionNota->save();
+
+            // Guardar la evaluación nota
+            if ($evaluacionNota->save()) {
+                // Actualizar el estado de sincronización de la evaluación a desincronizado
+                // solo si se guardó correctamente la nota
+                $evaluacion = Evaluacion::find($request->idEvaluacion);
+                if ($evaluacion->estado_sync === 'sync') {
+                    $evaluacion->estado_sync = 'de_sync';
+                    $evaluacion->save();
+                }
+            }
 
             // Llamar a la función para actualizar los puntajes de indicadores
             $this->actualizarPuntajesIndicadores($request, $idPeriodo);

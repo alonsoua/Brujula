@@ -77,6 +77,7 @@ class MeController extends Controller
                 'nombre' => $establecimiento->nombre,
                 'rbd' => $establecimiento->rbd,
                 'insignia' => $establecimiento->insignia,
+                'link_ld' => $establecimiento->link_ld,
             ],
             'rolActivo' => [
                 'id' => $rolActivo->id,

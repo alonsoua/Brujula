@@ -304,7 +304,7 @@ Route::prefix('bru')->group(function () {
             Route::get('/evaluaciones-notas/asignatura/{idAsignatura}/{idSubperiodo}', [EvaluacionNotaController::class, 'getNotasAsignatura']);
 
             // * DASH
-            // ? CONEXIÓN BRÚJULA > LD
+            // ? CONEXIÓN BRÚJULA > LD ANTIGUO
             Route::get('/dash/conexionLd/getLogs', [DashController::class, 'getLdConexions']);
             Route::post('/dash/conexionLd/addLog', [DashController::class, 'addLdConexion']);
             Route::post('/dash/conexionLd/notas', [DashController::class, 'getAllNotas']);

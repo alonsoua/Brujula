@@ -188,6 +188,10 @@ class EvaluacionController extends Controller
             $evaluacion = Evaluacion::with(['evaluacionesIndicadores', 'evaluacionesNotas'])
                 ->findOrFail($id);
 
+            if ($evaluacion->estado_sync === 'sync') {
+                return response()->json(['No se puede eliminar una evaluación que está sincronizada con LD'], 400);
+            }
+
             // Obtener las relaciones
             $evaluacionesIndicadores = $evaluacion->evaluacionesIndicadores;
             $evaluacionesNotas = $evaluacion->evaluacionesNotas;

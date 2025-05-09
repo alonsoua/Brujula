@@ -42,7 +42,7 @@ class DashController extends Controller
             $user = $request->user()->getUserData();
             $idEstablecimiento = $user['establecimiento']['id'];
 
-            // Obtener datos de conexión del establecimiento
+            // * 1 Obtener datos de conexión del establecimiento
             $establecimiento = DB::connection('master')
                 ->table('establecimientos')
                 ->where('id', $idEstablecimiento)
@@ -61,24 +61,32 @@ class DashController extends Controller
                 ], 400);
             }
 
-            // Obtener los IDs de evaluaciones
             $evaluacionesIds = $request->input('evaluaciones_ids');
 
-            // Obtener datos completos de las evaluaciones
+            // * 2 Obtener datos completos de las evaluaciones
             $datosEvaluaciones = $this->obtenerDatosEvaluaciones($evaluacionesIds);
 
-            // Procesar y formatear los datos para sincronización
+            // * 3 Procesar y formatear los datos para sincronización
             $datosProcesados = $this->procesarDatosParaSincronizacion(
                 $datosEvaluaciones,
                 $establecimiento
             );
 
-            // Envia datos a Libro Digital
+            // * 4 Envia datos a Libro Digital
             $resultadoSincronizacion = $this->enviarDatosASistemaExterno(
                 $datosProcesados,
                 $establecimiento
             );
+            // Verificar si hay un error en la sincronización
+            if (isset($resultadoSincronizacion['status']) && $resultadoSincronizacion['status'] === 'Error') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $resultadoSincronizacion['message'] ?? 'Error en la sincronización',
+                    'details' => $resultadoSincronizacion
+                ], 400);
+            }
 
+            // * 5 Actualizar estado de sincronización de las evaluaciones
             $this->actualizarEvaluaciones($resultadoSincronizacion);
 
             return response()->json([
@@ -86,27 +94,32 @@ class DashController extends Controller
                 'message' => 'Evaluaciones',
                 'resultadoSincronizacion' => $resultadoSincronizacion
             ]);
-            // Registrar resultado de la sincronización en logs
-            // $this->registrarResultadoSincronizacion(
-            //     $evaluacionesIds,
-            //     $resultadoSincronizacion
-            // );
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Evaluaciones sincronizadas correctamente',
-                'data' => $resultadoSincronizacion
-            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error de validación',
-                'errors' => $e->errors()
+                'message' => 'Error de validación en los datos proporcionados',
+                'errors' => $e->errors(),
+                'code' => 'VALIDATION_ERROR'
             ], 422);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error de conexión con el sistema externo: ' . $e->getMessage(),
+                'code' => 'CONNECTION_ERROR',
+                'details' => [
+                    'request' => $e->getRequest() ? (string)$e->getRequest()->getUri() : null,
+                    'response' => $e->getResponse() ? $e->getResponse()->getStatusCode() : null
+                ]
+            ], 503);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error al sincronizar evaluaciones: ' . $e->getMessage()
+                'message' => 'Error al sincronizar evaluaciones: ' . $e->getMessage(),
+                'code' => 'INTERNAL_ERROR',
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ], 500);
         }
     }
@@ -181,7 +194,7 @@ class DashController extends Controller
             ->whereIn('id', $evaluacionesIds)
             ->where('estado', 'Activo')
             ->where('estado_sync', '!=', 'sync')
-            ->select('id', 'nombre', 'fecha', 'idCurso', 'idAsignatura', 'idEstabUsuarioRol', 'idSubperiodo')
+            ->select('id', 'nombre', 'fecha', 'estado_sync', 'id_evaluacion_ld', 'idCurso', 'idAsignatura', 'idEstabUsuarioRol', 'idSubperiodo')
             ->get();
     }
 
@@ -236,6 +249,8 @@ class DashController extends Controller
                 'id_evaluacion' => $evaluacion->id,
                 'nombre_evaluacion' => $evaluacion->nombre,
                 'fecha' => $evaluacion->fecha,
+                'estado_sync' => $evaluacion->estado_sync,
+                'id_evaluacion_ld' => $evaluacion->id_evaluacion_ld,
                 'rut_docente' => isset($evaluacion->estabUsuarioRol->usuario) ?
                     $evaluacion->estabUsuarioRol->usuario->rut : null,
                 'asignatura' => isset($evaluacion->asignatura) ? $evaluacion->asignatura->nombre : null,
@@ -248,7 +263,6 @@ class DashController extends Controller
         $datosProcesados['curso'] = $curso;
         return $datosProcesados;
     }
-
 
     /**
      * Envía los datos procesados al sistema externo

@@ -107,15 +107,16 @@ class Rol extends Model
 
         // Si es profesor jefe, agregar permisos de sincronización LD
         if ($esProfesorJefe) {
-            array_unshift($permisos, ['action' => 'read', 'subject' => 'sincronizacion']);
-            array_unshift($permisos, ['action' => 'create', 'subject' => 'sincronizacion']);
-            array_unshift($permisos, ['action' => 'update', 'subject' => 'sincronizacion']);
+            // array_unshift($permisos, ['action' => 'read', 'subject' => 'informes']);
         }
 
         // Si es director agregar permisos para ver sincronización
         if ($rolActivo->idRol == 3 || $rolActivo->idRol == 6) {
             array_unshift($permisos, ['action' => 'read', 'subject' => 'sincronizacion']);
+            array_unshift($permisos, ['action' => 'create', 'subject' => 'sincronizacion']);
+            array_unshift($permisos, ['action' => 'update', 'subject' => 'sincronizacion']);
             array_unshift($permisos, ['action' => 'read', 'subject' => 'evaluaciones']);
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'informes']);
 
             // Elimina permisos de resumen anual
             $permisos = array_filter($permisos, function ($permiso) {

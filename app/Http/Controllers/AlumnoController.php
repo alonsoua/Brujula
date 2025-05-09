@@ -93,6 +93,7 @@ class AlumnoController extends Controller
             ->map(function ($alumno) {
                 return [
                     'id' => $alumno->id,
+                'rut' => $alumno->rut,
                     'nombres' => $alumno->nombres,
                     'primerApellido' => $alumno->primerApellido,
                     'segundoApellido' => $alumno->segundoApellido,
