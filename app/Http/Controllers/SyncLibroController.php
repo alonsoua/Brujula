@@ -52,6 +52,7 @@ class SyncLibroController extends Controller
                 || !$establecimiento->user_ld
                 || !$establecimiento->pass_ld
             ) {
+                logger()->error(['No se encontraron datos de conexión para el establecimiento.']);
                 return response()->json([
                     'status' => 'error',
                     'message' => 'No se encontraron datos de conexión para el establecimiento'
@@ -74,8 +75,17 @@ class SyncLibroController extends Controller
                 $datosProcesados,
                 $establecimiento
             );
+
             // Verificar si hay un error en la sincronización
-            if (isset($resultadoSincronizacion['status']) && $resultadoSincronizacion['status'] === 'Error') {
+            if (
+                is_array($resultadoSincronizacion) &&
+                isset($resultadoSincronizacion['status']) &&
+                $resultadoSincronizacion['status'] === 'Error'
+            ) {
+                logger()->error('Error detectado en la respuesta de sincronización', [
+                    'resultadoSincronizacion' => $resultadoSincronizacion
+                ]);
+
                 return response()->json([
                     'status' => 'error',
                     'message' => $resultadoSincronizacion['message'] ?? 'Error en la sincronización',
@@ -83,12 +93,24 @@ class SyncLibroController extends Controller
                 ], 400);
             }
 
+            // Verificar que la estructura es válida para actualizarEvaluaciones
+            if (!is_array($resultadoSincronizacion) || !isset($resultadoSincronizacion['resultados'])) {
+                logger()->error('Estructura de respuesta inválida para actualizarEvaluaciones', [
+                    'resultadoSincronizacion' => $resultadoSincronizacion
+                ]);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'La respuesta del sistema externo no tiene el formato esperado',
+                    'details' => $resultadoSincronizacion
+                ], 400);
+            }
+
             // * 5 Actualizar estado de sincronización de las evaluaciones
             $this->actualizarEvaluaciones($resultadoSincronizacion);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Evaluaciones',
+                'message' => 'Evaluaciones 1111',
                 'resultadoSincronizacion' => $resultadoSincronizacion
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -123,8 +145,27 @@ class SyncLibroController extends Controller
 
     public function actualizarEvaluaciones($resultadoSincronizacion)
     {
+        // Verificar que $resultadoSincronizacion sea un array y contenga la clave 'resultados'
+        if (!is_array($resultadoSincronizacion) || !isset($resultadoSincronizacion['resultados'])) {
+            // Registrar el error y salir
+            logger()->error('Error en actualizarEvaluaciones: formato incorrecto de resultadoSincronizacion', [
+                'resultadoSincronizacion' => $resultadoSincronizacion
+            ]);
+            return;
+        }
+
         $fechaActual = date('Y-m-d');
         $evaluaciones = $resultadoSincronizacion['resultados'];
+
+        // Verificar que existan las claves 'exitosas' y 'fallidas'
+        if (!isset($evaluaciones['exitosas']) || !is_array($evaluaciones['exitosas'])) {
+            $evaluaciones['exitosas'] = [];
+        }
+
+        if (!isset($evaluaciones['fallidas']) || !is_array($evaluaciones['fallidas'])) {
+            $evaluaciones['fallidas'] = [];
+        }
+
         foreach ($evaluaciones['exitosas'] as $evaluacion) {
             Evaluacion::where('id', $evaluacion['id_evaluacion_bru'])->update([
                 'id_evaluacion_ld' => $evaluacion['id_evaluacion_ld'],
@@ -133,9 +174,10 @@ class SyncLibroController extends Controller
                 'log' => null,
             ]);
         }
+
         foreach ($evaluaciones['fallidas'] as $evaluacion) {
             $log = [
-                'error' => $evaluacion['error'],
+                'error' => $evaluacion['error'] ?? 'Error desconocido',
                 'errores' => isset($evaluacion['errores']) ? $evaluacion['errores'] : null
             ];
             Evaluacion::where('id', $evaluacion['id_evaluacion_bru'])->update([
@@ -277,7 +319,7 @@ class SyncLibroController extends Controller
             $loginResponse = $client->post($establecimiento->link_ld . '/login', [
                 'json' => [
                     'rut' => $establecimiento->user_ld,
-                    'password' => '12345'
+                    'password' => '123456'
                 ],
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -289,7 +331,13 @@ class SyncLibroController extends Controller
             $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
 
             if (!$token) {
-                throw new \Exception('No se pudo obtener el token de autenticación');
+                logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
+                    'loginData' => $loginData
+                ]);
+                return [
+                    'status' => 'Error',
+                    'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
+                ];
             }
 
             // Ahora enviar los datos con el token
@@ -302,12 +350,49 @@ class SyncLibroController extends Controller
                 ]
             ]);
 
-            return json_decode($response->getBody()->getContents(), true);
+
+            // Extraer correctamente el contenido de la respuesta de Guzzle
+            $responseContent = $response->getBody()->getContents();
+
+            // Decodificar la respuesta JSON
+            $resultadoSincronizacion = json_decode($responseContent, true);
+
+            // Verificar si se pudo decodificar correctamente
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                logger()->error('Error al decodificar la respuesta JSON', [
+                    'json_error' => json_last_error_msg(),
+                    'response_content' => substr($responseContent, 0, 1000) // Mostrar los primeros 1000 caracteres
+                ]);
+
+                return [
+                    'status' => 'Error',
+                    'message' => 'Error al decodificar la respuesta: ' . json_last_error_msg(),
+                    'response_raw' => substr($responseContent, 0, 1000) // Incluir parte de la respuesta cruda para diagnóstico
+                ];
+            }
+
+            return $resultadoSincronizacion;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error en sincronización: ' . $e->getMessage()
-            ], 400);
+            logger()->error('Error de solicitud en sincronización', [
+                'message' => $e->getMessage(),
+                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+            ]);
+
+            return [
+                'status' => 'Error',
+                'message' => 'Error en solicitud de sincronización: ' . $e->getMessage(),
+                'response' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null
+            ];
+        } catch (\Exception $e) {
+            logger()->error('Excepción general en sincronización', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'status' => 'Error',
+                'message' => 'Error general en sincronización: ' . $e->getMessage()
+            ];
         }
     }
 
@@ -340,10 +425,9 @@ class SyncLibroController extends Controller
         $resultados = [];
 
         try {
-            logger()->info(['--- INICIO DE SINCRONIZACION ---']);
+            logger()->info(['--- INICIO DE MULTI SINCRONIZACION ---']);
             // Procesar cada usuario (establecimiento)
             foreach ($usuarios as $index => $usuario) {
-                logger()->info(['Iniciando sincronización para el usuario:' => $usuario['correo']]);
 
                 // Realizar login con AuthController
                 $authController = new \App\Http\Controllers\Auth\AuthController();
@@ -352,7 +436,10 @@ class SyncLibroController extends Controller
 
                 $respuestaLogin = $authController->login($request);
                 $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+                $roles = $contenidoRespuesta['roles'];
+                $nombreEstablecimiento = $roles['nombre_estab'];
 
+                logger()->info([' > > > ' . $nombreEstablecimiento . ' < < <']);
                 // Verificar si el login fue exitoso
                 if (!isset($contenidoRespuesta['token'])) {
                     logger()->error(['Error al iniciar sesión con el usuario:' => $usuario['correo']], $contenidoRespuesta);
@@ -371,7 +458,7 @@ class SyncLibroController extends Controller
                     ->toArray();
 
                 if (empty($evaluacionesPendientes)) {
-                    logger()->info(['Todas las evaluaciones están sincronizadas para: ' => $usuario['correo']]);
+                    logger()->info(['Todas las evaluaciones están en estado SYNC']);
                     $resultados[] = [
                         'usuario' => $usuario['correo'],
                         'estado' => 'success',
@@ -417,17 +504,17 @@ class SyncLibroController extends Controller
 
                 // Llamar a la función de sincronización
                 $respuestaSinc = $this->sincronizarEvaluaciones($requestSync);
-                $resultadoSinc = json_decode($respuestaSinc->getContent(), true);
-
-                logger()->info(['Resultado de sincronización para' => $usuario['correo']], [
-                    'status' => $resultadoSinc['status'] ?? 'error',
-                    'mensaje' => $resultadoSinc['message'] ?? 'Sin mensaje'
-                ]);
+                if ($respuestaSinc instanceof \Illuminate\Http\JsonResponse) {
+                    $resultadoSinc = json_decode($respuestaSinc->getContent(), true);
+                } else {
+                    $resultadoSinc = $respuestaSinc;
+                }
 
                 $resultados[] = [
-                    'usuario' => $usuario['correo'],
                     'estado' => $resultadoSinc['status'] ?? 'error',
                     'mensaje' => $resultadoSinc['message'] ?? 'Error en la sincronización',
+                    'usuario' => $usuario['correo'],
+                    'establecimiento' => $nombreEstablecimiento,
                     'evaluaciones_procesadas' => count($evaluacionesPendientes),
                     'detalles' => $resultadoSinc
                 ];
@@ -440,7 +527,8 @@ class SyncLibroController extends Controller
             $tiempoFin = microtime(true);
             $tiempoTotal = round($tiempoFin - $tiempoInicio, 2);
 
-            logger()->info(['--- Sincronización completada en' => $tiempoTotal . ' segundos ---']);
+            logger()->info(['> Sincronización completada en' . $tiempoTotal . ' SEG, para: ' . $usuario['correo'] . '.']);
+            logger()->info(['> > > - - - - - - - - - - - - - - - - - - - - - - - - - - - < < <']);
 
             return response()->json([
                 'status' => 'success',
