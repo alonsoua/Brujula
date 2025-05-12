@@ -107,7 +107,8 @@ class Rol extends Model
 
         // Si es profesor jefe, agregar permisos de sincronización LD
         if ($esProfesorJefe) {
-            // array_unshift($permisos, ['action' => 'read', 'subject' => 'informes']);
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'cursos']);
+            array_unshift($permisos, ['action' => 'lista', 'subject' => 'cursos']);
         }
 
         // Si es director agregar permisos para ver sincronización
