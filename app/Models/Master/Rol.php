@@ -136,6 +136,7 @@ class Rol extends Model
             array_unshift($permisos, ['action' => 'update', 'subject' => 'evaluaciones']);
             array_unshift($permisos, ['action' => 'create', 'subject' => 'evaluaciones']);
             array_unshift($permisos, ['action' => 'read', 'subject' => 'evaluaciones']);
+            array_unshift($permisos, ['action' => 'read', 'subject' => 'informes']);
 
             // Elimina permisos de avances
             $permisos = array_filter($permisos, function ($permiso) {
