@@ -245,62 +245,72 @@ class SyncLibroController extends Controller
      */
     private function procesarDatosParaSincronizacion($evaluaciones, $establecimiento)
     {
-        $datosProcesados = [];
-        $datosProcesados['rbd'] = $establecimiento->rbd;
-        $periodo = null;
-        $subperiodo = null;
-        $curso = null;
+        // Agrupar evaluaciones por curso
+        $evaluacionesPorCurso = [];
         foreach ($evaluaciones as $evaluacion) {
-
-            if ($subperiodo == null) {
-                $subperiodo = isset($evaluacion->subperiodo) ?
-                    $evaluacion->subperiodo->nombre : null;
-            }
-
-            if ($periodo == null) {
-                $periodo = isset($evaluacion->subperiodo->ajuste->periodo) ?
-                    $evaluacion->subperiodo->ajuste->periodo->nombre : null;
-            }
-
-            if ($curso == null) {
-                $curso = isset($evaluacion->curso) ? [
-                    'nombre' => $evaluacion->curso->nombre,
-                    'letra' => $evaluacion->curso->letra,
-                    'grado' => isset($evaluacion->curso->grado) ? [
-                        'idGrado' => $evaluacion->curso->grado->idGrado,
-                        'nombre' => $evaluacion->curso->grado->nombre,
-                        'idNivel' => $evaluacion->curso->grado->idNivel
-                    ] : null
-                ] : null;
-            }
-
-            $notasFormateadas = [];
-            foreach ($evaluacion->evaluacionesNotas as $evaluacionNota) {
-                if (isset($evaluacionNota->alumno)) {
-                    $notasFormateadas[] = [
-                        'rut_alumno' => $evaluacionNota->alumno->rut,
-                        'nota' => $evaluacionNota->nota
+            if (isset($evaluacion->curso)) {
+                $cursoKey = $evaluacion->curso->id;
+                if (!isset($evaluacionesPorCurso[$cursoKey])) {
+                    $evaluacionesPorCurso[$cursoKey] = [
+                        'curso' => [
+                            'nombre' => $evaluacion->curso->nombre,
+                            'letra' => $evaluacion->curso->letra,
+                            'grado' => isset($evaluacion->curso->grado) ? [
+                                'idGrado' => $evaluacion->curso->grado->idGrado,
+                                'nombre' => $evaluacion->curso->grado->nombre,
+                                'idNivel' => $evaluacion->curso->grado->idNivel
+                            ] : null
+                        ],
+                        'evaluaciones' => []
                     ];
                 }
+                $evaluacionesPorCurso[$cursoKey]['evaluaciones'][] = $evaluacion;
             }
-
-            $datosProcesados['evaluaciones'][] = [
-                'id_evaluacion' => $evaluacion->id,
-                'nombre_evaluacion' => $evaluacion->nombre,
-                'fecha' => $evaluacion->fecha,
-                'estado_sync' => $evaluacion->estado_sync,
-                'id_evaluacion_ld' => $evaluacion->id_evaluacion_ld,
-                'rut_docente' => isset($evaluacion->estabUsuarioRol->usuario) ?
-                    $evaluacion->estabUsuarioRol->usuario->rut : null,
-                'asignatura' => isset($evaluacion->asignatura) ? $evaluacion->asignatura->nombre : null,
-                'notas' => $notasFormateadas
-            ];
         }
 
-        $datosProcesados['periodo'] = $periodo;
-        $datosProcesados['subperiodo'] = $subperiodo;
-        $datosProcesados['curso'] = $curso;
-        return $datosProcesados;
+        // Procesar cada grupo de evaluaciones por curso
+        $resultados = [];
+        foreach ($evaluacionesPorCurso as $cursoData) {
+            $datosProcesados = [];
+            $datosProcesados['rbd'] = $establecimiento->rbd;
+            $datosProcesados['curso'] = $cursoData['curso'];
+
+            // Obtener periodo y subperiodo de la primera evaluación del curso
+            $primeraEvaluacion = $cursoData['evaluaciones'][0];
+            $datosProcesados['periodo'] = isset($primeraEvaluacion->subperiodo->ajuste->periodo) ?
+                $primeraEvaluacion->subperiodo->ajuste->periodo->nombre : null;
+            $datosProcesados['subperiodo'] = isset($primeraEvaluacion->subperiodo) ?
+                $primeraEvaluacion->subperiodo->nombre : null;
+
+            // Procesar evaluaciones del curso
+            foreach ($cursoData['evaluaciones'] as $evaluacion) {
+                $notasFormateadas = [];
+                foreach ($evaluacion->evaluacionesNotas as $evaluacionNota) {
+                    if (isset($evaluacionNota->alumno)) {
+                        $notasFormateadas[] = [
+                            'rut_alumno' => $evaluacionNota->alumno->rut,
+                            'nota' => $evaluacionNota->nota
+                        ];
+                    }
+                }
+
+                $datosProcesados['evaluaciones'][] = [
+                    'id_evaluacion' => $evaluacion->id,
+                    'nombre_evaluacion' => $evaluacion->nombre,
+                    'fecha' => $evaluacion->fecha,
+                    'estado_sync' => $evaluacion->estado_sync,
+                    'id_evaluacion_ld' => $evaluacion->id_evaluacion_ld,
+                    'rut_docente' => isset($evaluacion->estabUsuarioRol->usuario) ?
+                        $evaluacion->estabUsuarioRol->usuario->rut : null,
+                    'asignatura' => isset($evaluacion->asignatura) ? $evaluacion->asignatura->nombre : null,
+                    'notas' => $notasFormateadas
+                ];
+            }
+
+            $resultados[] = $datosProcesados;
+        }
+
+        return $resultados;
     }
 
     /**
@@ -311,89 +321,91 @@ class SyncLibroController extends Controller
      */
     private function enviarDatosASistemaExterno(array $datosProcesados, $establecimiento)
     {
-        try {
-            // Primero obtener el token de autenticación
-            $client = new \GuzzleHttp\Client();
+        $resultados = [
+            'resultados' => [
+                'exitosas' => [],
+                'fallidas' => []
+            ]
+        ];
 
-            // Hacer login para obtener el token (si es necesario)
-            $loginResponse = $client->post($establecimiento->link_ld . '/login', [
-                'json' => [
-                    'rut' => $establecimiento->user_ld,
-                    'password' => '123456'
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json'
-                ]
-            ]);
+        foreach ($datosProcesados as $datosCurso) {
+            try {
+                // Primero obtener el token de autenticación
+                $client = new \GuzzleHttp\Client();
 
-            $loginData = json_decode($loginResponse->getBody()->getContents(), true);
-            $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
-
-            if (!$token) {
-                logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
-                    'loginData' => $loginData
-                ]);
-                return [
-                    'status' => 'Error',
-                    'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
-                ];
-            }
-
-            // Ahora enviar los datos con el token
-            $response = $client->post($establecimiento->link_ld . '/sincronizar-evaluaciones', [
-                'json' => $datosProcesados,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer ' . $token
-                ]
-            ]);
-
-
-            // Extraer correctamente el contenido de la respuesta de Guzzle
-            $responseContent = $response->getBody()->getContents();
-
-            // Decodificar la respuesta JSON
-            $resultadoSincronizacion = json_decode($responseContent, true);
-
-            // Verificar si se pudo decodificar correctamente
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                logger()->error('Error al decodificar la respuesta JSON', [
-                    'json_error' => json_last_error_msg(),
-                    'response_content' => substr($responseContent, 0, 1000) // Mostrar los primeros 1000 caracteres
+                // Hacer login para obtener el token (si es necesario)
+                $loginResponse = $client->post($establecimiento->link_ld . '/login', [
+                    'json' => [
+                        'rut' => $establecimiento->user_ld,
+                        'password' => '123456'
+                    ],
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ]
                 ]);
 
+                $loginData = json_decode($loginResponse->getBody()->getContents(), true);
+                $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
+
+                if (!$token) {
+                    logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
+                        'loginData' => $loginData
+                    ]);
+                    return [
+                        'status' => 'Error',
+                        'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
+                    ];
+                }
+
+                // Ahora enviar los datos con el token
+                $response = $client->post($establecimiento->link_ld . '/sincronizar-evaluaciones', [
+                    'json' => $datosCurso,
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $token
+                    ]
+                ]);
+
+                $responseContent = $response->getBody()->getContents();
+                $resultadoCurso = json_decode($responseContent, true);
+
+                if (isset($resultadoCurso['resultados'])) {
+                    $resultados['resultados']['exitosas'] = array_merge(
+                        $resultados['resultados']['exitosas'],
+                        $resultadoCurso['resultados']['exitosas'] ?? []
+                    );
+                    $resultados['resultados']['fallidas'] = array_merge(
+                        $resultados['resultados']['fallidas'],
+                        $resultadoCurso['resultados']['fallidas'] ?? []
+                    );
+                }
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                logger()->error('Error de solicitud en sincronización', [
+                    'message' => $e->getMessage(),
+                    'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+                ]);
+
                 return [
                     'status' => 'Error',
-                    'message' => 'Error al decodificar la respuesta: ' . json_last_error_msg(),
-                    'response_raw' => substr($responseContent, 0, 1000) // Incluir parte de la respuesta cruda para diagnóstico
+                    'message' => 'Error en solicitud de sincronización: ' . $e->getMessage(),
+                    'response' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null
+                ];
+            } catch (\Exception $e) {
+                logger()->error('Excepción general en sincronización', [
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return [
+                    'status' => 'Error',
+                    'message' => 'Error general en sincronización: ' . $e->getMessage()
                 ];
             }
-
-            return $resultadoSincronizacion;
-        } catch (\GuzzleHttp\Exception\RequestException $e) {
-            logger()->error('Error de solicitud en sincronización', [
-                'message' => $e->getMessage(),
-                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
-            ]);
-
-            return [
-                'status' => 'Error',
-                'message' => 'Error en solicitud de sincronización: ' . $e->getMessage(),
-                'response' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null
-            ];
-        } catch (\Exception $e) {
-            logger()->error('Excepción general en sincronización', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return [
-                'status' => 'Error',
-                'message' => 'Error general en sincronización: ' . $e->getMessage()
-            ];
         }
+
+        return $resultados;
     }
 
     /**
