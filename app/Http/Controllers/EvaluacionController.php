@@ -176,20 +176,81 @@ class EvaluacionController extends Controller
     }
 
     /**
+     * Actualiza el estado de sincronización de todas las evaluaciones de un curso
+     *
+     * @param  int  $idCurso
+     * @return \Illuminate\Http\Response
+     */
+    public function actualizarEstadoSyncCurso($idCurso)
+    {
+        try {
+            // Buscar todas las evaluaciones del curso
+            $evaluaciones = Evaluacion::where('idCurso', $idCurso)->get();
+
+            // Actualizar el estado_sync de cada evaluación
+            foreach ($evaluaciones as $evaluacion) {
+                $evaluacion->update(['estado_sync' => 'de_sync']);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Estado de sincronización actualizado correctamente',
+                'evaluaciones_actualizadas' => $evaluaciones->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al actualizar el estado de sincronización: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             // Obtener la evaluación existente con sus relaciones
             $evaluacion = Evaluacion::with(['evaluacionesIndicadores', 'evaluacionesNotas'])
                 ->findOrFail($id);
 
+            $user = $request->user()->getUserData();
             if ($evaluacion->estado_sync === 'sync') {
-                return response()->json(['No se puede eliminar una evaluación que está sincronizada con LD'], 400);
+                $client = new \GuzzleHttp\Client();
+                $loginResponse = $client->post($user['establecimiento']['link_ld'] . '/login', [
+                    'json' => [
+                        'rut' => $user['establecimiento']['user_ld'],
+                        'password' => '123456'
+                    ],
+                ]);
+                $loginData = json_decode($loginResponse->getBody()->getContents(), true);
+                $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
+
+                if (!$token) {
+                    logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
+                        'loginData' => $loginData
+                    ]);
+                    return [
+                        'status' => 'Error',
+                        'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
+                    ];
+                }
+
+                // Ahora enviar los datos con el token
+                $client->delete($user['establecimiento']['link_ld'] . '/evaluacion/' . $evaluacion->id_evaluacion_ld, [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                        'Authorization' => 'Bearer ' . $token
+                    ]
+                ]);
+                // $responseContent = $response->getBody()->getContents();
+                // $resultadoCurso = json_decode($responseContent, true);
+                // return response()->json($resultadoCurso, 200);
             }
 
             // Obtener las relaciones
@@ -225,6 +286,7 @@ class EvaluacionController extends Controller
 
             return response()->json(['message' => 'La evaluación y sus registros relacionados han sido eliminados exitosamente'], 200);
         } catch (\Exception $e) {
+            logger()->info(['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

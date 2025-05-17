@@ -17,11 +17,13 @@ class AlumnoController extends Controller
 {
     protected $establecimientoController;
     protected $cursoController;
+    protected $evaluacionController;
 
     public function __construct()
     {
         $this->establecimientoController = app('App\Http\Controllers\Master\EstablecimientoController');
         $this->cursoController = app('App\Http\Controllers\CursoController');
+        $this->evaluacionController = app('App\Http\Controllers\EvaluacionController');
     }
 
     /**
@@ -47,7 +49,6 @@ class AlumnoController extends Controller
             ->leftJoin("alumnos_cursos", "alumnos.id", "=", "alumnos_cursos.idAlumno")
             ->leftJoin("cursos", "alumnos_cursos.idCurso", "=", "cursos.id")
             ->where('cursos.idPeriodo', $idPeriodo)
-            ->where('alumnos_cursos.estado', '!=', 'Eliminado')
             ->orderBy('cursos.idGrado')
             ->orderBy('cursos.letra')
             ->orderBy('alumnos.numLista')
@@ -632,6 +633,54 @@ class AlumnoController extends Controller
             ->table('alumnos_cursos')
             ->where('idAlumno', $id)
                 ->update(['estado' => 'Eliminado']); // 👈 Cambia el estado a "Eliminado"
+
+            // Actualizar el estado de sincronización de todas las evaluaciones del curso
+            $this->evaluacionController->actualizarEstadoSyncCurso($alumnoCurso->idCurso);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'El alumno ha sido marcado como eliminado',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error al actualizar el estado del alumno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function reincorporar(Request $request, $id)
+    {
+        try {
+            // Buscar la relación del alumno en alumnos_cursos
+            $alumnoCurso = DB::connection('establecimiento')
+                ->table('alumnos_cursos')
+                ->where('idAlumno', $id)
+                ->first();
+
+            if (!$alumnoCurso) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'No se encontró la relación del alumno con el curso',
+                ], 404);
+            }
+
+            // Actualizar el estado en la tabla alumnos_cursos
+            DB::connection('establecimiento')
+                ->table('alumnos_cursos')
+                ->where('idAlumno', $id)
+                ->update(['estado' => 'Activo']); // 👈 Cambia el estado a "Activo"
+
+            // Actualizar el estado de sincronización de todas las evaluaciones del curso
+            $this->evaluacionController->actualizarEstadoSyncCurso($alumnoCurso->idCurso);
 
             return response()->json([
                 'status'  => 'success',

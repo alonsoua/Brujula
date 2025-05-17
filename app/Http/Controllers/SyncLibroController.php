@@ -5,10 +5,28 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Evaluacion;
+use App\Models\UsuarioAsignatura;
 use Illuminate\Support\Facades\DB;
 
 class SyncLibroController extends Controller
 {
+
+    // Definir la propiedad protegida para los usuarios
+    protected $usuarios = [
+        // ['correo' => '6.director@dev.cl', 'password' => '6.123456'],
+        ['correo' => '25.director@dev.cl', 'password' => '25.123456'],
+        ['correo' => '26.director@dev.cl', 'password' => '26.123456'],
+        ['correo' => '27.director@dev.cl', 'password' => '27.123456'],
+        ['correo' => '28.director@dev.cl', 'password' => '28.123456'],
+        ['correo' => '29.director@dev.cl', 'password' => '29.123456'],
+        ['correo' => '30.director@dev.cl', 'password' => '30.123456'],
+        ['correo' => '31.director@dev.cl', 'password' => '31.123456'],
+        // ['correo' => '33.director@dev.cl', 'password' => '33.123456'], // el rincón
+        ['correo' => '34.director@dev.cl', 'password' => '34.123456'],
+        ['correo' => '35.director@dev.cl', 'password' => '35.123456'],
+        ['correo' => '36.director@dev.cl', 'password' => '36.123456'],
+    ];
+
     /**
      * @OA\Post(
      *     path="/sincronizar-evaluaciones",
@@ -218,7 +236,10 @@ class SyncLibroController extends Controller
                 $query->select('id', 'nota', 'idAlumno', 'idEvaluacion');
             },
             'evaluacionesNotas.alumno' => function ($query) {
-                $query->select('id', 'rut');
+                $query->select('id', 'rut')
+                    ->whereHas('curso', function ($q) {
+                        $q->where('alumnos_cursos.estado', 'Activo');
+                    });
             },
             'subperiodo' => function ($query) {
                 $query->select('id', 'nombre', 'idAjuste');
@@ -337,7 +358,7 @@ class SyncLibroController extends Controller
                 $loginResponse = $client->post($establecimiento->link_ld . '/login', [
                     'json' => [
                         'rut' => $establecimiento->user_ld,
-                        'password' => '123456'
+                        'password' => '12345'
                     ],
                     'headers' => [
                         'Content-Type' => 'application/json',
@@ -418,28 +439,12 @@ class SyncLibroController extends Controller
         // Tiempo de inicio
         $tiempoInicio = microtime(true);
 
-        // Definir los usuarios para el login
-        $usuarios = [
-            // ['correo' => '6.director@dev.cl', 'password' => '6.123456'],
-            ['correo' => '25.director@dev.cl', 'password' => '25.123456'],
-            ['correo' => '26.director@dev.cl', 'password' => '26.123456'],
-            ['correo' => '27.director@dev.cl', 'password' => '27.123456'],
-            ['correo' => '28.director@dev.cl', 'password' => '28.123456'],
-            ['correo' => '29.director@dev.cl', 'password' => '29.123456'],
-            ['correo' => '30.director@dev.cl', 'password' => '30.123456'],
-            ['correo' => '31.director@dev.cl', 'password' => '31.123456'],
-            ['correo' => '33.director@dev.cl', 'password' => '33.123456'],
-            ['correo' => '34.director@dev.cl', 'password' => '34.123456'],
-            ['correo' => '35.director@dev.cl', 'password' => '35.123456'],
-            ['correo' => '36.director@dev.cl', 'password' => '36.123456'],
-        ];
-
         $resultados = [];
 
         try {
             logger()->info(['--- INICIO DE MULTI SINCRONIZACION ---']);
             // Procesar cada usuario (establecimiento)
-            foreach ($usuarios as $index => $usuario) {
+            foreach ($this->usuarios as $index => $usuario) {
 
                 // Realizar login con AuthController
                 $authController = new \App\Http\Controllers\Auth\AuthController();
@@ -562,6 +567,165 @@ class SyncLibroController extends Controller
                 'status' => 'error',
                 'message' => 'Error en el proceso de sincronización múltiple',
                 'tiempo_total' => $tiempoTotal,
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
+    }
+
+
+    public function cantidadEvaluacionesGeneral()
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE CONTEO DE EVALUACIONES ---']);
+            // Procesar cada usuario (establecimiento)
+            foreach ($this->usuarios as $index => $usuario) {
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuario);
+
+                $respuestaLogin = $authController->login($request);
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+                $roles = $contenidoRespuesta['roles'];
+                $nombreEstablecimiento = $roles['nombre_estab'];
+
+                logger()->info([' > > > ' . $nombreEstablecimiento . ' < < <']);
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuario['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+                // Buscar evaluaciones pendientes de sincronización
+                $evaluaciones = Evaluacion::where('estado_sync', '!=', 'sync')
+                    ->where('estado', 'Activo')
+                    ->pluck('id')
+                    ->toArray();
+
+                $conteosPorEstado = Evaluacion::select('estado_sync', DB::raw('count(*) as total'))
+                    ->groupBy('estado_sync')
+                    ->pluck('total', 'estado_sync')
+                    ->toArray();
+
+                $totalEvaluaciones = array_sum($conteosPorEstado);
+
+                $resultados[] = [
+                    'Establecimiento' => $nombreEstablecimiento,
+                    'Total' => $totalEvaluaciones,
+                    'Sincronizadas' => $conteosPorEstado['sync'] ?? 0,
+                    'Pendientes' => ($conteosPorEstado['de_sync'] ?? 0) + ($conteosPorEstado['no_sync'] ?? 0),
+                    'Fallidas' => $conteosPorEstado['error'] ?? 0,
+                ];
+            }
+
+            return response()->json($resultados);
+        } catch (\Exception $e) {
+            logger()->error(['Error en el conteo de evaluaciones:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de conteo de evaluaciones',
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
+    }
+
+
+    public function asignaturasBrujula()
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE CONSULTA DE ASIGNATURAS ---']);
+            // Procesar cada usuario (establecimiento)
+            foreach ($this->usuarios as $index => $usuario) {
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuario);
+
+                $respuestaLogin = $authController->login($request);
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+                $roles = $contenidoRespuesta['roles'];
+                $nombreEstablecimiento = $roles['nombre_estab'];
+
+                logger()->info([' > > > ' . $nombreEstablecimiento . ' < < <']);
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuario['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+
+                // Consultar UsuarioAsignatura con sus relaciones
+                $usuarioAsignaturas = UsuarioAsignatura::with(['asignatura', 'curso'])
+                    ->whereHas('curso', function ($query) {
+                        $query->where('idGrado', '>', 5);
+                    })
+                    ->get();
+
+                $asignaturasPorCurso = [];
+                foreach ($usuarioAsignaturas as $ua) {
+                    $cursoId = $ua->curso->id;
+                    $cursoNombre = $ua->curso->nombre;
+                    $asignaturaId = $ua->asignatura->id;
+                    $asignaturaNombre = $ua->asignatura->nombre;
+
+                    if (!isset($asignaturasPorCurso[$cursoId])) {
+                        $asignaturasPorCurso[$cursoId] = [
+                            'curso_nombre' => $cursoNombre,
+                            'asignaturas' => []
+                        ];
+                    }
+
+                    $asignaturasPorCurso[$cursoId]['asignaturas'][] = [
+                        'nombre' => $asignaturaNombre
+                    ];
+                }
+
+                $resultados[] = [
+                    'Establecimiento' => $nombreEstablecimiento,
+                    'Cursos' => array_values($asignaturasPorCurso)
+                ];
+            }
+
+            return response()->json($resultados);
+        } catch (\Exception $e) {
+            logger()->error(['Error en la consulta de asignaturas:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de consulta de asignaturas',
                 'error' => $e->getMessage(),
                 'resultados' => $resultados
             ], 500);

@@ -203,6 +203,7 @@ Route::prefix('bru')->group(function () {
             Route::post('/alumnos', [AlumnoController::class, 'store']);
             Route::put('/alumnos/{id}', [AlumnoController::class, 'update']);
             Route::delete('/alumnos/{id}', [AlumnoController::class, 'destroy']);
+            Route::put('/alumnos/reincorporar/{id}', [AlumnoController::class, 'reincorporar']);
 
             // * Imports
             Route::post('/alumnos/import', [AlumnoController::class, 'importAlumnos']);
@@ -318,5 +319,7 @@ Route::prefix('bru')->group(function () {
 
     // * Sincronización múltiple BRÚJULA > LD
     Route::post('/sincronizar-multiples', [SyncLibroController::class, 'sincronizarEvaluacionesMultiples']);
+    Route::get('/cantidad-evaluaciones', [SyncLibroController::class, 'cantidadEvaluacionesGeneral']);
+    Route::get('/asignaturas-brujula', [SyncLibroController::class, 'asignaturasBrujula']);
 });
 
