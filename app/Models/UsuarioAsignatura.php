@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Master\Asignatura;
+use App\Models\Master\Estab_usuario_rol;
+use App\Models\Master\Usuario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,6 +33,11 @@ class UsuarioAsignatura extends Model
     public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'idAsignatura', 'id');
+    }
+
+    public function estabUsuarioRol()
+    {
+        return $this->belongsTo(Estab_usuario_rol::class, 'idEstabUsuarioRol', 'id');
     }
 
     public static function getAll($idEstablecimiento, $estado) {

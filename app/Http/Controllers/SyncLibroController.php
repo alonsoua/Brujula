@@ -1325,4 +1325,147 @@ class SyncLibroController extends Controller
 
         return $resultados;
     }
+
+
+    // * ASIGNATURAS ASIGNADAS
+    public function asignaturasAsignadas()
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE ASIGNATURAS ASIGNADAS ---']);
+            // Procesar cada usuario (establecimiento)
+            foreach ($this->usuarios as $index => $usuario) {
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuario);
+
+                $respuestaLogin = $authController->login($request);
+                logger()->info([' > > > ' . $respuestaLogin . ' < < <']);
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+                $roles = $contenidoRespuesta['roles'];
+                $nombreEstablecimiento = $roles['nombre_estab'];
+
+                logger()->info([' > > > ' . $nombreEstablecimiento . ' < < <']);
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuario['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+
+                // Buscar asignaturas pendientes de sincronización
+                $asignaturas = UsuarioAsignatura::with([
+                    'curso' => function ($query) {
+                        $query->select('id', 'nombre', 'letra', 'idGrado')
+                            ->orderBy('idGrado')
+                            ->orderBy('letra');
+                    },
+                    'asignatura' => function ($query) {
+                        $query->select('id', 'nombre', 'idGrado')
+                            ->where('estado', 'Activo');
+                    },
+                    'estabUsuarioRol.usuario' => function ($query) {
+                        $query->select('id', 'nombres', 'primerApellido', 'correo');
+                    },
+                    'estabUsuarioRol' => function ($query) {
+                        $query->select('id', 'idUsuario', 'idEstablecimiento', 'idRol');
+                    }
+                ])
+                    ->whereHas('curso', function ($query) {
+                        $query->whereNotIn('idGrado', [4, 5]);
+                    })
+                    ->get();
+
+                if (empty($asignaturas)) {
+                    logger()->info(['No tiene asignaturas en el sistema']);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'success',
+                        'mensaje' => 'No hay asignaturas en el sistema',
+                    ];
+                    continue;
+                }
+
+                $cursosAgrupados = [];
+                foreach ($asignaturas as $asignaturaUsuario) {
+                    if (isset($asignaturaUsuario->curso)) {
+                        $idGrado = $asignaturaUsuario->curso->idGrado;
+                        $letra = $asignaturaUsuario->curso->letra;
+                        $nombre = $asignaturaUsuario->curso->nombre;
+                        $key = $idGrado . '-' . $letra;
+
+                        if (!isset($cursosAgrupados[$key])) {
+                            $cursosAgrupados[$key] = [
+                                'colegio' => $nombreEstablecimiento,
+                                'curso' => $nombre . ' ' . $letra,
+                                'asignaturas' => []
+                            ];
+                        }
+
+                        $usuario = null;
+                        $rol = null;
+
+                        if ($asignaturaUsuario->estabUsuarioRol) {
+                            $rol = [
+                                'id' => $asignaturaUsuario->estabUsuarioRol->idRol,
+                                'establecimiento' => $asignaturaUsuario->estabUsuarioRol->idEstablecimiento
+                            ];
+
+                            if ($asignaturaUsuario->estabUsuarioRol->usuario) {
+                                $usuario = [
+                                    'id' => $asignaturaUsuario->estabUsuarioRol->usuario->id,
+                                    'nombre' => $asignaturaUsuario->estabUsuarioRol->usuario->nombres . ' ' . $asignaturaUsuario->estabUsuarioRol->usuario->primerApellido,
+                                    'correo' => $asignaturaUsuario->estabUsuarioRol->usuario->correo,
+                                    'rol' => $rol
+                                ];
+                            }
+                        }
+
+                        $cursosAgrupados[$key]['asignaturas'][] = [
+                            'nombre' => $asignaturaUsuario->asignatura->nombre,
+                            'usuario' => $usuario ?? [
+                                'id' => null,
+                                'nombre' => 'Sin usuario asignado',
+                                'correo' => null,
+                                'rol' => null
+                            ]
+                        ];
+                    }
+                }
+
+                $cursosData = array_values($cursosAgrupados);
+
+                $resultados = [...$resultados, ...$cursosData];
+            }
+            return response()->json($resultados);
+        } catch (\Exception $e) {
+            logger()->error(['Error en la sincronización múltiple:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $tiempoFin = microtime(true);
+            $tiempoTotal = round($tiempoFin - $tiempoInicio, 2);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de sincronización múltiple',
+                'tiempo_total' => $tiempoTotal,
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
+    }
 }
