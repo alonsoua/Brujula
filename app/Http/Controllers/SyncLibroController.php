@@ -32,6 +32,7 @@ class SyncLibroController extends Controller
     //     ['correo' => '34.director@dev.cl', 'password' => '34.123456'],
     //     ['correo' => '35.director@dev.cl', 'password' => '35.123456'],
     //     ['correo' => '36.director@dev.cl', 'password' => '36.123456'],
+    //     ['correo' => '37.director@dev.cl', 'password' => '37.123456'],
     //     // ['correo' => '33.director@dev.cl', 'password' => '33.123456'], // el rincón
     // ];
 

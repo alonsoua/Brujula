@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Master\Asignatura;
 use App\Models\Master\Estab_usuario_rol;
-use App\Models\Master\Usuario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -39,6 +38,7 @@ class UsuarioAsignatura extends Model
     {
         return $this->belongsTo(Estab_usuario_rol::class, 'idEstabUsuarioRol', 'id');
     }
+
 
     public static function getAll($idEstablecimiento, $estado) {
         $cursos = Curso::select(

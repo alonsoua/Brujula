@@ -438,6 +438,19 @@ class AlumnoController extends Controller
                     'trace' => $e->getTraceAsString()
                 ]
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // 1. Registrar los errores exactos
+            logger()->error('Errores de validación en importAlumnos', [
+                'errores' => $e->errors()      // array [campo => [mensajes…]]
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Errores de validación en importAlumnos.',
+                'error' => [
+                    'errores' => $e->errors()
+                ]
+            ]);
         }
     }
 
