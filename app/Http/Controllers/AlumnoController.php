@@ -303,9 +303,19 @@ class AlumnoController extends Controller
             logger()->info('Inicio de importación de alumnos desde CSV');
 
             // Validar el archivo antes de procesarlo
-            $request->validate([
-                'lista' => 'required|file|mimes:csv,xlsx,xls|max:10240' // máximo 10MB
-            ]);
+            try {
+                $request->validate([
+                    'lista' => 'required|file|mimes:csv,xlsx,xls|max:10240' // máximo 10MB
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Error de validación',
+                    'errors' => [
+                        'lista' => $e->errors()['lista'] ?? ['Error desconocido con el archivo']
+                    ]
+                ], 422);
+            }
 
             // 📌 1️⃣ Procesar el archivo CSV
             $documento = $request->file('lista');
@@ -447,10 +457,8 @@ class AlumnoController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Errores de validación en importAlumnos.',
-                'error' => [
-                    'errores' => $e->errors()
-                ]
-            ]);
+                'errors' => $e->errors()
+            ], 422);
         }
     }
 
