@@ -1469,4 +1469,305 @@ class SyncLibroController extends Controller
             ], 500);
         }
     }
+
+    // * COMPARATIVA EVALUACIONES
+    public function comparativaEvaluaciones()
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE MULTI SINCRONIZACION ---']);
+            // Procesar cada usuario (establecimiento)
+            foreach ($this->usuarios as $index => $usuario) {
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuario);
+
+                $respuestaLogin = $authController->login($request);
+                logger()->info([' > > > ' . $respuestaLogin . ' < < <']);
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+                $roles = $contenidoRespuesta['roles'];
+                $nombreEstablecimiento = $roles['nombre_estab'];
+
+                logger()->info([' > > > ' . $nombreEstablecimiento . ' < < <']);
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuario['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+
+                // Buscar asignaturas pendientes de sincronización
+                $evaluaciones = Evaluacion::with([
+                    'curso' => function ($query) {
+                        $query->select('id', 'nombre', 'letra', 'idGrado')
+                            ->orderBy('idGrado')
+                            ->orderBy('letra');
+                    },
+                    'evaluacionesNotas' => function ($query) {
+                        $query->select('id', 'idEvaluacion');
+                    }
+                ])
+                    ->whereNotNull('id_evaluacion_ld')
+                    ->withCount('evaluacionesNotas')
+                    ->whereHas('curso', function ($query) {
+                        $query->whereNotIn('idGrado', [4, 5]);
+                    })
+                    ->get();
+
+                if (empty($evaluaciones)) {
+                    logger()->info(['No tiene evaluaciones en el sistema']);
+                    $resultados[] = [
+                        'usuario' => $usuario['correo'],
+                        'estado' => 'success',
+                        'mensaje' => 'No hay evaluaciones en el sistema',
+                    ];
+                    continue;
+                }
+
+                $cursosAgrupados = [];
+                foreach ($evaluaciones as $evaluacion) {
+
+                    if (isset($evaluacion->curso)) {
+                        $idGrado = $evaluacion->curso->idGrado;
+                        $letra = $evaluacion->curso->letra;
+                        $key = $idGrado . '-' . $letra;
+
+                        $nombre = $evaluacion->curso->nombre . ' ' . $letra;
+
+                        if (!isset($cursosAgrupados[$key])) {
+                            $cursosAgrupados[$key] = [
+                                'idGrado' => $idGrado,
+                                'nombreCurso' => $nombre,
+                                'evaluaciones' => []
+                            ];
+                        }
+                        $cursosAgrupados[$key]['evaluaciones'][] = [
+                            'id_evaluacion_bru' => $evaluacion->id,
+                            'id_evaluacion_ld' => $evaluacion->id_evaluacion_ld,
+                            'cantidad_notas_bru' => $evaluacion->evaluaciones_notas_count,
+                            'estado_sync' => $evaluacion->estado_sync,
+                        ];
+                    }
+                }
+
+                $cursosData = array_values($cursosAgrupados);
+
+                // Preparar la petición para sincronizarEvaluaciones
+                $requestSync = new \Illuminate\Http\Request();
+                $requestSync->replace(['cursos' => $cursosData]);
+
+                // Establecer el token en la petición
+                $requestSync->headers->set('Authorization', 'Bearer ' . $contenidoRespuesta['token']);
+
+                // Mantener el usuario actual en la petición
+                $requestSync->setUserResolver(function () use ($contenidoRespuesta) {
+                    return new class($contenidoRespuesta['user'], $contenidoRespuesta['roles']) {
+                        private $user;
+                        private $roles;
+
+                        public function __construct($user, $roles)
+                        {
+                            $this->user = $user;
+                            $this->roles = $roles;
+                        }
+
+                        public function getUserData()
+                        {
+                            return [
+                                'id' => $this->user['id'],
+                                'establecimiento' => [
+                                    'id' => $this->roles['id_estab']
+                                ],
+                                'periodo' => [
+                                    'id' => 1 // Valor predeterminado si no está disponible
+                                ]
+                            ];
+                        }
+                    };
+                });
+
+                // Llamar a la función de sincronización
+                $respuestaSinc = $this->evaluacionesLD($requestSync);
+                if ($respuestaSinc instanceof \Illuminate\Http\JsonResponse) {
+                    $resultadoSinc = json_decode($respuestaSinc->getContent(), true);
+                } else {
+                    $resultadoSinc = $respuestaSinc;
+                }
+
+                // Cerrar sesión para el usuario actual
+                $authController->logout($requestSync);
+
+                $resultados = [...$resultados, ...$resultadoSinc];
+            }
+            return response()->json($resultados);
+        } catch (\Exception $e) {
+            logger()->error(['Error en la sincronización múltiple:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $tiempoFin = microtime(true);
+            $tiempoTotal = round($tiempoFin - $tiempoInicio, 2);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de sincronización múltiple',
+                'tiempo_total' => $tiempoTotal,
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
+    }
+
+    public function evaluacionesLD(Request $request)
+    {
+        try {
+
+            $user = $request->user()->getUserData();
+            $idEstablecimiento = $user['establecimiento']['id'];
+
+            // * 1 Obtener datos de conexión del establecimiento
+            $establecimiento = DB::connection('master')
+                ->table('establecimientos')
+                ->where('id', $idEstablecimiento)
+                ->select('rbd', 'link_ld', 'user_ld', 'pass_ld')
+                ->first();
+
+            if (
+                !$establecimiento
+                || !$establecimiento->link_ld
+                || !$establecimiento->user_ld
+                || !$establecimiento->pass_ld
+            ) {
+                logger()->error(['No se encontraron datos de conexión para el establecimiento.']);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No se encontraron datos de conexión para el establecimiento'
+                ], 400);
+            }
+
+            $arrayData = [];
+            $cursos = $request->input('cursos');
+            $arrayData = [
+                'rbd' => $establecimiento->rbd,
+                'cursos' => $cursos,
+            ];
+
+            // * 4 Envia datos a Libro Digital
+            $estudiantesFaltantesLd = $this->enviarEvaluacionesLD(
+                $arrayData,
+                $establecimiento
+            );
+
+            return response()->json($estudiantesFaltantesLd);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error de validación en los datos proporcionados',
+                'errors' => $e->errors(),
+                'code' => 'VALIDATION_ERROR'
+            ], 422);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error de conexión con el sistema externo: ' . $e->getMessage(),
+                'code' => 'CONNECTION_ERROR',
+                'details' => [
+                    'request' => $e->getRequest() ? (string)$e->getRequest()->getUri() : null,
+                    'response' => $e->getResponse() ? $e->getResponse()->getStatusCode() : null
+                ]
+            ], 503);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al sincronizar evaluaciones: ' . $e->getMessage(),
+                'code' => 'INTERNAL_ERROR',
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            ], 500);
+        }
+    }
+
+    private function enviarEvaluacionesLD(array $datosProcesados, $establecimiento)
+    {
+        try {
+            // Primero obtener el token de autenticación
+            $client = new \GuzzleHttp\Client();
+
+            // Hacer login para obtener el token (si es necesario)
+            $loginResponse = $client->post($establecimiento->link_ld . '/login', [
+                'json' => [
+                    'rut' => $establecimiento->user_ld,
+                    'password' => $this->password
+                ],
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
+                ]
+            ]);
+
+            $loginData = json_decode($loginResponse->getBody()->getContents(), true);
+            $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
+
+            if (!$token) {
+                logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
+                    'loginData' => $loginData
+                ]);
+                return [
+                    'status' => 'Error',
+                    'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
+                ];
+            }
+
+            // Ahora enviar los datos con el token
+            $response = $client->post($establecimiento->link_ld . '/comparativa-evaluaciones', [
+                'json' => $datosProcesados,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token
+                ]
+            ]);
+
+            $responseContent = $response->getBody()->getContents();
+            return json_decode($responseContent, true);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            logger()->error('Error de solicitud en sincronización', [
+                'message' => $e->getMessage(),
+                'response' => $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null
+            ]);
+
+            return [
+                'status' => 'Error',
+                'message' => 'Error en solicitud de sincronización: ' . $e->getMessage(),
+                'response' => $e->hasResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null
+            ];
+        } catch (\Exception $e) {
+            logger()->error('Excepción general en sincronización', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'status' => 'Error',
+                'message' => 'Error general en sincronización: ' . $e->getMessage()
+            ];
+        }
+
+        return $resultados;
+    }
 }
