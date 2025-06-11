@@ -17,22 +17,22 @@ class SyncLibroController extends Controller
 
     // * DEV
     protected $usuarios = [
-        ['correo' => '6.director@dev.cl', 'password' => '6.123456'],
+        ['correo' => '6.director@dev.cl', 'password' => '6.123456', 'establecimiento' => 'Colegio Softinnova'],
     ];
 
     // * PROD
     // protected $usuarios = [
-    //     ['correo' => '25.director@dev.cl', 'password' => '25.123456'],
-    //     ['correo' => '26.director@dev.cl', 'password' => '26.123456'],
-    //     ['correo' => '27.director@dev.cl', 'password' => '27.123456'],
-    //     ['correo' => '28.director@dev.cl', 'password' => '28.123456'],
-    //     ['correo' => '29.director@dev.cl', 'password' => '29.123456'],
-    //     ['correo' => '30.director@dev.cl', 'password' => '30.123456'],
-    //     ['correo' => '31.director@dev.cl', 'password' => '31.123456'],
-    //     ['correo' => '34.director@dev.cl', 'password' => '34.123456'],
-    //     ['correo' => '35.director@dev.cl', 'password' => '35.123456'],
-    //     ['correo' => '36.director@dev.cl', 'password' => '36.123456'],
-    //     ['correo' => '37.director@dev.cl', 'password' => '37.123456'],
+    //     ['correo' => '25.director@dev.cl', 'password' => '25.123456', 'establecimiento' => 'Escuela Básica La Laguna'],
+    //     ['correo' => '26.director@dev.cl', 'password' => '26.123456', 'establecimiento' => 'Colegio La Greda'],
+    //     ['correo' => '27.director@dev.cl', 'password' => '27.123456', 'establecimiento' => 'Escuela Básica La Chocota'],
+    //     ['correo' => '28.director@dev.cl', 'password' => '28.123456', 'establecimiento' => 'Escuela Básica Campiche'],
+    //     ['correo' => '29.director@dev.cl', 'password' => '29.123456', 'establecimiento' => 'Colegio Maitencillo'],
+    //     ['correo' => '30.director@dev.cl', 'password' => '30.123456', 'establecimiento' => 'Escuela Básica Horcon'],
+    //     ['correo' => '31.director@dev.cl', 'password' => '31.123456', 'establecimiento' => 'Escuela Básica Pucalan'],
+    //     ['correo' => '34.director@dev.cl', 'password' => '34.123456', 'establecimiento' => 'Escuela Básica La Quebrada'],
+    //     ['correo' => '35.director@dev.cl', 'password' => '35.123456', 'establecimiento' => 'Escuela Básica El Rungue'],
+    //     ['correo' => '36.director@dev.cl', 'password' => '36.123456', 'establecimiento' => 'Escuela Los Maquis'],
+    //     ['correo' => '37.director@dev.cl', 'password' => '37.123456', 'establecimiento' => 'Escuela República de Francia'],
     //     // ['correo' => '33.director@dev.cl', 'password' => '33.123456'], // el rincón
     // ];
 
@@ -265,9 +265,9 @@ class SyncLibroController extends Controller
         ])
             ->whereIn('id', $evaluacionesIds)
             ->where('estado', 'Activo')
-            ->where('estado_sync', '!=', 'sync')
             ->select('id', 'nombre', 'fecha', 'estado_sync', 'id_evaluacion_ld', 'idCurso', 'idAsignatura', 'idEstabUsuarioRol', 'idSubperiodo')
             ->get();
+        // ->where('estado_sync', '!=', 'sync')
     }
 
     /**
@@ -481,8 +481,8 @@ class SyncLibroController extends Controller
                     continue;
                 }
                 // Buscar evaluaciones pendientes de sincronización
-                $evaluacionesPendientes = Evaluacion::where('estado_sync', '!=', 'sync')
-                    ->where('estado', 'Activo')
+                // where('estado_sync', '!=', 'sync')
+                $evaluacionesPendientes = Evaluacion::where('estado', 'Activo')
                     ->pluck('id')
                     ->toArray();
 
@@ -1743,7 +1743,28 @@ class SyncLibroController extends Controller
                 ]
             ]);
 
+
+
             $responseContent = $response->getBody()->getContents();
+            $responseData = json_decode($responseContent, true);
+
+            // Filtrar solo registros con error "no existe la evaluación"
+            $evaluacionesNoExistentes = array_filter($responseData, function ($item) {
+                return isset($item['error']) && $item['error'] === 'no existe la evaluación';
+            });
+
+            if (!empty($evaluacionesNoExistentes)) {
+                $this->editarEstadoEvaluaciones($evaluacionesNoExistentes);
+            }
+
+            $evaluacionesCantNotas = array_filter($responseData, function ($item) {
+                return isset($item['error']) && $item['error'] === 'chat' && $item['estado_sync'] === 'sync';
+            });
+
+            if (!empty($evaluacionesCantNotas)) {
+                $this->editarEstadoEvaluacionesCantNotas($evaluacionesCantNotas);
+            }
+
             return json_decode($responseContent, true);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             logger()->error('Error de solicitud en sincronización', [
@@ -1769,5 +1790,273 @@ class SyncLibroController extends Controller
         }
 
         return $resultados;
+    }
+
+
+
+    // * EDITAR ESTADO EVALUACIONES SYNC NO EXISTENTES EN LD
+    public function editarEstadoEvaluaciones($evaluacionesNoExistentes)
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE EDITAR ESTADO EVALUACIONES NO EXISTENTES ---']);
+
+            // Procesar cada evaluación no existente
+            foreach ($evaluacionesNoExistentes as $evaluacionNoExistente) {
+                logger()->info(['Procesando evaluación no existente:', $evaluacionNoExistente]);
+
+                // Buscar el usuario que corresponde al establecimiento de la evaluación
+                $usuarioEncontrado = null;
+                foreach ($this->usuarios as $usuario) {
+                    if (
+                        isset($usuario['establecimiento']) &&
+                        $usuario['establecimiento'] === $evaluacionNoExistente['Establecimiento']
+                    ) {
+                        $usuarioEncontrado = $usuario;
+                        break;
+                    }
+                }
+
+                if (!$usuarioEncontrado) {
+                    logger()->error(['No se encontró usuario para el establecimiento:', $evaluacionNoExistente['Establecimiento']]);
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se encontró usuario para el establecimiento'
+                    ];
+                    continue;
+                }
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuarioEncontrado);
+
+                $respuestaLogin = $authController->login($request);
+                logger()->info([' > > > Login Response: ' . $respuestaLogin . ' < < <']);
+
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuarioEncontrado['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'usuario' => $usuarioEncontrado['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+
+                // Login exitoso, proceder a actualizar la evaluación
+                try {
+                    // Buscar y actualizar la evaluación por id_evaluacion_bru
+                    $evaluacionActualizada = Evaluacion::where('id', $evaluacionNoExistente['id_evaluacion_bru'])
+                        ->update([
+                            'id_evaluacion_ld' => null,
+                            'fecha_sync' => null,
+                            'estado_sync' => 'no_sync'
+                        ]);
+
+                    if ($evaluacionActualizada) {
+                        logger()->info(['Evaluación actualizada exitosamente:', $evaluacionNoExistente['id_evaluacion_bru']]);
+                        $resultados[] = [
+                            'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                            'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                            'usuario' => $usuarioEncontrado['correo'],
+                            'estado' => 'exitoso',
+                            'mensaje' => 'Evaluación actualizada correctamente'
+                        ];
+                    } else {
+                        logger()->warning(['No se encontró la evaluación para actualizar:', $evaluacionNoExistente['id_evaluacion_bru']]);
+                        $resultados[] = [
+                            'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                            'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                            'usuario' => $usuarioEncontrado['correo'],
+                            'estado' => 'warning',
+                            'mensaje' => 'No se encontró la evaluación para actualizar'
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    logger()->error(['Error al actualizar evaluación:', $e->getMessage()], [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]);
+
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'usuario' => $usuarioEncontrado['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'Error al actualizar la evaluación: ' . $e->getMessage()
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Proceso de edición de estado de evaluaciones completado',
+                'total_procesadas' => count($evaluacionesNoExistentes),
+                'resultados' => $resultados
+            ]);
+        } catch (\Exception $e) {
+            logger()->error(['Error en editarEstadoEvaluaciones:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $tiempoFin = microtime(true);
+            $tiempoTotal = round($tiempoFin - $tiempoInicio, 2);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de edición de estado de evaluaciones',
+                'tiempo_total' => $tiempoTotal,
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
+    }
+
+    // * EDITAR ESTADO EVALUACIONES SYNC CANTIDAD DE NOTAS NO COINCIDE EN LD
+    public function editarEstadoEvaluacionesCantNotas($evaluacionesCantNotas)
+    {
+        // Tiempo de inicio
+        $tiempoInicio = microtime(true);
+
+        $resultados = [];
+
+        try {
+            logger()->info(['--- INICIO DE EDITAR ESTADO EVALUACIONES CANTIDAD DE NOTAS NO COINCIDE ---']);
+
+            // Procesar cada evaluación no existente
+            foreach ($evaluacionesCantNotas as $evaluacionNoExistente) {
+                logger()->info(['Procesando evaluación cantidad de notas no coincide:', $evaluacionNoExistente]);
+
+                // Buscar el usuario que corresponde al establecimiento de la evaluación
+                $usuarioEncontrado = null;
+                foreach ($this->usuarios as $usuario) {
+                    if (
+                        isset($usuario['establecimiento']) &&
+                        $usuario['establecimiento'] === $evaluacionNoExistente['Establecimiento']
+                    ) {
+                        $usuarioEncontrado = $usuario;
+                        break;
+                    }
+                }
+
+                if (!$usuarioEncontrado) {
+                    logger()->error(['No se encontró usuario para el establecimiento:', $evaluacionNoExistente['Establecimiento']]);
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se encontró usuario para el establecimiento'
+                    ];
+                    continue;
+                }
+
+                // Realizar login con AuthController
+                $authController = new \App\Http\Controllers\Auth\AuthController();
+                $request = new \Illuminate\Http\Request();
+                $request->replace($usuarioEncontrado);
+
+                $respuestaLogin = $authController->login($request);
+                logger()->info([' > > > Login Response: ' . $respuestaLogin . ' < < <']);
+
+                $contenidoRespuesta = json_decode($respuestaLogin->getContent(), true);
+
+                // Verificar si el login fue exitoso
+                if (!isset($contenidoRespuesta['token'])) {
+                    logger()->error(['Error al iniciar sesión con el usuario:' => $usuarioEncontrado['correo']], $contenidoRespuesta);
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'usuario' => $usuarioEncontrado['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'No se pudo iniciar sesión',
+                        'detalles' => $contenidoRespuesta
+                    ];
+                    continue;
+                }
+
+                // Login exitoso, proceder a actualizar la evaluación
+                try {
+                    // Buscar y actualizar la evaluación por id_evaluacion_bru
+                    $evaluacionActualizada = Evaluacion::where('id', $evaluacionNoExistente['id_evaluacion_bru'])
+                        ->update([
+                            'estado_sync' => 'de_sync'
+                        ]);
+
+                    if ($evaluacionActualizada) {
+                        logger()->info(['Evaluación actualizada exitosamente:', $evaluacionNoExistente['id_evaluacion_bru']]);
+                        $resultados[] = [
+                            'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                            'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                            'usuario' => $usuarioEncontrado['correo'],
+                            'estado' => 'exitoso',
+                            'mensaje' => 'Evaluación actualizada correctamente'
+                        ];
+                    } else {
+                        logger()->warning(['No se encontró la evaluación para actualizar:', $evaluacionNoExistente['id_evaluacion_bru']]);
+                        $resultados[] = [
+                            'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                            'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                            'usuario' => $usuarioEncontrado['correo'],
+                            'estado' => 'warning',
+                            'mensaje' => 'No se encontró la evaluación para actualizar'
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    logger()->error(['Error al actualizar evaluación:', $e->getMessage()], [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]);
+
+                    $resultados[] = [
+                        'id_evaluacion_bru' => $evaluacionNoExistente['id_evaluacion_bru'],
+                        'establecimiento' => $evaluacionNoExistente['Establecimiento'],
+                        'usuario' => $usuarioEncontrado['correo'],
+                        'estado' => 'error',
+                        'mensaje' => 'Error al actualizar la evaluación: ' . $e->getMessage()
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Proceso de edición de estado de evaluaciones completado',
+                'total_procesadas' => count($evaluacionesCantNotas),
+                'resultados' => $resultados
+            ]);
+        } catch (\Exception $e) {
+            logger()->error(['Error en editarEstadoEvaluaciones:' => $e->getMessage()], [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $tiempoFin = microtime(true);
+            $tiempoTotal = round($tiempoFin - $tiempoInicio, 2);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error en el proceso de edición de estado de evaluaciones',
+                'tiempo_total' => $tiempoTotal,
+                'error' => $e->getMessage(),
+                'resultados' => $resultados
+            ], 500);
+        }
     }
 }
