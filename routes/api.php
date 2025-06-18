@@ -325,5 +325,7 @@ Route::prefix('bru')->group(function () {
     Route::get('/comparativa-estudiantes', [SyncLibroController::class, 'comparativaEstudiantes']);
     Route::get('/asignaturas-asignadas', [SyncLibroController::class, 'asignaturasAsignadas']);
     Route::get('/comparativa-evaluaciones', [SyncLibroController::class, 'comparativaEvaluaciones']);
+    Route::get('/ordenar-estudiantes', [SyncLibroController::class, 'comparativaOrdenEstudiantes']);
+    Route::get('/comparativa-cantidad-evaluaciones', [SyncLibroController::class, 'comparativaCantidadEvaluaciones']);
 });
 

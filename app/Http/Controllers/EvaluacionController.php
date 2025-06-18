@@ -98,6 +98,19 @@ class EvaluacionController extends Controller
                 'idSubperiodo' => 'required|integer',
             ]);
 
+            // Verificar si ya existe una evaluación con los mismos datos
+            $evaluacionExistente = Evaluacion::where('nombre', $request->nombre)
+                ->where('fecha', $request->fecha)
+                ->where('idAsignatura', $request->idAsignatura)
+                ->where('idCurso', $request->idCurso)
+                ->first();
+
+            if ($evaluacionExistente) {
+                return response()->json([
+                    'error' => 'Ya existe una evaluación con el mismo nombre, fecha, asignatura y curso.'
+                ], 422);
+            }
+
             // Crear la evaluación
             $evaluacion = new Evaluacion([
                 'nombre' => $request->nombre,
