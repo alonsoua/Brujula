@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class EvaluacionController extends Controller
 {
+
+    protected $password = '12345'; // * DEV
+    // protected $password = '123456'; // * PROD
+
     /**
      * Display a listing of the resource.
      *
@@ -232,38 +236,39 @@ class EvaluacionController extends Controller
                 ->findOrFail($id);
 
             $user = $request->user()->getUserData();
-            if ($evaluacion->estado_sync === 'sync') {
+            if ($evaluacion->id_evaluacion_ld !== null) {
+                // Login a la api de libro digital
                 $client = new \GuzzleHttp\Client();
                 $loginResponse = $client->post($user['establecimiento']['link_ld'] . '/login', [
                     'json' => [
                         'rut' => $user['establecimiento']['user_ld'],
-                        'password' => '123456'
+                        'password' => $this->password
                     ],
                 ]);
+
                 $loginData = json_decode($loginResponse->getBody()->getContents(), true);
                 $token = $loginData['access_token'] ?? $loginData['token'] ?? null;
 
                 if (!$token) {
-                    logger()->error('Error en sincronización: No se pudo obtener el token de autenticación', [
-                        'loginData' => $loginData
-                    ]);
-                    return [
-                        'status' => 'Error',
-                        'message' => 'Error en sincronización: No se pudo obtener el token de autenticación'
-                    ];
+                    logger()->info(['error al eliminar la evaluación' => 'Error al eliminar la evaluación, intente de nuevo más tarde.']);
+                    return response()->json(['message' => 'Error al eliminar la evaluación, intente de nuevo más tarde.'], 400);
                 }
 
-                // Ahora enviar los datos con el token
-                $client->delete($user['establecimiento']['link_ld'] . '/evaluacion/' . $evaluacion->id_evaluacion_ld, [
+                // Eliminar la evaluación en libro digital
+                $response = $client->delete($user['establecimiento']['link_ld'] . '/evaluacion/' . $evaluacion->id_evaluacion_ld, [
                     'headers' => [
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
                         'Authorization' => 'Bearer ' . $token
                     ]
                 ]);
-                // $responseContent = $response->getBody()->getContents();
-                // $resultadoCurso = json_decode($responseContent, true);
-                // return response()->json($resultadoCurso, 200);
+
+                $responseContent = $response->getBody()->getContents();
+                $resultadoCurso = json_decode($responseContent, true);
+                if ($resultadoCurso['status'] === 'error') {
+                    logger()->info(['error al eliminar la evaluación' => $resultadoCurso['message']]);
+                    return response()->json(['message' => 'Error al eliminar la evaluación, intente de nuevo más tarde'], 400);
+                }
             }
 
             // Obtener las relaciones
@@ -299,8 +304,8 @@ class EvaluacionController extends Controller
 
             return response()->json(['message' => 'La evaluación y sus registros relacionados han sido eliminados exitosamente'], 200);
         } catch (\Exception $e) {
-            logger()->info(['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+            logger()->info(['error al eliminar la evaluación' => $e->getMessage()]);
+            return response()->json(['message' => 'Error al eliminar la evaluación, intente de nuevo más tarde'], 500);
         }
     }
 }
